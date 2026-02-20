@@ -888,7 +888,9 @@ def page_wrap(title, body, active_page="index"):
     if REPO_FEEDS:
         nav_items.append(("/issues.html", "ISSUES", "issues"))
     nav_items.append(("/notes.html", "NOTES", "notes"))
+    nav_items.append(("/career.html", "CAREERS", "career"))
     nav_items.append(("/load.html", "LOAD", "load"))
+    nav_items.append(("/leaks.html", "LEAKS", "leaks"))
     nav_items += [
         ("/security.html", "SECURITY", "security"),
         ("/history.html", "HISTORY", "history"),
@@ -1490,6 +1492,231 @@ function filterScore(min, max) {{
 }}
 </script>"""
     return page_wrap("HOST INVENTORY", body, "hosts")
+
+
+# ─── Page: Leaks / CTI (leaks.html) ───
+
+def gen_leaks():
+    """Generate the Leak Monitor / Cyber Threat Intelligence page."""
+    leaks_file = os.path.join(DATA_DIR, "leaks", "leak-intel.json")
+    if not os.path.exists(leaks_file):
+        body = '<div class="section"><div class="section-title">🔒 LEAK MONITOR</div><div class="section-body"><p style="color:var(--fg-dim)">No leak intelligence data yet. Run <code>leak-monitor.py scan</code> to collect.</p></div></div>'
+        return page_wrap("LEAKS", body, "leaks")
+    try:
+        db = json.loads(open(leaks_file).read())
+    except Exception:
+        body = '<div class="section"><div class="section-title">🔒 LEAK MONITOR</div><div class="section-body"><p style="color:var(--red)">Error reading leak DB.</p></div></div>'
+        return page_wrap("LEAKS", body, "leaks")
+
+    findings = db.get("findings", [])
+    runs = db.get("runs", [])
+    stats = db.get("stats", {})
+    last_analysis = stats.get("last_analysis", "")
+    last_run = stats.get("last_run", "never")
+
+    # ── Severity counts ──
+    sev = {"critical": 0, "high": 0, "medium": 0, "low": 0, "info": 0}
+    for f in findings:
+        s = f.get("severity", "info")
+        sev[s] = sev.get(s, 0) + 1
+
+    # ── Source counts ──
+    src_counts = {}
+    for f in findings:
+        s = f.get("source", "?")
+        src_counts[s] = src_counts.get(s, 0) + 1
+
+    # ── Category counts ──
+    cat_counts = {}
+    for f in findings:
+        c = f.get("category", "?")
+        cat_counts[c] = cat_counts.get(c, 0) + 1
+
+    # ── Recent findings (last 7 days) ──
+    from datetime import timedelta as _td
+    cutoff_7d = (datetime.now() - _td(days=7)).isoformat()
+    recent = [f for f in findings if f.get("first_seen", "") > cutoff_7d]
+    recent.sort(key=lambda x: x.get("first_seen", ""), reverse=True)
+
+    # ── 24h findings ──
+    cutoff_24h = (datetime.now() - _td(hours=24)).isoformat()
+    last_24h = [f for f in findings if f.get("first_seen", "") > cutoff_24h]
+
+    # ── Stat boxes ──
+    crit_class = "red" if sev["critical"] > 0 else "green"
+    high_class = "amber" if sev["high"] > 0 else "green"
+    stats_html = f"""
+    <div class="section">
+      <div class="section-title">▸ 🔒 LEAK MONITOR — Cyber Threat Intelligence</div>
+      <div class="section-body">
+        <div class="stats-grid">
+          <div class="stat-box"><div class="stat-val">{len(findings)}</div>
+            <div class="stat-label">total findings</div></div>
+          <div class="stat-box"><div class="stat-val">{len(last_24h)}</div>
+            <div class="stat-label">last 24h</div></div>
+          <div class="stat-box"><div class="stat-val {crit_class}">{sev['critical']}</div>
+            <div class="stat-label">critical</div></div>
+          <div class="stat-box"><div class="stat-val {high_class}">{sev['high']}</div>
+            <div class="stat-label">high</div></div>
+          <div class="stat-box"><div class="stat-val">{sev['medium']}</div>
+            <div class="stat-label">medium</div></div>
+          <div class="stat-box"><div class="stat-val">{len(runs)}</div>
+            <div class="stat-label">scans run</div></div>
+          <div class="stat-box"><div class="stat-val">{len(src_counts)}</div>
+            <div class="stat-label">active sources</div></div>
+          <div class="stat-box"><div class="stat-val" style="font-size:0.7em">{last_run[:16] if last_run != 'never' else 'never'}</div>
+            <div class="stat-label">last scan</div></div>
+        </div>
+      </div>
+    </div>"""
+
+    # ── Source breakdown ──
+    src_rows = ""
+    for src, cnt in sorted(src_counts.items(), key=lambda x: -x[1]):
+        src_sev = {"critical": 0, "high": 0, "medium": 0, "low": 0, "info": 0}
+        for f in findings:
+            if f.get("source") == src:
+                src_sev[f.get("severity", "info")] += 1
+        src_rows += f"""<tr>
+          <td style="color:var(--cyan)">{src}</td>
+          <td>{cnt}</td>
+          <td style="color:var(--red)">{src_sev['critical']}</td>
+          <td style="color:var(--amber)">{src_sev['high']}</td>
+          <td>{src_sev['medium']}</td>
+          <td style="color:var(--fg-dim)">{src_sev['low'] + src_sev['info']}</td>
+        </tr>"""
+
+    source_html = f"""
+    <div class="section">
+      <div class="section-title">▸ 📡 INTELLIGENCE SOURCES</div>
+      <div class="section-body">
+        <table class="host-table">
+          <thead><tr><th>Source</th><th>Findings</th><th>Critical</th><th>High</th><th>Medium</th><th>Low/Info</th></tr></thead>
+          <tbody>{src_rows}</tbody>
+        </table>
+      </div>
+    </div>"""
+
+    # ── Category breakdown as badges ──
+    cat_badges = ""
+    cat_icons = {"ransomware_victim": "🔒", "exploited_vuln": "🛡", "exposed_secret": "🔑",
+                 "channel_mention": "📱", "c2_infrastructure": "🦠", "c2_stats": "📊",
+                 "osint_alert": "🐦", "darkweb_mention": "🧅", "breach_intel": "🕵",
+                 "pl_database": "🇵🇱", "source_code_leak": "💻", "target_breach": "🎯",
+                 "major_breach": "📢", "infostealer_exposure": "🔓"}
+    for cat, cnt in sorted(cat_counts.items(), key=lambda x: -x[1]):
+        icon = cat_icons.get(cat, "📌")
+        cat_badges += f'<span class="badge" style="margin:2px 4px;padding:4px 10px">{icon} {cat.replace("_"," ")}: {cnt}</span>'
+
+    cat_html = f"""
+    <div class="section">
+      <div class="section-title">▸ 📂 FINDING CATEGORIES</div>
+      <div class="section-body"><div style="padding:6px 0">{cat_badges}</div></div>
+    </div>"""
+
+    # ── LLM Analysis ──
+    analysis_html = ""
+    if last_analysis:
+        analysis_date = stats.get("last_analysis_date", "")[:16]
+        safe_analysis = last_analysis.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        analysis_html = f"""
+    <div class="section">
+      <div class="section-title">▸ 🤖 LLM THREAT ANALYSIS ({analysis_date})</div>
+      <div class="section-body">
+        <div class="log-view" style="max-height:400px;overflow-y:auto;white-space:pre-wrap;font-size:0.82em;line-height:1.5">{safe_analysis}</div>
+      </div>
+    </div>"""
+
+    # ── Critical & High findings table ──
+    crit_high = [f for f in findings if f.get("severity") in ("critical", "high")]
+    crit_high.sort(key=lambda x: x.get("first_seen", ""), reverse=True)
+    ch_rows = ""
+    for f in crit_high[:50]:
+        ts = f.get("first_seen", "")[:16]
+        sev_color = "var(--red)" if f["severity"] == "critical" else "var(--amber)"
+        sev_label = f["severity"].upper()[:4]
+        url = f.get("url", "")
+        title_safe = f.get("title", "?")[:120].replace("&", "&amp;").replace("<", "&lt;")
+        if url:
+            title_safe = f'<a href="{url}" target="_blank" rel="noopener" style="color:var(--cyan)">{title_safe}</a>'
+        ch_rows += f"""<tr>
+          <td style="color:var(--fg-dim);white-space:nowrap">{ts}</td>
+          <td style="color:{sev_color};font-weight:bold">{sev_label}</td>
+          <td>{f.get('source','?')}</td>
+          <td>{title_safe}</td>
+        </tr>"""
+
+    crit_html = ""
+    if ch_rows:
+        crit_html = f"""
+    <div class="section">
+      <div class="section-title">▸ 🚨 CRITICAL &amp; HIGH FINDINGS</div>
+      <div class="section-body">
+        <table class="host-table">
+          <thead><tr><th>Time</th><th>Sev</th><th>Source</th><th>Finding</th></tr></thead>
+          <tbody>{ch_rows}</tbody>
+        </table>
+      </div>
+    </div>"""
+
+    # ── Recent findings (all severities, last 7 days) ──
+    recent_rows = ""
+    for f in recent[:100]:
+        ts = f.get("first_seen", "")[:16]
+        sev_map = {"critical": ("var(--red)", "CRIT"), "high": ("var(--amber)", "HIGH"),
+                   "medium": ("var(--fg)", "MED"), "low": ("var(--fg-dim)", "LOW"),
+                   "info": ("var(--fg-dim)", "INFO")}
+        sev_color, sev_label = sev_map.get(f.get("severity", "info"), ("var(--fg-dim)", "?"))
+        title_safe = f.get("title", "?")[:140].replace("&", "&amp;").replace("<", "&lt;")
+        url = f.get("url", "")
+        if url:
+            title_safe = f'<a href="{url}" target="_blank" rel="noopener" style="color:var(--cyan)">{title_safe}</a>'
+        summary = f.get("summary", "")[:200].replace("&", "&amp;").replace("<", "&lt;")
+        recent_rows += f"""<tr>
+          <td style="color:var(--fg-dim);white-space:nowrap">{ts}</td>
+          <td style="color:{sev_color}">{sev_label}</td>
+          <td>{f.get('source','?')}</td>
+          <td>{title_safe}<br><small style="color:var(--fg-dim)">{summary}</small></td>
+        </tr>"""
+
+    recent_html = f"""
+    <div class="section">
+      <div class="section-title">▸ 📋 ALL FINDINGS — LAST 7 DAYS ({len(recent)} total)</div>
+      <div class="section-body">
+        <table class="host-table">
+          <thead><tr><th>Time</th><th>Sev</th><th>Source</th><th>Finding</th></tr></thead>
+          <tbody>{recent_rows if recent_rows else '<tr><td colspan="4" style="color:var(--fg-dim)">No findings in the last 7 days</td></tr>'}</tbody>
+        </table>
+      </div>
+    </div>"""
+
+    # ── Scan history ──
+    run_rows = ""
+    for r in reversed(runs[-14:]):
+        ts = r.get("timestamp", "")[:16]
+        new_c = r.get("new_findings", 0)
+        total_c = r.get("total_findings", 0)
+        new_style = "color:var(--green)" if new_c > 0 else "color:var(--fg-dim)"
+        run_rows += f"""<tr>
+          <td style="color:var(--fg-dim)">{ts}</td>
+          <td style="{new_style}">{new_c}</td>
+          <td>{total_c}</td>
+          <td>{r.get('sources_ok', '?')}</td>
+        </tr>"""
+
+    run_html = f"""
+    <div class="section">
+      <div class="section-title">▸ 📆 SCAN HISTORY (last 14 runs)</div>
+      <div class="section-body">
+        <table class="host-table">
+          <thead><tr><th>Timestamp</th><th>New</th><th>Total</th><th>Sources</th></tr></thead>
+          <tbody>{run_rows if run_rows else '<tr><td colspan="4" style="color:var(--fg-dim)">No scan runs recorded</td></tr>'}</tbody>
+        </table>
+      </div>
+    </div>"""
+
+    body = stats_html + source_html + cat_html + analysis_html + crit_html + recent_html + run_html
+    return page_wrap("LEAKS", body, "leaks")
 
 
 # ─── Page: Security (security.html) ───
@@ -2637,12 +2864,14 @@ def gen_notes():
         "crossfeed": "🔗", "research": "🔬",
         "career": "🎯", "crawl": "🌐",
         "learn": "🧠", "signal": "📡",
+        "home": "🏠", "career-scan": "💼",
     }
     type_colors = {
         "weekly": "var(--green)", "trends": "var(--amber)",
         "crossfeed": "var(--cyan)", "research": "var(--magenta)",
         "career": "var(--amber)", "crawl": "var(--blue)",
         "learn": "var(--green)", "signal": "var(--red)",
+        "home": "var(--cyan)", "career-scan": "var(--purple)",
     }
 
     for entry in index[:20]:
@@ -2702,10 +2931,583 @@ def gen_notes():
     return page_wrap("NOTES", body, "notes")
 
 
+# ─── Page: Career Intelligence (career.html) ───
+
+def gen_careers():
+    """Generate the career intelligence / job scanner page."""
+    career_dir = os.path.join(DATA_DIR, "career")
+    scan_path = os.path.join(career_dir, "latest-scan.json")
+
+    if not os.path.exists(scan_path):
+        body = """
+<div class="section">
+  <div class="section-title">🎯 CAREER INTELLIGENCE</div>
+  <div class="section-body" style="text-align:center;padding:40px;color:var(--fg-dim)">
+    <div style="font-size:3rem;margin-bottom:16px">🎯</div>
+    <div style="font-size:1.1rem;color:var(--amber)">No career scan data yet</div>
+    <div style="margin-top:12px;color:var(--fg-dim);font-size:0.9rem">
+      career-scan.py scans company career pages, job boards, and intel sites.<br>
+      Scheduled Mon/Thu at 11:00. First scan results will appear here.
+    </div>
+  </div>
+</div>"""
+        return page_wrap("CAREERS", body, "career")
+
+    scan = load_json(scan_path) or {}
+    meta = scan.get("meta", {})
+    jobs = scan.get("jobs", [])
+    intel = scan.get("intel", {})
+    summary_text = scan.get("summary", "")
+    sources = scan.get("source_results", {})
+
+    hot_jobs = [j for j in jobs if j.get("match_score", 0) >= 70]
+    good_jobs = [j for j in jobs if 40 <= j.get("match_score", 0) < 70]
+    remote_jobs = [j for j in jobs if j.get("remote_compatible", False)]
+
+    scan_ts = meta.get("timestamp", "?")
+    duration = meta.get("duration_seconds", 0)
+    mode_label = "FULL" if meta.get("mode") == "full" else "QUICK"
+
+    # ─ Scan overview section ─
+    overview = f"""
+<div class="section">
+  <div class="section-title">🎯 CAREER INTELLIGENCE &nbsp;<span style="color:var(--fg-dim);font-size:0.8rem">// {e(scan_ts)} ({mode_label}, {duration}s)</span></div>
+  <div class="section-body">
+    <div style="display:flex;gap:32px;flex-wrap:wrap;font-size:0.9rem">
+      <div><span style="color:var(--green);font-size:1.8rem;font-weight:bold">{len(jobs)}</span><br><span style="color:var(--fg-dim)">matches found</span></div>
+      <div><span style="color:var(--red);font-size:1.8rem;font-weight:bold">{len(hot_jobs)}</span><br><span style="color:var(--fg-dim)">hot (≥70%)</span></div>
+      <div><span style="color:var(--amber);font-size:1.8rem;font-weight:bold">{len(good_jobs)}</span><br><span style="color:var(--fg-dim)">good (40-69%)</span></div>
+      <div><span style="color:var(--cyan);font-size:1.8rem;font-weight:bold">{len(remote_jobs)}</span><br><span style="color:var(--fg-dim)">remote-ok</span></div>
+      <div><span style="color:var(--purple);font-size:1.8rem;font-weight:bold">{meta.get('companies_scanned', 0)}</span><br><span style="color:var(--fg-dim)">companies</span></div>
+      <div><span style="color:var(--blue);font-size:1.8rem;font-weight:bold">{meta.get('pages_fetched', 0)}</span><br><span style="color:var(--fg-dim)">pages fetched</span></div>
+    </div>
+  </div>
+</div>"""
+
+    # ─ LLM Summary section ─
+    summary_html = ""
+    if summary_text:
+        summary_content = e(summary_text).replace("\n", "<br>")
+        summary_html = f"""
+<div class="section">
+  <div class="section-title">🤖 AI BRIEFING</div>
+  <div class="section-body">
+    <div style="font-family:monospace;white-space:pre-wrap;line-height:1.6;font-size:0.88rem;color:var(--fg)">{summary_content}</div>
+  </div>
+</div>"""
+
+    # ─ Hot matches section ─
+    hot_html = ""
+    if hot_jobs:
+        hot_cards = ""
+        for j in sorted(hot_jobs, key=lambda x: -x.get("match_score", 0)):
+            score = j.get("match_score", 0)
+            title = e(j.get("title", "Unknown"))
+            company = e(j.get("company", "?"))
+            location = e(j.get("remote_details") or j.get("location", "?"))
+            remote = "✅ Remote OK" if j.get("remote_compatible") else "❌ On-site"
+            # Salary: prefer new structured fields, fall back to salary_hint
+            b2b = j.get("salary_b2b_net_pln")
+            uop = j.get("salary_uop_gross_pln")
+            sal_src = j.get("salary_source", "")
+            sal_note = j.get("salary_note", "")
+            if b2b or uop:
+                sal_parts = []
+                if b2b:
+                    sal_parts.append(f"B2B net: {b2b}")
+                if uop:
+                    sal_parts.append(f"UoP gross: {uop}")
+                zus = j.get("salary_has_zus_akup")
+                if zus is True:
+                    sal_parts.append("+ ZUS/akup")
+                elif zus is False:
+                    sal_parts.append("no akup")
+                src_label = {"from_offer": "📋 from offer", "estimated": "📊 estimated", "not_possible": "❓"}.get(sal_src, "")
+                salary = e(" | ".join(sal_parts))
+                salary_badge = f' <span style="font-size:0.75rem;color:var(--purple)">[{e(src_label)}]</span>' if src_label else ""
+            else:
+                salary = e(j.get("salary_hint", "—"))
+                salary_badge = ""
+            sw_badge = ' <span style="color:var(--purple);font-size:0.75rem">[SW House]</span>' if j.get("via_software_house") else ""
+            reasons = ", ".join(j.get("match_reasons", [])[:4])
+            reqs = ", ".join(j.get("key_requirements", [])[:5])
+            flags = ", ".join(j.get("red_flags", []))
+            job_url = j.get("job_url", "")
+
+            score_color = "var(--green)" if score >= 85 else "var(--amber)" if score >= 70 else "var(--fg)"
+            flag_html = f'<div style="color:var(--red);margin-top:4px">⚠ {e(flags)}</div>' if flags else ""
+            remote_feas = j.get("remote_feasibility", "")
+            feas_html = f'<div style="color:var(--amber);margin-top:4px;font-size:0.8rem">🌍 {e(remote_feas)}</div>' if remote_feas else ""
+            title_html = f'<a href="{e(job_url)}" target="_blank" style="color:var(--cyan);font-weight:bold;margin-left:12px;font-size:1rem;text-decoration:none" title="Open job posting">{title} ↗</a>' if job_url else f'<span style="color:var(--cyan);font-weight:bold;margin-left:12px;font-size:1rem">{title}</span>'
+
+            hot_cards += f"""
+    <div style="background:var(--bg3);border:1px solid var(--border-bright);border-radius:6px;padding:12px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <span style="color:{score_color};font-weight:bold;font-size:1.3rem">{score}%</span>
+          {title_html}
+          <span style="color:var(--fg-dim);margin-left:8px">@ {company}{sw_badge}</span>
+        </div>
+        <div style="font-size:0.82rem;text-align:right">
+          <div style="color:var(--fg-dim)">📍 {location}</div>
+          <div>{remote}</div>
+        </div>
+      </div>
+      <div style="margin-top:8px;font-size:0.82rem;color:var(--fg-dim)">
+        <div>✅ <span style="color:var(--green)">{e(reasons)}</span></div>
+        <div style="margin-top:2px">📋 {e(reqs)}</div>
+        <div style="margin-top:2px">💰 {salary}{salary_badge}</div>
+        {flag_html}
+        {feas_html}
+      </div>
+    </div>"""
+
+        hot_html = f"""
+<div class="section">
+  <div class="section-title">🔥 HOT MATCHES <span style="color:var(--red)">({len(hot_jobs)} jobs, score ≥ 70%)</span></div>
+  <div class="section-body">{hot_cards}</div>
+</div>"""
+
+    # ─ Good matches table ─
+    good_html = ""
+    if good_jobs:
+        rows = ""
+        for j in sorted(good_jobs, key=lambda x: -x.get("match_score", 0))[:20]:
+            score = j.get("match_score", 0)
+            sc = "var(--amber)" if score >= 55 else "var(--fg-dim)"
+            remote_icon = "✅" if j.get("remote_compatible") else "❌"
+            reasons_short = ", ".join(j.get("match_reasons", [])[:2])
+            b2b_g = j.get("salary_b2b_net_pln", "")
+            sal_src_g = j.get("salary_source", "")
+            sal_short = e(b2b_g) if b2b_g else e(j.get("salary_hint", "—"))
+            sal_src_icon = {"from_offer": "📋", "estimated": "📊", "not_possible": "❓"}.get(sal_src_g, "")
+            sw_icon = "🏢" if j.get("via_software_house") else ""
+            job_url_g = j.get("job_url", "")
+            title_g = e(j.get('title', '?'))
+            title_cell = f'<a href="{e(job_url_g)}" target="_blank" style="color:var(--cyan);text-decoration:none">{title_g} ↗</a>' if job_url_g else f'<span style="color:var(--cyan)">{title_g}</span>'
+            rows += f"""<tr>
+  <td style="color:{sc};font-weight:bold">{score}%</td>
+  <td>{title_cell}</td>
+  <td>{e(j.get('company', '?'))} {sw_icon}</td>
+  <td>{e(j.get('remote_details') or j.get('location', '?'))}</td>
+  <td>{remote_icon}</td>
+  <td style="color:var(--green);font-size:0.8rem">{sal_short} {sal_src_icon}</td>
+  <td style="color:var(--fg-dim);font-size:0.8rem">{e(reasons_short)}</td>
+</tr>"""
+
+        good_html = f"""
+<div class="section">
+  <div class="section-title">📊 GOOD MATCHES <span style="color:var(--amber)">({len(good_jobs)} jobs, score 40-69%)</span></div>
+  <div class="section-body">
+    <table class="host-table"><thead><tr>
+      <th>Score</th><th>Title</th><th>Company</th><th>Location</th><th>Remote</th><th>Salary (B2B net)</th><th>Match</th>
+    </tr></thead><tbody>{rows}</tbody></table>
+  </div>
+</div>"""
+
+    # ─ Company intel section ─
+    intel_html = ""
+    if intel and isinstance(intel, dict):
+        alerts = intel.get("alerts", [])
+        benchmarks = intel.get("salary_benchmarks", [])
+        mood = intel.get("market_mood", "")
+
+        alert_cards = ""
+        for a in alerts:
+            sev = a.get("severity", "info")
+            sev_color = {"urgent": "var(--red)", "notable": "var(--amber)"}.get(sev, "var(--fg-dim)")
+            sev_icon = {"urgent": "🚨", "notable": "📢"}.get(sev, "ℹ️")
+            alert_cards += f"""
+    <div style="border-left:3px solid {sev_color};padding:6px 12px;margin-bottom:8px;background:var(--bg3)">
+      <div>{sev_icon} <span style="color:{sev_color};font-weight:bold">{e(a.get('company', '?'))}</span>
+        — <span style="color:var(--fg)">{e(a.get('summary', ''))}</span>
+        <span style="color:var(--fg-dim);font-size:0.8rem;margin-left:8px">[{e(a.get('type', '?'))}]</span>
+      </div>
+      <div style="font-size:0.82rem;color:var(--fg-dim);margin-top:2px">{e(a.get('details', ''))}</div>
+    </div>"""
+
+        bench_rows = ""
+        for b in benchmarks[:10]:
+            bench_rows += f"<tr><td>{e(b.get('role', '?'))}</td><td style='color:var(--green)'>{e(b.get('range', '?'))}</td><td style='color:var(--fg-dim)'>{e(b.get('source', '?'))}</td></tr>"
+
+        bench_html = ""
+        if bench_rows:
+            bench_html = f"""
+    <div style="margin-top:16px">
+      <div style="color:var(--amber);font-weight:bold;margin-bottom:6px">💰 SALARY BENCHMARKS</div>
+      <table class="host-table"><thead><tr><th>Role</th><th>Range</th><th>Source</th></tr></thead>
+      <tbody>{bench_rows}</tbody></table>
+    </div>"""
+
+        mood_html = f'<div style="margin-top:12px;font-size:0.88rem;color:var(--fg);padding:8px;background:var(--bg2);border-radius:4px">{e(mood)}</div>' if mood else ""
+
+        intel_html = f"""
+<div class="section">
+  <div class="section-title">🕵️ COMPANY INTELLIGENCE</div>
+  <div class="section-body">
+    {alert_cards}
+    {bench_html}
+    {mood_html}
+  </div>
+</div>"""
+
+    # ─ Source status section ─
+    source_rows = ""
+    for label, results in [("Career Pages", sources.get("career_pages", {})),
+                           ("Job Boards", sources.get("job_boards", {})),
+                           ("Intel Sources", sources.get("intel_sources", {}))]:
+        for sid, res in results.items():
+            status = res.get("status", "?")
+            st_color = {"ok": "var(--green)", "error": "var(--red)", "no_keywords": "var(--fg-dim)", "insufficient": "var(--amber)"}.get(status, "var(--fg)")
+            source_rows += f"""<tr>
+  <td style="color:var(--cyan)">{e(label)}</td>
+  <td>{e(sid)}</td>
+  <td style="color:{st_color}">{e(status)}</td>
+  <td style="color:var(--fg-dim)">{res.get('chars', '—')}</td>
+  <td>{res.get('jobs_found', '—')}</td>
+</tr>"""
+
+    source_html = f"""
+<div class="section">
+  <div class="section-title">📡 SCAN SOURCES</div>
+  <div class="section-body">
+    <table class="host-table"><thead><tr>
+      <th>Category</th><th>Source</th><th>Status</th><th>Chars</th><th>Jobs</th>
+    </tr></thead><tbody>{source_rows}</tbody></table>
+  </div>
+</div>"""
+
+    # ─ Scan history ─
+    archives = sorted(
+        [f for f in os.listdir(career_dir) if f.startswith("scan-") and f.endswith(".json")],
+        reverse=True,
+    ) if os.path.isdir(career_dir) else []
+
+    history_rows = ""
+    for af in archives[:10]:
+        a = load_json(os.path.join(career_dir, af))
+        if not a:
+            continue
+        am = a.get("meta", {})
+        history_rows += f"""<tr>
+  <td style="color:var(--cyan)">{e(am.get('timestamp', '?')[:16])}</td>
+  <td>{e(am.get('mode', '?'))}</td>
+  <td style="color:var(--green)">{am.get('total_jobs_found', 0)}</td>
+  <td style="color:var(--red)">{am.get('hot_matches', 0)}</td>
+  <td>{am.get('pages_fetched', 0)}</td>
+  <td style="color:var(--fg-dim)">{am.get('duration_seconds', 0)}s</td>
+</tr>"""
+
+    history_html = ""
+    if history_rows:
+        history_html = f"""
+<div class="section">
+  <div class="section-title">📜 SCAN HISTORY</div>
+  <div class="section-body">
+    <table class="host-table"><thead><tr>
+      <th>Timestamp</th><th>Mode</th><th>Jobs</th><th>Hot</th><th>Pages</th><th>Duration</th>
+    </tr></thead><tbody>{history_rows}</tbody></table>
+  </div>
+</div>"""
+
+    # ─ Career page health check section ─
+    url_health = scan.get("url_health", {})
+    health_html = ""
+    if url_health:
+        health_rows = ""
+        # Sort: errors first, then by company name
+        sorted_urls = sorted(url_health.items(),
+                             key=lambda x: (x[1].get("http_code", 0) == 200,
+                                            x[1].get("company", "")))
+        for url, h in sorted_urls:
+            http_code = h.get("http_code", 0)
+            resp_time = h.get("response_time", 0)
+            company = h.get("company", "?")
+            company_id = h.get("company_id", "?")
+            is_sw_house = h.get("software_house", False)
+            status = h.get("status", "unknown")
+
+            # Color coding for HTTP status
+            if http_code == 200:
+                code_color = "var(--green)"
+                code_icon = "✅"
+            elif http_code == 0:
+                code_color = "var(--red)"
+                code_icon = "❌"
+            elif 300 <= http_code < 400:
+                code_color = "var(--amber)"
+                code_icon = "↩️"
+            else:
+                code_color = "var(--red)"
+                code_icon = "⚠️"
+
+            # Response time color
+            if resp_time > 0 and resp_time < 3:
+                time_color = "var(--green)"
+            elif resp_time < 8:
+                time_color = "var(--amber)"
+            else:
+                time_color = "var(--red)"
+
+            tier_badge = '<span style="color:var(--purple);font-size:0.75rem;margin-left:4px">[SW House]</span>' if is_sw_house else ""
+            short_url = url[:80] + ("..." if len(url) > 80 else "")
+
+            health_rows += f"""<tr>
+  <td style="color:var(--cyan)">{e(company)}{tier_badge}</td>
+  <td>{code_icon} <span style="color:{code_color};font-weight:bold">{http_code or 'FAIL'}</span></td>
+  <td style="color:{time_color}">{f'{resp_time:.1f}s' if resp_time > 0 else '—'}</td>
+  <td style="color:var(--fg-dim);font-size:0.78rem" title="{e(url)}">{e(short_url)}</td>
+</tr>"""
+
+        # Count stats
+        total = len(url_health)
+        ok_count = sum(1 for h in url_health.values() if h.get("http_code") == 200)
+        fail_count = total - ok_count
+        health_color = "var(--green)" if fail_count == 0 else "var(--red)" if fail_count > 2 else "var(--amber)"
+
+        health_html = f"""
+<div class="section">
+  <div class="section-title">🏥 CAREER PAGE HEALTH CHECK &nbsp;<span style="color:{health_color};font-size:0.85rem">({ok_count}/{total} OK)</span></div>
+  <div class="section-body">
+    <table class="host-table"><thead><tr>
+      <th>Company</th><th>HTTP</th><th>Response</th><th>URL</th>
+    </tr></thead><tbody>{health_rows}</tbody></table>
+  </div>
+</div>"""
+
+    body = overview + summary_html + hot_html + good_html + intel_html + health_html + source_html + history_html
+    return page_wrap("CAREERS", body, "career")
+
+
 # ─── Page: GPU Load (load.html) ───
 
+# ── GPU hardware sensor data (from gpu-monitor.py CSVs) ──
+
+GPU_DATA_DIR = os.path.join(DATA_DIR, "gpu")
+SYSTEM_OVERHEAD_W = 9
+PSU_EFFICIENCY = 0.87
+G11_PLN_PER_KWH = 1.30  # PGE Łódź 2026 gross
+
+
+def _estimate_wall_w(ppt_w):
+    return (ppt_w + SYSTEM_OVERHEAD_W) / PSU_EFFICIENCY
+
+
+def load_gpu_hw_csv(date_str):
+    """Load one day's GPU hardware CSV. Returns list of dicts."""
+    import csv as csv_mod
+    fpath = os.path.join(GPU_DATA_DIR, f"gpu-{date_str}.csv")
+    if not os.path.exists(fpath):
+        return []
+    rows = []
+    with open(fpath) as f:
+        reader = csv_mod.DictReader(f)
+        for r in reader:
+            try:
+                rows.append({
+                    "time": datetime.strptime(r["timestamp"], "%Y-%m-%d %H:%M:%S"),
+                    "power_w": float(r["power_w"]) if r.get("power_w") else None,
+                    "temp_c": float(r["temp_c"]) if r.get("temp_c") else None,
+                    "freq_mhz": float(r["freq_mhz"]) if r.get("freq_mhz") else None,
+                    "vram_mb": float(r["vram_mb"]) if r.get("vram_mb") else None,
+                    "gtt_mb": float(r["gtt_mb"]) if r.get("gtt_mb") else None,
+                })
+            except (ValueError, KeyError):
+                continue
+    return rows
+
+
+def gpu_day_summary(date_str):
+    """Calculate daily GPU hardware summary + cost. Returns dict or None."""
+    rows = load_gpu_hw_csv(date_str)
+    if not rows:
+        return None
+    powers = [r["power_w"] for r in rows if r["power_w"] is not None]
+    temps = [r["temp_c"] for r in rows if r["temp_c"] is not None]
+    freqs = [r["freq_mhz"] for r in rows if r["freq_mhz"] is not None]
+    if not powers:
+        return None
+    wall_powers = [_estimate_wall_w(p) for p in powers]
+    minutes = len(powers)
+    hours = minutes / 60.0
+    avg_wall = sum(wall_powers) / len(wall_powers)
+    daily_kwh = avg_wall * 24 / 1000
+    daily_pln = daily_kwh * G11_PLN_PER_KWH
+    return {
+        "date": date_str,
+        "samples": minutes,
+        "hours": hours,
+        "ppt_avg": sum(powers) / len(powers),
+        "ppt_max": max(powers),
+        "ppt_min": min(powers),
+        "wall_avg": avg_wall,
+        "wall_max": max(wall_powers),
+        "temp_avg": sum(temps) / len(temps) if temps else 0,
+        "temp_max": max(temps) if temps else 0,
+        "freq_avg": sum(freqs) / len(freqs) if freqs else 0,
+        "freq_max": max(freqs) if freqs else 0,
+        "daily_kwh": daily_kwh,
+        "daily_pln": daily_pln,
+    }
+
+
+def gen_power_cost_section():
+    """Generate the GPU hardware power & electricity cost HTML section."""
+    now = datetime.now()
+    today_str = now.strftime("%Y%m%d")
+
+    # Collect up to 14 days of summaries
+    day_summaries = []
+    for i in range(14):
+        ds = (now - timedelta(days=i)).strftime("%Y%m%d")
+        s = gpu_day_summary(ds)
+        if s:
+            day_summaries.append(s)
+
+    if not day_summaries:
+        return ""  # no hardware data yet
+
+    today = day_summaries[0] if day_summaries[0]["date"] == today_str else None
+
+    # Averages across all days with data
+    avg_daily_kwh = sum(d["daily_kwh"] for d in day_summaries) / len(day_summaries)
+    avg_daily_pln = sum(d["daily_pln"] for d in day_summaries) / len(day_summaries)
+    avg_wall = sum(d["wall_avg"] for d in day_summaries) / len(day_summaries)
+    avg_ppt = sum(d["ppt_avg"] for d in day_summaries) / len(day_summaries)
+    max_ppt = max(d["ppt_max"] for d in day_summaries)
+
+    # Current readings from today
+    curr_ppt = f"{today['ppt_avg']:.0f}" if today else "—"
+    curr_wall = f"{today['wall_avg']:.0f}" if today else "—"
+    curr_temp = f"{today['temp_avg']:.0f}" if today else "—"
+    curr_freq = f"{today['freq_avg']:.0f}" if today else "—"
+
+    # Stats boxes
+    html = f"""
+<div class="section">
+  <div class="section-title">⚡ POWER &amp; ELECTRICITY COST — G11 tariff (PGE Łódź)</div>
+  <div class="section-body">
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="stat-val" style="color:var(--amber)">{curr_ppt}</div>
+        <div class="stat-label">PPT avg (W)</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" style="color:#ff6b35">{curr_wall}</div>
+        <div class="stat-label">est. wall (W)</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" style="color:var(--cyan)">{curr_temp}</div>
+        <div class="stat-label">temp avg (°C)</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" style="color:var(--purple)">{curr_freq}</div>
+        <div class="stat-label">clock avg (MHz)</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" style="color:var(--green)">{avg_daily_pln:.2f}</div>
+        <div class="stat-label">PLN / day</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" style="color:var(--green)">{avg_daily_pln*30:.0f}</div>
+        <div class="stat-label">PLN / month</div>
+      </div>
+    </div>
+    <div style="margin-top:10px;font-size:0.82rem;color:var(--fg-dim)">
+      G11: {G11_PLN_PER_KWH:.2f} PLN/kWh gross &nbsp;│&nbsp;
+      Wall = (PPT + {SYSTEM_OVERHEAD_W}W) / {PSU_EFFICIENCY*100:.0f}% PSU &nbsp;│&nbsp;
+      ~{avg_daily_kwh:.2f} kWh/day &nbsp;│&nbsp;
+      {avg_daily_pln*365:.0f} PLN/year
+    </div>
+  </div>
+</div>"""
+
+    # Daily cost table (last 14 days)
+    html += """
+<div class="section">
+  <div class="section-title">💰 DAILY ELECTRICITY COST — last 14 days</div>
+  <div class="section-body">
+    <table class="host-table">
+      <thead><tr>
+        <th>Date</th><th>Samples</th><th>PPT avg</th><th>PPT max</th>
+        <th>Wall est.</th><th>Temp avg</th><th>kWh/day</th><th>PLN/day</th>
+      </tr></thead>
+      <tbody>"""
+
+    for d in sorted(day_summaries, key=lambda x: x["date"], reverse=True):
+        ds_fmt = f"{d['date'][:4]}-{d['date'][4:6]}-{d['date'][6:]}"
+        is_today = d["date"] == today_str
+        row_style = ' style="background:var(--bg3)"' if is_today else ''
+        today_tag = ' ◀' if is_today else ''
+        # Color code the PLN
+        pln_color = "var(--green)" if d["daily_pln"] < 3 else "var(--amber)" if d["daily_pln"] < 5 else "var(--red)"
+        html += f"""<tr{row_style}>
+          <td style="color:{'var(--green)' if is_today else 'var(--fg-dim)'}">{ds_fmt}{today_tag}</td>
+          <td>{d['samples']} ({d['hours']:.1f}h)</td>
+          <td style="color:var(--amber)">{d['ppt_avg']:.1f}W</td>
+          <td>{d['ppt_max']:.1f}W</td>
+          <td style="color:#ff6b35">{d['wall_avg']:.0f}W</td>
+          <td style="color:var(--cyan)">{d['temp_avg']:.1f}°C</td>
+          <td>{d['daily_kwh']:.2f}</td>
+          <td style="color:{pln_color};font-weight:bold">{d['daily_pln']:.2f} zł</td>
+        </tr>"""
+
+    html += """</tbody></table>"""
+
+    # Summary row
+    total_pln = sum(d["daily_pln"] for d in day_summaries)
+    html += f"""
+    <div style="margin-top:12px;display:flex;gap:24px;flex-wrap:wrap;font-size:0.88rem">
+      <div><span style="color:var(--fg-dim)">Avg daily:</span>
+           <span style="color:var(--green);font-weight:bold">{avg_daily_pln:.2f} PLN</span></div>
+      <div><span style="color:var(--fg-dim)">Monthly est:</span>
+           <span style="color:var(--green);font-weight:bold">{avg_daily_pln*30:.1f} PLN</span></div>
+      <div><span style="color:var(--fg-dim)">Yearly est:</span>
+           <span style="color:var(--amber);font-weight:bold">{avg_daily_pln*365:.0f} PLN</span></div>
+      <div><span style="color:var(--fg-dim)">Avg wall power:</span>
+           <span style="color:#ff6b35">{avg_wall:.0f}W</span></div>
+    </div>
+  </div>
+</div>"""
+
+    # Embedded chart images (if they exist)
+    chart_names = [
+        ("power", "⚡ Power Consumption"),
+        ("temp", "🌡️ Temperature"),
+        ("dashboard", "📊 Full Dashboard"),
+    ]
+    chart_html = ""
+    for suffix, label in chart_names:
+        # Check for today's chart first, then most recent
+        for di in range(14):
+            ds = (now - timedelta(days=di)).strftime("%Y%m%d")
+            chart_file = f"gpu-{ds}-{suffix}.png"
+            chart_path = os.path.join(GPU_DATA_DIR, chart_file)
+            if os.path.exists(chart_path):
+                # Encode as base64 for inline embedding
+                import base64
+                with open(chart_path, "rb") as cf:
+                    b64 = base64.b64encode(cf.read()).decode("ascii")
+                chart_html += f"""
+<div class="section">
+  <div class="section-title">{label} — {ds[:4]}-{ds[4:6]}-{ds[6:]}</div>
+  <div class="section-body" style="text-align:center;padding:8px">
+    <img src="data:image/png;base64,{b64}" alt="{e(label)}" style="max-width:100%;height:auto;border-radius:6px;border:1px solid var(--border)">
+  </div>
+</div>"""
+                break  # found most recent chart for this type
+
+    html += chart_html
+    return html
+
+
 def load_gpu_samples(days=14):
-    """Load GPU load TSV samples. Returns list of (datetime, status, model, script, vram_mb)."""
+    """Load GPU load TSV samples.
+
+    Returns list of (datetime, status, model, script, vram_mb, gpu_mhz, temp_c).
+    Status: 'generating' (GPU active), 'loaded' (model in VRAM, idle), 'idle'.
+    Legacy 'busy' rows are re-mapped using gpu_mhz if available.
+    """
     tsv_path = os.path.join(DATA_DIR, "gpu-load.tsv")
     if not os.path.exists(tsv_path):
         return []
@@ -2729,7 +3531,15 @@ def load_gpu_samples(days=14):
             model = parts[2] if len(parts) > 2 else ""
             script = parts[3] if len(parts) > 3 else ""
             vram = int(parts[4]) if len(parts) > 4 and parts[4].isdigit() else 0
-            samples.append((ts, status, model, script, vram))
+            gpu_mhz = int(parts[5]) if len(parts) > 5 and parts[5].isdigit() else 0
+            temp_c = int(parts[6]) if len(parts) > 6 and parts[6].isdigit() else 0
+            # Re-map legacy "busy" using gpu_mhz if available
+            if status == "busy":
+                if gpu_mhz > 1200:
+                    status = "generating"
+                else:
+                    status = "loaded"
+            samples.append((ts, status, model, script, vram, gpu_mhz, temp_c))
     return samples
 
 
@@ -2756,41 +3566,54 @@ def gen_load():
     today_str = now.strftime("%Y-%m-%d")
 
     # ─── Compute stats ───
+    # Helper: "generating" means GPU is actually computing tokens
+    def is_active(st):
+        return st == "generating"
+
+    def is_model_loaded(st):
+        return st in ("generating", "loaded", "busy")
+
     # Today
-    today_samples = [(s, st, m, sc, v) for s, st, m, sc, v in samples if s.strftime("%Y-%m-%d") == today_str]
-    today_busy = sum(1 for _, st, _, _, _ in today_samples if st == "busy")
+    today_samples = [s for s in samples if s[0].strftime("%Y-%m-%d") == today_str]
+    today_gen = sum(1 for s in today_samples if is_active(s[1]))
+    today_loaded = sum(1 for s in today_samples if is_model_loaded(s[1]))
     today_total = len(today_samples)
-    today_pct = (today_busy / today_total * 100) if today_total > 0 else 0
-    today_busy_min = today_busy  # 1 sample ≈ 1 minute
+    today_pct = (today_gen / today_total * 100) if today_total > 0 else 0
+    today_loaded_pct = (today_loaded / today_total * 100) if today_total > 0 else 0
+    today_busy_min = today_gen  # 1 sample ≈ 1 minute
 
     # Last 7 days
     week_cutoff = now - timedelta(days=7)
-    week_samples = [(s, st, m, sc, v) for s, st, m, sc, v in samples if s >= week_cutoff]
-    week_busy = sum(1 for _, st, _, _, _ in week_samples if st == "busy")
+    week_samples = [s for s in samples if s[0] >= week_cutoff]
+    week_gen = sum(1 for s in week_samples if is_active(s[1]))
+    week_loaded = sum(1 for s in week_samples if is_model_loaded(s[1]))
     week_total = len(week_samples)
-    week_pct = (week_busy / week_total * 100) if week_total > 0 else 0
+    week_pct = (week_gen / week_total * 100) if week_total > 0 else 0
+    week_loaded_pct = (week_loaded / week_total * 100) if week_total > 0 else 0
 
     # Available capacity estimate: 1440 min/day, show how many more 2-min jobs could fit
     daily_capacity = 1440
-    today_idle_min = today_total - today_busy if today_total > 0 else daily_capacity
+    today_idle_min = today_total - today_gen if today_total > 0 else daily_capacity
     avg_job_min = 2  # typical Ollama call ≈ 1-2 minutes
     headroom_jobs = today_idle_min // avg_job_min
 
-    # Per-script breakdown (last 7 days)
+    # Per-script breakdown (last 7 days) — count actual generating minutes
     script_minutes = {}
-    for _, st, _, sc, _ in week_samples:
-        if st == "busy" and sc:
-            script_minutes[sc] = script_minutes.get(sc, 0) + 1
+    for s in week_samples:
+        if is_active(s[1]) and s[3]:
+            script_minutes[s[3]] = script_minutes.get(s[3], 0) + 1
 
     # ─── Daily utilization for last 14 days ───
     daily_stats = {}
-    for s, st, _, _, _ in samples:
-        day = s.strftime("%Y-%m-%d")
+    for s in samples:
+        day = s[0].strftime("%Y-%m-%d")
         if day not in daily_stats:
-            daily_stats[day] = {"busy": 0, "total": 0}
+            daily_stats[day] = {"generating": 0, "loaded": 0, "total": 0}
         daily_stats[day]["total"] += 1
-        if st == "busy":
-            daily_stats[day]["busy"] += 1
+        if is_active(s[1]):
+            daily_stats[day]["generating"] += 1
+        elif is_model_loaded(s[1]):
+            daily_stats[day]["loaded"] += 1
 
     # ─── Hourly heatmap (last 7 days, 24 hours × 7 days) ───
     # Build a grid: rows=hours (0-23), cols=days
@@ -2799,16 +3622,18 @@ def gen_load():
         d = (now - timedelta(days=i)).strftime("%Y-%m-%d")
         heatmap_days.append(d)
 
-    heatmap = {}  # (day, hour) → (busy, total)
-    for s, st, _, _, _ in week_samples:
-        day = s.strftime("%Y-%m-%d")
-        hour = s.hour
+    heatmap = {}  # (day, hour) → [generating, loaded, total]
+    for s in week_samples:
+        day = s[0].strftime("%Y-%m-%d")
+        hour = s[0].hour
         key = (day, hour)
         if key not in heatmap:
-            heatmap[key] = [0, 0]
-        heatmap[key][1] += 1
-        if st == "busy":
+            heatmap[key] = [0, 0, 0]  # generating, loaded, total
+        heatmap[key][2] += 1
+        if is_active(s[1]):
             heatmap[key][0] += 1
+        elif is_model_loaded(s[1]):
+            heatmap[key][1] += 1
 
     # ─── Build HTML ───
 
@@ -2837,19 +3662,19 @@ def gen_load():
     <div class="stats-grid">
       <div class="stat-box">
         <div class="stat-val {pct_class(today_pct)}">{today_pct:.0f}%</div>
-        <div class="stat-label">today util</div>
+        <div class="stat-label">today generating</div>
       </div>
       <div class="stat-box">
         <div class="stat-val {pct_class(week_pct)}">{week_pct:.0f}%</div>
-        <div class="stat-label">7-day util</div>
+        <div class="stat-label">7-day generating</div>
       </div>
       <div class="stat-box">
         <div class="stat-val cyan">{today_busy_min}</div>
-        <div class="stat-label">busy min today</div>
+        <div class="stat-label">gen. min today</div>
       </div>
       <div class="stat-box">
-        <div class="stat-val">{today_total}</div>
-        <div class="stat-label">samples today</div>
+        <div class="stat-val" style="color:var(--fg-dim)">{today_loaded_pct:.0f}%</div>
+        <div class="stat-label">model in VRAM</div>
       </div>
       <div class="stat-box">
         <div class="stat-val" style="color:var(--green)">{headroom_jobs}</div>
@@ -2861,8 +3686,8 @@ def gen_load():
       </div>
     </div>
     <div style="margin-top:10px;font-size:0.82rem;color:var(--fg-dim)">
-      1 sample = 1 minute &nbsp;│&nbsp; free slots = idle minutes ÷ ~{avg_job_min} min/job &nbsp;│&nbsp;
-      Sampling started {samples[0][0].strftime('%Y-%m-%d %H:%M')}
+      1 sample = 1 minute &nbsp;│&nbsp; generating = GPU clock &gt;1.2 GHz (actual compute) &nbsp;│&nbsp;
+      loaded = model in VRAM but GPU idle (keep-alive 30m)
     </div>
   </div>
 </div>"""
@@ -2881,61 +3706,66 @@ def gen_load():
         heatmap_html += f'<tr><td style="padding:2px 6px;color:var(--fg-dim);text-align:right">{h:02d}:00</td>'
         for d in heatmap_days:
             key = (d, h)
-            busy, total = heatmap[key] if key in heatmap else (0, 0)
+            gen, loaded, total = heatmap[key] if key in heatmap else (0, 0, 0)
             if total == 0:
                 # No data (future or not yet sampled)
                 bg = "var(--bg)"
                 label = "·"
                 fg = "var(--fg-dim)"
+            elif gen == 0 and loaded == 0:
+                # All samples idle (no model)
+                bg = "#0d1a0d"
+                label = "░"
+                fg = "#224422"
+            elif gen == 0:
+                # Model loaded in VRAM but not computing — dim indicator
+                bg = "#141e28"
+                label = "▪"
+                fg = "#2a4a5a"
             else:
-                pct = busy / total * 100
-                if pct == 0:
-                    bg = "#0d1a0d"
-                    label = "░"
-                    fg = "#224422"
-                elif pct < 25:
+                # Actual generation happened — show minutes
+                gen_pct = gen / total * 100
+                if gen_pct < 25:
                     bg = "#1a2a1a"
-                    label = f"{busy}m"
                     fg = "var(--green)"
-                elif pct < 50:
+                elif gen_pct < 50:
                     bg = "#2a3a1a"
-                    label = f"{busy}m"
                     fg = "var(--green)"
-                elif pct < 75:
+                elif gen_pct < 75:
                     bg = "#3a3a1a"
-                    label = f"{busy}m"
                     fg = "var(--amber)"
                 else:
                     bg = "#3a2a1a"
-                    label = f"{busy}m"
                     fg = "var(--amber)"
+                label = f"{gen}m"
             heatmap_html += f'<td style="padding:2px 4px;text-align:center;background:{bg};color:{fg};border:1px solid var(--border)">{label}</td>'
         heatmap_html += '</tr>'
     heatmap_html += '</table></div>'
-    heatmap_html += '<div style="margin-top:8px;font-size:0.78rem;color:var(--fg-dim)">░ = idle &nbsp;│&nbsp; Nm = N minutes busy in that hour &nbsp;│&nbsp; · = no data</div>'
+    heatmap_html += '<div style="margin-top:8px;font-size:0.78rem;color:var(--fg-dim)">░ idle &nbsp;│&nbsp; ▪ model in VRAM (not computing) &nbsp;│&nbsp; Nm = N minutes generating &nbsp;│&nbsp; · no data</div>'
     heatmap_html += '</div></div>'
 
     # ─── Daily bar chart ───
     sorted_days = sorted(daily_stats.keys())[-14:]
-    bar_html = '<div class="section"><div class="section-title">📈 DAILY UTILIZATION — last 14 days</div><div class="section-body">'
+    bar_html = '<div class="section"><div class="section-title">📈 DAILY UTILIZATION — last 14 days (generating vs loaded)</div><div class="section-body">'
     for day in sorted_days:
         ds = daily_stats[day]
-        pct = (ds["busy"] / ds["total"] * 100) if ds["total"] > 0 else 0
-        busy_h = ds["busy"] / 60  # convert min to hours
-        total_h = ds["total"] / 60
+        gen_pct = (ds["generating"] / ds["total"] * 100) if ds["total"] > 0 else 0
+        loaded_pct = (ds["loaded"] / ds["total"] * 100) if ds["total"] > 0 else 0
         is_today = day == today_str
         day_label = datetime.strptime(day, "%Y-%m-%d").strftime("%a %d")
-        # Bar width proportional to utilization
-        bar_w = max(pct, 1)
-        bar_color = pct_color(pct)
+        gen_w = max(gen_pct, 0.5) if ds["generating"] > 0 else 0
+        loaded_w = max(loaded_pct, 0.5) if ds["loaded"] > 0 else 0
+        gen_color = pct_color(gen_pct)
         today_marker = " ◀" if is_today else ""
         bar_html += f'''<div style="display:flex;align-items:center;gap:8px;margin:3px 0;font-size:0.82rem">
   <span style="width:52px;text-align:right;color:{'var(--green)' if is_today else 'var(--fg-dim)'};flex-shrink:0">{day_label}</span>
-  <div style="flex:1;height:16px;background:var(--bg);border:1px solid var(--border);position:relative">
-    <div style="height:100%;width:{bar_w}%;background:{bar_color};opacity:0.7"></div>
+  <div style="flex:1;height:16px;background:var(--bg);border:1px solid var(--border);position:relative;display:flex">
+    <div style="height:100%;width:{gen_w}%;background:{gen_color};opacity:0.8"></div>
+    <div style="height:100%;width:{loaded_w}%;background:#1a3a5a;opacity:0.5"></div>
   </div>
-  <span style="width:90px;text-align:right;color:var(--fg-dim);flex-shrink:0">{pct:.0f}% ({ds['busy']}m){today_marker}</span>
+  <span style="width:120px;text-align:right;color:var(--fg-dim);flex-shrink:0">{gen_pct:.0f}% gen ({ds['generating']}m) + {ds['loaded']}m loaded{today_marker}</span>
 </div>'''
+    bar_html += '<div style="margin-top:6px;font-size:0.78rem;color:var(--fg-dim)">■ generating (GPU active) &nbsp;│&nbsp; <span style="color:#2a5a7a">■</span> loaded (model in VRAM, idle)</div>'
     bar_html += '</div></div>'
 
     # ─── Per-script breakdown ───
@@ -2944,7 +3774,10 @@ def gen_load():
         total_busy_week = sum(script_minutes.values())
         script_icons = {
             "lore-digest": "📨", "repo-watch": "👁", "idle-think": "🧠",
-            "report": "📊", "manual": "🖐",
+            "report": "📊", "career-scan": "💼", "salary-tracker": "💰",
+            "company-intel": "🏢", "patent-watch": "📜", "event-scout": "🎤",
+            "ha-journal": "🏠", "leak-monitor": "🔒", "gateway": "🌐",
+            "unknown": "❓",
         }
         # Sort by minutes descending
         sorted_scripts = sorted(script_minutes.items(), key=lambda x: -x[1])
@@ -2960,35 +3793,117 @@ def gen_load():
   </div>
   <span style="width:110px;text-align:right;color:var(--fg-dim);flex-shrink:0">{mins}m ({hours:.1f}h) {sc_pct:.0f}%</span>
 </div>'''
-        script_html += f'<div style="margin-top:8px;font-size:0.82rem;color:var(--fg-dim)">Total busy: {total_busy_week} min ({total_busy_week/60:.1f}h) over 7 days</div>'
+        script_html += f'<div style="margin-top:8px;font-size:0.82rem;color:var(--fg-dim)">Total generating: {total_busy_week} min ({total_busy_week/60:.1f}h) over 7 days</div>'
     else:
-        script_html += '<div style="color:var(--fg-dim)">No per-script data yet (need busy samples with script identification)</div>'
+        script_html += '<div style="color:var(--fg-dim)">No generating data yet (need samples with GPU clock &gt;1.2 GHz)</div>'
     script_html += '</div></div>'
 
-    # ─── Capacity planning ───
-    cron_jobs = [
-        ("lore-digest", "04:00", "~8–15 min", "Daily digest of mailing list feeds"),
-        ("repo-watch ×3", "00:00, 06:00, 12:00", "~5–10 min", "Silent repo monitoring"),
-        ("repo-watch +notify", "18:00", "~5–10 min", "Daily repo digest + Signal alert"),
-        ("idle-think ×2", "10:00, 15:00", "~1–3 min", "Research / career / crawl / learn"),
-        ("report", "08:00", "~1 min", "Morning health report"),
-    ]
-    cap_html = '<div class="section"><div class="section-title">🔧 SCHEDULED JOBS &amp; CAPACITY</div><div class="section-body">'
-    cap_html += '<table class="host-table"><thead><tr>'
-    cap_html += '<th>Job</th><th>Schedule</th><th>Est. Duration</th><th>Purpose</th>'
-    cap_html += '</tr></thead><tbody>'
-    for name, sched, dur, purpose in cron_jobs:
-        cap_html += f'<tr><td style="color:var(--cyan)">{e(name)}</td><td>{e(sched)}</td><td>{e(dur)}</td><td style="color:var(--fg-dim)">{e(purpose)}</td></tr>'
-    cap_html += '</tbody></table>'
-    # Estimated total
+    # ─── Capacity planning — dynamically read from openclaw cron jobs.json ───
+    cron_jobs_path = os.path.expanduser("~/.openclaw/cron/jobs.json")
+    cron_jobs_night = []  # (sort_key, name, schedule_str, timeout_str, last_status, last_dur_s)
+    cron_jobs_day = []
+    cron_total = 0
+    cron_enabled = 0
+    try:
+        with open(cron_jobs_path) as _cjf:
+            _cron_data = json.load(_cjf)
+        for _cj in _cron_data.get("jobs", []):
+            cron_total += 1
+            if not _cj.get("enabled", True):
+                continue
+            cron_enabled += 1
+            _name = _cj.get("name", "?")
+            _expr = _cj.get("schedule", {}).get("expr", "* * * * *")
+            _timeout = _cj.get("payload", {}).get("timeoutSeconds", 0)
+            _state = _cj.get("state", {})
+            _last_status = _state.get("lastStatus", "—")
+            _last_dur = _state.get("lastDurationMs", 0) / 1000
+
+            # Parse cron expression for display
+            _parts = _expr.split()
+            _min_s, _hour_s = _parts[0], _parts[1]
+            if _hour_s == "*":
+                _sched_str = f"*:{int(_min_s):02d}"
+                _sort_h = 99
+            else:
+                _h = int(_hour_s)
+                _sched_str = f"{_h:02d}:{int(_min_s):02d}"
+                _sort_h = _h
+
+            _timeout_min = _timeout // 60
+            _timeout_str = f"≤{_timeout_min} min"
+
+            _row = (_sort_h, int(_min_s), _name, _sched_str, _timeout_str, _last_status, _last_dur)
+            if _sort_h >= 23 or _sort_h < 8:
+                _sk = _sort_h if _sort_h >= 23 else _sort_h + 24
+                cron_jobs_night.append((_sk, int(_min_s), _name, _sched_str, _timeout_str, _last_status, _last_dur))
+            elif _sort_h == 99:
+                cron_jobs_day.append(_row)
+            else:
+                cron_jobs_day.append(_row)
+        cron_jobs_night.sort()
+        cron_jobs_day.sort()
+    except Exception:
+        pass  # no cron data → empty tables
+
+    _n_night = len(cron_jobs_night)
+    _n_day = len(cron_jobs_day)
+
+    cap_html = f'<div class="section"><div class="section-title">🔧 OPENCLAW CRON — {cron_enabled} SCHEDULED JOBS</div><div class="section-body">'
+    cap_html += '<div style="margin-bottom:12px;padding:8px;background:var(--bg2);border-left:3px solid var(--purple);border-radius:4px;font-size:0.85rem">'
+    cap_html += '🤖 <span style="color:var(--purple);font-weight:bold">All GPU tasks run through Clawd</span> '
+    cap_html += '<span style="color:var(--fg-dim)">via </span>'
+    cap_html += '<span style="color:var(--cyan)">openclaw cron</span> '
+    cap_html += '<span style="color:var(--fg-dim)">→ agent turns → shell tools. Gateway runs 24/7. Signal preempts background work.</span>'
+    cap_html += '</div>'
+
+    def _status_color(st):
+        return {"ok": "var(--green)", "error": "var(--red)", "running": "var(--amber)"}.get(st, "var(--fg-dim)")
+
+    def _render_cron_table(jobs, bg_style=""):
+        t = '<table class="host-table"><thead><tr>'
+        t += '<th>Job</th><th>Time</th><th>Timeout</th><th>Last</th><th>Duration</th>'
+        t += '</tr></thead><tbody>'
+        for _, _, name, sched, timeout_s, status, dur in jobs:
+            dur_str = f"{dur:.0f}s" if dur > 0 else "—"
+            st_icon = {"ok": "✓", "error": "✗", "running": "⟳"}.get(status, "—")
+            st_color = _status_color(status)
+            row_bg = f' style="background:var(--bg3)"' if bg_style else ""
+            t += f'<tr{row_bg}><td style="color:var(--cyan)">{e(name)}</td>'
+            t += f'<td>{e(sched)}</td><td>{e(timeout_s)}</td>'
+            t += f'<td style="color:{st_color}">{st_icon} {e(status)}</td>'
+            t += f'<td style="color:var(--fg-dim)">{dur_str}</td></tr>'
+        t += '</tbody></table>'
+        return t
+
+    # Night table
+    cap_html += f'<div style="margin-bottom:6px;color:var(--purple);font-weight:bold;font-size:0.85rem">🌙 Night batch (23:00–07:59) — {_n_night} jobs</div>'
+    cap_html += _render_cron_table(cron_jobs_night, bg_style="night")
+    # Day table
+    cap_html += f'<div style="margin:12px 0 6px;color:var(--amber);font-weight:bold;font-size:0.85rem">☀️ Daytime (08:00–22:59) — {_n_day} jobs</div>'
+    cap_html += _render_cron_table(cron_jobs_day)
+
+    # Summary stats
+    _total_timeout_night = sum(j[4].replace("≤", "").replace(" min", "") for j in cron_jobs_night if True) if False else 0
+    _night_max_min = sum(int(j[4].replace("≤", "").replace(" min", "")) for j in cron_jobs_night)
+    _day_max_min = sum(int(j[4].replace("≤", "").replace(" min", "")) for j in cron_jobs_day)
+    _total_max_min = _night_max_min + _day_max_min
     cap_html += f'''<div style="margin-top:12px;font-size:0.85rem">
-  <span style="color:var(--fg-dim)">Estimated daily GPU time:</span>
-  <span style="color:var(--amber)">~30–55 min</span>
-  <span style="color:var(--fg-dim)">out of 1440 min (</span><span style="color:var(--green)">~2–4%</span><span style="color:var(--fg-dim)">)</span>
+  <span style="color:var(--fg-dim)">Daily jobs:</span>
+  <span style="color:var(--amber)">{cron_enabled}</span>
+  <span style="color:var(--fg-dim)">({_n_night} night + {_n_day} day) — max timeout budget:</span>
+  <span style="color:var(--amber)">{_total_max_min} min</span>
+  <span style="color:var(--fg-dim)">({round(_total_max_min/1440*100)}% of 24h)</span>
   <br>
-  <span style="color:var(--fg-dim)">Headroom for additional jobs:</span>
-  <span style="color:var(--green)">very high</span>
-  <span style="color:var(--fg-dim)">— could comfortably add 10–20× more tasks</span>
+  <span style="color:var(--fg-dim)">Night timeout budget:</span>
+  <span style="color:var(--purple)">{_night_max_min} min</span>
+  <span style="color:var(--fg-dim)">of 540 min window</span>
+  <br>
+  <span style="color:var(--fg-dim)">Orchestration:</span>
+  <span style="color:var(--cyan)">openclaw cron → Clawd → shell tools → scripts → Ollama</span>
+  <br>
+  <span style="color:var(--fg-dim)">Preemption:</span>
+  <span style="color:var(--green)">Signal messages queue and process after current agent turn</span>
 </div>'''
     cap_html += '</div></div>'
 
@@ -2997,17 +3912,31 @@ def gen_load():
     recent.reverse()
     log_html = '<div class="section"><div class="section-title">📋 RECENT SAMPLES — last 60 minutes</div><div class="section-body">'
     log_html += '<div class="log-view">'
-    for ts, st, model, script, vram in recent:
+    for s in recent:
+        ts, st, model, script, vram = s[0], s[1], s[2], s[3], s[4]
+        gpu_mhz = s[5] if len(s) > 5 else 0
+        temp_c = s[6] if len(s) > 6 else 0
         ts_str = ts.strftime("%H:%M")
-        if st == "busy":
+        hw_info = ""
+        if gpu_mhz:
+            hw_info = f" {gpu_mhz}MHz"
+        if temp_c:
+            hw_info += f" {temp_c}°C"
+        if st == "generating":
             vram_str = f" [{vram}MB]" if vram else ""
             script_str = f" ← {script}" if script else ""
-            log_html += f'<span class="log-ts">{ts_str}</span> <span style="color:var(--amber)">■ BUSY</span> {e(model)}{vram_str}{script_str}\n'
+            log_html += f'<span class="log-ts">{ts_str}</span> <span style="color:var(--amber)">■ GEN</span> {e(model)}{vram_str}{script_str}{hw_info}\n'
+        elif st in ("loaded", "busy"):
+            vram_str = f" [{vram}MB]" if vram else ""
+            script_str = f" ← {script}" if script and script != "unknown" else ""
+            log_html += f'<span class="log-ts">{ts_str}</span> <span style="color:#2a5a7a">▪ loaded</span> {e(model)}{vram_str}{script_str}{hw_info}\n'
         else:
-            log_html += f'<span class="log-ts">{ts_str}</span> <span style="color:#224422">□ idle</span>\n'
+            log_html += f'<span class="log-ts">{ts_str}</span> <span style="color:#224422">□ idle</span>{hw_info}\n'
     log_html += '</div></div></div>'
 
-    body = stats_html + heatmap_html + bar_html + script_html + cap_html + log_html
+    power_html = gen_power_cost_section()
+
+    body = stats_html + heatmap_html + bar_html + power_html + script_html + cap_html + log_html
     return page_wrap("LOAD", body, "load")
 
 
@@ -3167,7 +4096,9 @@ def main():
         "history.html": lambda: gen_history(all_scans),
         "log.html": gen_log,
         "notes.html": gen_notes,
+        "career.html": gen_careers,
         "load.html": gen_load,
+        "leaks.html": gen_leaks,
     }
     # Dynamic feed pages from digest-feeds.json
     for fid, fcfg in DIGEST_FEEDS.items():
