@@ -18,6 +18,7 @@ Schedule (cron):
 Location on bc250: /opt/netscan/ha-journal.py
 """
 
+import argparse
 import json
 import re
 import os
@@ -28,6 +29,7 @@ import urllib.request
 import urllib.error
 from datetime import datetime, timedelta, timezone
 from collections import defaultdict
+from llm_sanitize import sanitize_llm_output
 
 # ─── Config ───
 
@@ -37,7 +39,7 @@ HA_OBSERVE = "/opt/netscan/ha-observe.py"
 
 OLLAMA_URL = "http://localhost:11434"
 OLLAMA_CHAT = f"{OLLAMA_URL}/api/chat"
-OLLAMA_MODEL = "huihui_ai/qwen3-abliterated:14b"  # consolidated model for all batch scripts
+OLLAMA_MODEL = "qwen3:14b"  # consolidated model for all batch scripts
 
 QUIET_START = 0   # 00:00
 QUIET_END   = 6   # 06:00 — no chat, GPU free for batch jobs
@@ -45,7 +47,11 @@ QUIET_END   = 6   # 06:00 — no chat, GPU free for batch jobs
 def is_quiet_hours():
     return QUIET_START <= datetime.now().hour < QUIET_END
 
+HA_JOURNAL_DIR = os.path.join(DATA_DIR, "ha-journal")
+RAW_HA_FILE = os.path.join(HA_JOURNAL_DIR, "raw-ha-data.json")
+
 os.makedirs(THINK_DIR, exist_ok=True)
+os.makedirs(HA_JOURNAL_DIR, exist_ok=True)
 
 # Load HA credentials from openclaw .env
 ENV_FILE = os.path.expanduser("~/.openclaw/.env")
@@ -271,7 +277,7 @@ def call_ollama(system_prompt, user_prompt, temperature=0.4, max_tokens=2000):
             {"role": "user", "content": "/nothink\n" + user_prompt},
         ],
         "stream": False,
-        "options": {"temperature": temperature, "num_predict": max_tokens, "num_ctx": 12288},
+        "options": {"temperature": temperature, "num_predict": max_tokens, "num_ctx": 24576},
         "keep_alive": "5m",
     })
 
@@ -289,7 +295,7 @@ def call_ollama(system_prompt, user_prompt, temperature=0.4, max_tokens=2000):
         tokens = result.get("eval_count", 0)
         tps = tokens / elapsed if elapsed > 0 else 0
         print(f"  Ollama OK: {elapsed:.0f}s, {tokens} tok ({tps:.1f} t/s)")
-        return content
+        return sanitize_llm_output(content)
     except Exception as ex:
         print(f"  Ollama failed: {ex}")
         return None
@@ -415,12 +421,65 @@ Device context (do NOT flag these as anomalies):
 """
 
 
-def main():
-    quick = "--quick" in sys.argv
+def run_scrape(quick=False):
+    """Collect HA sensor data via ha-observe.py. Save raw JSON (no LLM)."""
+    sys.stdout.reconfigure(line_buffering=True)
+    sys.stderr.reconfigure(line_buffering=True)
 
+    dt = datetime.now()
+    mode_str = 'quick' if quick else 'full'
+    print(f"[{dt:%Y-%m-%d %H:%M:%S}] ha-journal scrape starting ({mode_str})")
+
+    t0 = time.time()
+
+    # Collect HA data
+    print("  Collecting HA data...")
+    climate_data = run_ha("climate")
+    rooms_data = run_ha("rooms") if not quick else ""
+    anomalies_data = run_ha("anomalies") if not quick else ""
+    lights_data = run_ha("lights")
+
+    # Get switch activity and room usage (last 6h window)
+    print("  Fetching switch activity...")
+    room_activity, switch_timeline = get_switch_activity(hours=6)
+
+    if not climate_data or climate_data.startswith("[error"):
+        print(f"  Failed to get HA data: {climate_data}")
+        return
+
+    scrape_duration = int(time.time() - t0)
+    raw_data = {
+        "scrape_timestamp": dt.isoformat(timespec="seconds"),
+        "scrape_duration_seconds": scrape_duration,
+        "scrape_version": 1,
+        "data": {
+            "quick": quick,
+            "climate_data": climate_data,
+            "rooms_data": rooms_data,
+            "anomalies_data": anomalies_data,
+            "lights_data": lights_data,
+            "room_activity": room_activity,
+            "switch_timeline": switch_timeline,
+        },
+        "scrape_errors": [],
+    }
+
+    tmp_path = RAW_HA_FILE + ".tmp"
+    with open(tmp_path, "w") as f:
+        json.dump(raw_data, f, indent=2, ensure_ascii=False)
+    os.replace(tmp_path, RAW_HA_FILE)
+
+    print(f"[{datetime.now():%Y-%m-%d %H:%M:%S}] ha-journal scrape done ({scrape_duration}s)")
+
+
+def run_analyze():
+    """Load raw HA data, run LLM analysis, save think note."""
+    sys.stdout.reconfigure(line_buffering=True)
+    sys.stderr.reconfigure(line_buffering=True)
+
+    dt = datetime.now()
     quiet = is_quiet_hours()
-    mode_str = f"{'quick' if quick else 'full'}, {'QUIET HOURS' if quiet else 'daytime'}"
-    print(f"[{datetime.now():%Y-%m-%d %H:%M:%S}] ha-journal starting ({mode_str})")
+    print(f"[{dt:%Y-%m-%d %H:%M:%S}] ha-journal analyze starting ({'QUIET HOURS' if quiet else 'daytime'})")
 
     # Guard: don't compete for GPU with other batch scripts
     for proc_name in ["lore-digest.sh", "repo-watch.sh", "idle-think.sh"]:
@@ -451,20 +510,40 @@ def main():
     else:
         print("  Quiet hours — GPU free for batch, no chat guard needed")
 
-    # Collect HA data
-    print("  Collecting HA data...")
-    climate_data = run_ha("climate")
-    rooms_data = run_ha("rooms") if not quick else ""
-    anomalies_data = run_ha("anomalies") if not quick else ""
-    lights_data = run_ha("lights")
+    # Load raw data
+    if not os.path.exists(RAW_HA_FILE):
+        print(f"  ERROR: Raw data file not found: {RAW_HA_FILE}", file=sys.stderr)
+        print("  Run with --scrape-only first.", file=sys.stderr)
+        sys.exit(1)
 
-    # Get switch activity and room usage (last 6h window)
-    print("  Fetching switch activity...")
-    room_activity, switch_timeline = get_switch_activity(hours=6)
+    try:
+        with open(RAW_HA_FILE) as f:
+            raw = json.load(f)
+    except (json.JSONDecodeError, OSError) as e:
+        print(f"  ERROR: Failed to read raw data: {e}", file=sys.stderr)
+        sys.exit(1)
 
-    if not climate_data or climate_data.startswith("[error"):
-        print(f"  Failed to get HA data: {climate_data}")
-        return
+    scrape_ts = raw.get("scrape_timestamp", "")
+    d = raw.get("data", {})
+    quick = d.get("quick", False)
+    climate_data = d.get("climate_data", "")
+    rooms_data = d.get("rooms_data", "")
+    anomalies_data = d.get("anomalies_data", "")
+    lights_data = d.get("lights_data", "")
+    room_activity = d.get("room_activity", "")
+    switch_timeline = d.get("switch_timeline", "")
+
+    # Check staleness
+    if scrape_ts:
+        try:
+            scrape_dt = datetime.fromisoformat(scrape_ts)
+            age_hours = (dt - scrape_dt).total_seconds() / 3600
+            if age_hours > 12:
+                print(f"  WARNING: Raw data is {age_hours:.0f}h old (scraped {scrape_ts})")
+        except ValueError:
+            pass
+
+    print(f"  Loaded raw data (scraped {scrape_ts}, mode={'quick' if quick else 'full'})")
 
     # Build the user prompt
     now = datetime.now()
@@ -525,10 +604,12 @@ def main():
             f"{climate_data}\n\n{lights_data}"
         )
 
-    # Save note
+    # Save note with dual timestamps
     title = f"Home Journal — {now.strftime('%d %b %Y, %H:%M')}"
     context = {
         "mode": "quick" if quick else "full",
+        "scrape_timestamp": scrape_ts,
+        "analyze_timestamp": dt.isoformat(timespec="seconds"),
         "sensors_collected": sum(1 for x in [climate_data, rooms_data, anomalies_data, lights_data] if x),
         "previous_available": prev is not None,
         "room_activity": bool(room_activity),
@@ -536,6 +617,26 @@ def main():
     }
     save_note(title, analysis, context)
     print("  Done.")
+
+
+def main():
+    parser = argparse.ArgumentParser(description="HA journal — home automation analysis")
+    parser.add_argument('--scrape-only', action='store_true',
+                        help='Only collect HA sensor data, save raw (no LLM)')
+    parser.add_argument('--analyze-only', action='store_true',
+                        help='Only run LLM analysis on previously collected raw data')
+    parser.add_argument('--quick', action='store_true',
+                        help='Climate-only snapshot (shorter prompt)')
+    args = parser.parse_args()
+
+    if args.scrape_only:
+        run_scrape(quick=args.quick)
+    elif args.analyze_only:
+        run_analyze()
+    else:
+        # Legacy: full run (backward compatible)
+        run_scrape(quick=args.quick)
+        run_analyze()
 
 
 if __name__ == "__main__":

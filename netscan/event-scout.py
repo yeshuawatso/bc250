@@ -31,6 +31,7 @@ Output: /opt/netscan/data/events/
 Cron: 30 3 * * * flock -w 1200 /tmp/ollama-gpu.lock python3 /opt/netscan/event-scout.py
 """
 
+import argparse
 import json
 import os
 import re
@@ -41,11 +42,12 @@ import urllib.error
 import urllib.parse
 from datetime import datetime, timedelta
 from pathlib import Path
+from llm_sanitize import sanitize_llm_output
 
 # ── Config ─────────────────────────────────────────────────────────────────
 OLLAMA_URL = "http://localhost:11434"
 OLLAMA_CHAT = f"{OLLAMA_URL}/api/chat"
-OLLAMA_MODEL = "huihui_ai/qwen3-abliterated:14b"
+OLLAMA_MODEL = "qwen3:14b"
 
 EVENT_DIR = Path("/opt/netscan/data/events")
 EVENT_DB = EVENT_DIR / "event-db.json"
@@ -149,6 +151,9 @@ KNOWN_CONFERENCES = [
         "alt_urls": ["https://elinux.org/ELC"],
         "keywords": ["embedded linux conference", "elc", "elinux"],
         "relevance": 10,
+        "cfp_url": "https://events.linuxfoundation.org/embedded-linux-conference/program/cfp/",
+        "cfp_keywords": ["call for proposals", "cfp", "submit", "proposal deadline", "abstract"],
+        "typical_cfp_months": [1, 2, 3],  # CFP usually opens Jan-Mar
     },
     {
         "name": "Linux Plumbers Conference (LPC)",
@@ -156,6 +161,9 @@ KNOWN_CONFERENCES = [
         "alt_urls": ["https://www.linuxplumbersconf.org/"],
         "keywords": ["linux plumbers", "lpc"],
         "relevance": 10,
+        "cfp_url": "https://lpc.events/",
+        "cfp_keywords": ["call for proposals", "cfp", "microconference", "submit", "deadline"],
+        "typical_cfp_months": [4, 5, 6],
     },
     {
         "name": "FOSDEM",
@@ -163,6 +171,9 @@ KNOWN_CONFERENCES = [
         "alt_urls": [],
         "keywords": ["fosdem"],
         "relevance": 9,
+        "cfp_url": "https://fosdem.org/",
+        "cfp_keywords": ["call for participation", "devroom", "call for proposals", "cfp", "stand"],
+        "typical_cfp_months": [9, 10, 11],
     },
     {
         "name": "Automotive Linux Summit",
@@ -170,6 +181,9 @@ KNOWN_CONFERENCES = [
         "alt_urls": [],
         "keywords": ["automotive linux summit", "als"],
         "relevance": 9,
+        "cfp_url": "https://events.linuxfoundation.org/automotive-linux-summit/program/cfp/",
+        "cfp_keywords": ["call for proposals", "cfp", "submit", "proposal deadline"],
+        "typical_cfp_months": [2, 3, 4],
     },
     {
         "name": "Embedded World",
@@ -177,6 +191,9 @@ KNOWN_CONFERENCES = [
         "alt_urls": [],
         "keywords": ["embedded world", "nuremberg embedded"],
         "relevance": 8,
+        "cfp_url": "https://www.embedded-world.de/en/embedded-world-conference/call-for-papers",
+        "cfp_keywords": ["call for papers", "submit", "paper deadline", "abstract submission"],
+        "typical_cfp_months": [5, 6, 7],
     },
     {
         "name": "Open Source Summit Europe",
@@ -184,6 +201,9 @@ KNOWN_CONFERENCES = [
         "alt_urls": [],
         "keywords": ["open source summit europe", "osseu"],
         "relevance": 7,
+        "cfp_url": "https://events.linuxfoundation.org/open-source-summit-europe/program/cfp/",
+        "cfp_keywords": ["call for proposals", "cfp", "submit"],
+        "typical_cfp_months": [3, 4, 5],
     },
     {
         "name": "GStreamer Conference",
@@ -191,6 +211,9 @@ KNOWN_CONFERENCES = [
         "alt_urls": [],
         "keywords": ["gstreamer conference"],
         "relevance": 9,
+        "cfp_url": "https://gstreamer.freedesktop.org/conference/",
+        "cfp_keywords": ["call for papers", "cfp", "talk proposals", "submit", "lightning talk"],
+        "typical_cfp_months": [5, 6, 7],
     },
     {
         "name": "Yocto Project Summit",
@@ -198,6 +221,9 @@ KNOWN_CONFERENCES = [
         "alt_urls": [],
         "keywords": ["yocto summit", "yocto project summit"],
         "relevance": 7,
+        "cfp_url": "https://www.yoctoproject.org/",
+        "cfp_keywords": ["call for talks", "cfp", "submit"],
+        "typical_cfp_months": [3, 4],
     },
     {
         "name": "KernelCI Hackfest",
@@ -213,6 +239,9 @@ KNOWN_CONFERENCES = [
         "alt_urls": ["https://jesien.org/2025/en/", "https://jesien.org/2026/"],
         "keywords": ["jesień linuksowa", "linux autumn", "plug", "polish linux"],
         "relevance": 9,
+        "cfp_url": "https://jesien.org/",
+        "cfp_keywords": ["call for papers", "cfp", "zgłoszenia", "prelekcje"],
+        "typical_cfp_months": [6, 7, 8],
     },
     {
         "name": "Embedded Recipes",
@@ -220,6 +249,9 @@ KNOWN_CONFERENCES = [
         "alt_urls": ["https://embedded-recipes.org/2026/"],
         "keywords": ["embedded recipes", "isp", "libcamera", "yocto"],
         "relevance": 10,
+        "cfp_url": "https://embedded-recipes.org/",
+        "cfp_keywords": ["call for presentations", "cfp", "submit a talk", "proposal"],
+        "typical_cfp_months": [5, 6, 7],
     },
     {
         "name": "code::dive",
@@ -227,6 +259,9 @@ KNOWN_CONFERENCES = [
         "alt_urls": ["https://www.codedive.pl/"],
         "keywords": ["code::dive", "codedive", "c++ conference wrocław"],
         "relevance": 7,
+        "cfp_url": "https://codedive.pl/",
+        "cfp_keywords": ["call for papers", "cfp", "submit", "speaker"],
+        "typical_cfp_months": [4, 5, 6],
     },
     {
         "name": "Kernel Recipes",
@@ -234,6 +269,9 @@ KNOWN_CONFERENCES = [
         "alt_urls": ["https://kernel-recipes.org/en/2026/"],
         "keywords": ["kernel recipes", "linux kernel conference"],
         "relevance": 9,
+        "cfp_url": "https://kernel-recipes.org/",
+        "cfp_keywords": ["call for presentations", "cfp", "submit", "proposal"],
+        "typical_cfp_months": [4, 5, 6],
     },
     {
         "name": "Linux Security Summit Europe",
@@ -477,7 +515,7 @@ def call_ollama(system_prompt, user_prompt, temperature=0.3, max_tokens=2000):
             {"role": "user", "content": "/nothink\n" + user_prompt},
         ],
         "stream": False,
-        "options": {"temperature": temperature, "num_predict": max_tokens, "num_ctx": 12288},
+        "options": {"temperature": temperature, "num_predict": max_tokens, "num_ctx": 24576},
     }).encode()
 
     req = urllib.request.Request(OLLAMA_CHAT, data=payload, headers={
@@ -493,7 +531,7 @@ def call_ollama(system_prompt, user_prompt, temperature=0.3, max_tokens=2000):
             tokens = result.get("eval_count", len(content.split()))
             tps = tokens / elapsed if elapsed > 0 else 0
             log(f"  LLM: {elapsed:.0f}s, {tokens} tok ({tps:.1f} t/s)")
-            return content
+            return sanitize_llm_output(content)
     except Exception as e:
         log(f"  Ollama call failed: {e}")
         return None
@@ -711,6 +749,86 @@ def search_eventbrite(query, location="Poland"):
 
 # ── Source: Known conference websites ──────────────────────────────────────
 
+def search_cfp_deadlines():
+    """Search for Call for Papers/Proposals deadlines across known conferences."""
+    cfp_results = []
+    current_month = datetime.now().month
+    year = datetime.now().year
+
+    for conf in KNOWN_CONFERENCES:
+        cfp_url = conf.get("cfp_url")
+        cfp_keywords = conf.get("cfp_keywords", [])
+        typical_months = conf.get("typical_cfp_months", [])
+        if not cfp_url or not cfp_keywords:
+            continue
+
+        # Check if we're in or near CFP season for this conference
+        is_cfp_season = any(
+            abs(current_month - m) <= 2 or abs(current_month - m + 12) <= 2
+            for m in typical_months
+        ) if typical_months else True
+
+        if not is_cfp_season:
+            continue
+
+        log(f"  CFP check: {conf['name']}")
+        html = fetch_url(cfp_url, timeout=20)
+        if not html:
+            continue
+
+        text = strip_html(html)[:8000].lower()
+
+        # Check if CFP is mentioned
+        cfp_found = any(kw.lower() in text for kw in cfp_keywords)
+        if not cfp_found:
+            # Also try main URL
+            html2 = fetch_url(conf["url"], timeout=20)
+            if html2:
+                text2 = strip_html(html2)[:8000].lower()
+                cfp_found = any(kw.lower() in text2 for kw in cfp_keywords)
+                if cfp_found:
+                    text = text2
+
+        if cfp_found:
+            # Try to extract deadline
+            deadline = None
+            deadline_patterns = [
+                r'(?:deadline|due|closes?|submission)\s*(?:date)?\s*:?\s*'
+                r'((?:January|February|March|April|May|June|July|August|September|'
+                r'October|November|December)\s+\d{1,2},?\s*\d{4})',
+                r'(?:deadline|due|closes?)\s*(?:date)?\s*:?\s*(\d{1,2}\s+'
+                r'(?:January|February|March|April|May|June|July|August|September|'
+                r'October|November|December)\s+\d{4})',
+                r'(?:deadline|due|closes?)\s*(?:date)?\s*:?\s*(\d{4}-\d{2}-\d{2})',
+            ]
+            for pat in deadline_patterns:
+                m = re.search(pat, text, re.IGNORECASE)
+                if m:
+                    deadline = m.group(1).strip()
+                    break
+
+            # Check CFP status: open, closed, upcoming
+            status = "detected"
+            if any(w in text for w in ["cfp is open", "now accepting", "submit your", "call for"]):
+                status = "open"
+            elif any(w in text for w in ["cfp closed", "submissions closed", "deadline passed"]):
+                status = "closed"
+
+            cfp_results.append({
+                "conference": conf["name"],
+                "cfp_url": cfp_url,
+                "status": status,
+                "deadline": deadline,
+                "relevance": conf["relevance"],
+                "typical_cfp_months": typical_months,
+            })
+
+        time.sleep(2)
+
+    log(f"CFP deadlines found: {len(cfp_results)}")
+    return cfp_results
+
+
 def check_known_conferences():
     """Check known conference websites for upcoming dates."""
     events = []
@@ -857,6 +975,61 @@ def search_konfeo():
         time.sleep(2)
 
     log(f"Konfeo.com: {len(events)} events")
+    return events
+
+
+def search_evenea():
+    """Search Evenea.pl (Polish event/ticketing platform)."""
+    events = []
+    search_terms = ["embedded", "linux", "iot", "programowanie", "it", "technologie"]
+
+    for term in search_terms:
+        url = f"https://app.evenea.pl/szukaj/?q={term}"
+        html = fetch_url(url, timeout=20)
+        if not html:
+            continue
+
+        # Evenea lists events in card/block elements
+        blocks = re.findall(
+            r'<(?:div|article|li|a)[^>]*class="[^"]*(?:event|card|listing)[^"]*"[^>]*>(.*?)</(?:div|article|li|a)>',
+            html, re.DOTALL
+        )
+
+        for block in blocks[:15]:
+            name_m = re.search(r'<(?:h2|h3|h4|a|span|strong)[^>]*>(.*?)</(?:h2|h3|h4|a|span|strong)>', block, re.DOTALL)
+            name = strip_html(name_m.group(1)).strip() if name_m else ""
+
+            date_m = re.search(r'(\d{1,2}[./-]\d{1,2}[./-]\d{2,4})', block)
+            date_str = date_m.group(1) if date_m else ""
+
+            link_m = re.search(r'href="(https?://[^"]*evenea[^"]*\.pl[^"]*|/[^"]+)"', block)
+            link = link_m.group(1) if link_m else ""
+            if link and link.startswith("/"):
+                link = f"https://app.evenea.pl{link}"
+
+            loc_m = re.search(r'(?:Łódź|Warszawa|Warsaw|Kraków|Wrocław|Poznań|Gdańsk|Poland|Online|online)', block)
+            city = loc_m.group(0) if loc_m else ""
+
+            if name and len(name) > 3:
+                events.append({
+                    "name": name, "date": date_str, "url": link,
+                    "source": "evenea", "location": "Poland", "city": city,
+                    "description": strip_html(block)[:300],
+                })
+
+        time.sleep(2)
+
+    # Deduplicate by name similarity
+    seen = set()
+    unique = []
+    for ev in events:
+        key = ev["name"].lower().strip()[:60]
+        if key not in seen:
+            seen.add(key)
+            unique.append(ev)
+    events = unique
+
+    log(f"Evenea.pl: {len(events)} events")
     return events
 
 
@@ -1230,7 +1403,7 @@ def search_community_sources():
 
 # ── LLM Analysis ──────────────────────────────────────────────────────────
 
-def llm_analyze_events(events):
+def llm_analyze_events(events, cfp_deadlines=None):
     """Use LLM to prioritize and analyze found events."""
     if not events:
         return None
@@ -1253,6 +1426,7 @@ Respond in JSON:
 - networking_opportunities: specific people/companies likely at top events
 - calendar_conflicts: any events that overlap
 - preparation_tips: what to do before the top events (submit talks, prepare papers)
+- cfp_action_items: list of {conference, deadline, talk_topic_suggestions} — conferences where CFP is open or upcoming, with specific talk ideas based on user's expertise
 Output ONLY valid JSON. /no_think"""
 
     event_text = "\n".join(
@@ -1275,6 +1449,20 @@ User context:
 - Budget: personal budget for Poland events, would need employer sponsorship for Europe
 
 Prioritize and recommend."""
+
+    # Add CFP deadlines section
+    if cfp_deadlines:
+        cfp_text = "\n\n=== CALL FOR PAPERS / PROPOSALS ===\n"
+        for cfp in cfp_deadlines:
+            deadline_str = ""
+            if cfp.get("deadline"):
+                dl = cfp["deadline"]
+                deadline_str = f", deadline: {dl}"
+            rel = cfp["relevance"]
+            cfp_text += (f"• {cfp['conference']} — status: {cfp['status']}"
+                         f"{deadline_str}"
+                         f" (relevance {rel})\n")
+        prompt += cfp_text
 
     return call_ollama(system, prompt, temperature=0.3, max_tokens=2500)
 
@@ -1314,20 +1502,19 @@ def event_id(event):
     return re.sub(r'[^a-z0-9]+', '-', name)[:60] + (f"_{date}" if date else "")
 
 
-# ── Main ───────────────────────────────────────────────────────────────────
+# ── Raw data file for scrape/analyze split ─────────────────────────────────
+RAW_EVENTS_FILE = EVENT_DIR / "raw-events.json"
 
-def main():
-    sys.stdout.reconfigure(line_buffering=True)
-    sys.stderr.reconfigure(line_buffering=True)
 
+# ── Scrape phase ───────────────────────────────────────────────────────────
+
+def run_scrape():
+    """Phase 1+2: Collect events from all sources, score and dedup. Save raw JSON."""
     dt = datetime.now()
     today = dt.strftime("%Y-%m-%d")
-    print(f"[{dt.strftime('%Y-%m-%d %H:%M:%S')}] event-scout starting", flush=True)
-
     EVENT_DIR.mkdir(parents=True, exist_ok=True)
     t0 = time.time()
 
-    db = load_db()
     all_events = []
 
     # ── Phase 1: Collect from all sources ──
@@ -1347,6 +1534,10 @@ def main():
 
     # Konfeo.com
     all_events.extend(search_konfeo())
+    time.sleep(2)
+
+    # Evenea.pl — Polish event/ticketing platform
+    all_events.extend(search_evenea())
     time.sleep(2)
 
     # Meetup.com — search by location × topic
@@ -1395,7 +1586,11 @@ def main():
         all_events.extend(search_ddg_events(query, region))
         time.sleep(2)
 
-    log(f"Total raw events: {len(all_events)}")
+    # CFP deadline tracking
+    log("Checking CFP deadlines...")
+    cfp_deadlines = search_cfp_deadlines()
+
+    log(f"Total raw events: {len(all_events)}, CFP: {len(cfp_deadlines)}")
 
     # ── Phase 2: Score and filter ──
     log("Phase 2: Scoring events...")
@@ -1425,20 +1620,28 @@ def main():
 
     log(f"After scoring/dedup: {len(deduped)} relevant events")
 
-    # ── Phase 3: LLM analysis ──
-    log("Phase 3: LLM event analysis...")
-    analysis_raw = llm_analyze_events(deduped[:25])
+    # ── Save raw intermediate data ──
+    scrape_duration = int(time.time() - t0)
+    sources_meta = list(set(e.get("source", "unknown") for e in all_events))
+    raw_data = {
+        "scrape_timestamp": dt.isoformat(timespec="seconds"),
+        "scrape_duration_seconds": scrape_duration,
+        "scrape_version": 1,
+        "data": {
+            "events": deduped,
+            "cfp_deadlines": cfp_deadlines,
+            "sources_meta": sources_meta,
+            "total_found": len(all_events),
+        },
+        "scrape_errors": [],
+    }
+    tmp = RAW_EVENTS_FILE.with_suffix(".tmp")
+    with open(tmp, "w") as f:
+        json.dump(raw_data, f, indent=2, ensure_ascii=False)
+    tmp.rename(RAW_EVENTS_FILE)
 
-    analysis = {}
-    if analysis_raw:
-        try:
-            json_m = re.search(r'\{.*\}', analysis_raw, re.DOTALL)
-            if json_m:
-                analysis = json.loads(json_m.group())
-        except json.JSONDecodeError:
-            analysis = {"raw_analysis": analysis_raw[:2000]}
-
-    # ── Update DB ──
+    # ── Update DB (scrape phase owns the DB) ──
+    db = load_db()
     for e in deduped:
         eid = event_id(e)
         if eid not in db.get("events", {}):
@@ -1452,21 +1655,79 @@ def main():
                 "location_tier": e.get("location_tier", ""),
             }
         else:
-            # Update score if higher
             existing = db["events"][eid]
             if e.get("combined_score", 0) > existing.get("combined_score", 0):
                 existing["combined_score"] = e["combined_score"]
             existing["last_seen"] = today
+    save_db(db)
+
+    log(f"Scrape done: {len(deduped)} events saved to {RAW_EVENTS_FILE}")
+    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] event-scout scrape done ({scrape_duration}s)", flush=True)
+
+
+# ── Analyze phase ──────────────────────────────────────────────────────────
+
+def run_analyze():
+    """Phase 3: Load raw data, run LLM analysis, save final output."""
+    dt = datetime.now()
+    EVENT_DIR.mkdir(parents=True, exist_ok=True)
+    t0 = time.time()
+
+    # Load raw data
+    if not RAW_EVENTS_FILE.exists():
+        print(f"ERROR: Raw data file not found: {RAW_EVENTS_FILE}", file=sys.stderr)
+        print("Run with --scrape-only first to collect event data.", file=sys.stderr)
+        sys.exit(1)
+
+    try:
+        with open(RAW_EVENTS_FILE) as f:
+            raw = json.load(f)
+    except (json.JSONDecodeError, OSError) as e:
+        print(f"ERROR: Failed to read raw data: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    scrape_ts = raw.get("scrape_timestamp", "")
+    deduped = raw.get("data", {}).get("events", [])
+    cfp_deadlines = raw.get("data", {}).get("cfp_deadlines", [])
+    sources_meta = raw.get("data", {}).get("sources_meta", [])
+    total_found = raw.get("data", {}).get("total_found", len(deduped))
+
+    # Check staleness
+    if scrape_ts:
+        try:
+            scrape_dt = datetime.fromisoformat(scrape_ts)
+            age_hours = (dt - scrape_dt).total_seconds() / 3600
+            if age_hours > 48:
+                log(f"WARNING: Raw data is {age_hours:.0f}h old (scraped {scrape_ts})")
+        except ValueError:
+            pass
+
+    log(f"Loaded {len(deduped)} events from raw data (scraped {scrape_ts})")
+
+    # ── Phase 3: LLM analysis ──
+    log("Phase 3: LLM event analysis...")
+    analysis_raw = llm_analyze_events(deduped[:25], cfp_deadlines)
+
+    analysis = {}
+    if analysis_raw:
+        try:
+            json_m = re.search(r'\{.*\}', analysis_raw, re.DOTALL)
+            if json_m:
+                analysis = json.loads(json_m.group())
+        except json.JSONDecodeError:
+            analysis = {"raw_analysis": analysis_raw[:2000]}
 
     # ── Save output ──
     duration = int(time.time() - t0)
     output = {
         "meta": {
-            "timestamp": dt.isoformat(timespec="seconds"),
+            "scrape_timestamp": scrape_ts,
+            "analyze_timestamp": dt.isoformat(timespec="seconds"),
+            "timestamp": dt.isoformat(timespec="seconds"),  # backward compat
             "duration_seconds": duration,
-            "total_found": len(all_events),
+            "total_found": total_found,
             "relevant": len(deduped),
-            "sources": list(set(e.get("source", "unknown") for e in all_events)),
+            "sources": sources_meta,
         },
         "events": deduped[:50],  # top 50 by score
         "analysis": analysis,
@@ -1480,8 +1741,6 @@ def main():
     latest = EVENT_DIR / "latest-events.json"
     latest.unlink(missing_ok=True)
     latest.symlink_to(fname)
-
-    save_db(db)
 
     # Cleanup: keep last 60 reports
     reports = sorted(EVENT_DIR.glob("events-2*.json"))
@@ -1499,7 +1758,33 @@ def main():
     except Exception:
         pass
 
-    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] event-scout done ({duration}s)", flush=True)
+    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] event-scout analyze done ({duration}s)", flush=True)
+
+
+# ── Main ───────────────────────────────────────────────────────────────────
+
+def main():
+    sys.stdout.reconfigure(line_buffering=True)
+    sys.stderr.reconfigure(line_buffering=True)
+
+    parser = argparse.ArgumentParser(description="Event scout — discover tech events")
+    parser.add_argument('--scrape-only', action='store_true',
+                        help='Only scrape events, save raw data (no LLM)')
+    parser.add_argument('--analyze-only', action='store_true',
+                        help='Only run LLM analysis on previously scraped raw data')
+    args = parser.parse_args()
+
+    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] event-scout starting"
+          f"{' (scrape-only)' if args.scrape_only else ' (analyze-only)' if args.analyze_only else ''}", flush=True)
+
+    if args.scrape_only:
+        run_scrape()
+    elif args.analyze_only:
+        run_analyze()
+    else:
+        # Legacy: full run (backward compatible)
+        run_scrape()
+        run_analyze()
 
 
 if __name__ == "__main__":

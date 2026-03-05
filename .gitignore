@@ -13,9 +13,16 @@ __pycache__/
 netscan/profile-private.json
 netscan/crawl-targets.json
 netscan/watchlist.json
+car-known-locations.json
 *.pdf
 
 # Secrets (systemd units may contain tokens)
 # openclaw-gateway.service is tracked as reference (token redacted)
 user info/
 tmp/
+
+# Internal notes (Claude session context, not for repo)
+internal_notes_claude.txt
+
+# Presentation materials
+presentation/

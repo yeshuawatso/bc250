@@ -9,15 +9,17 @@
 
 <div align="center">
 
-**GPU-accelerated AI home server on repurposed crypto-mining hardware**
+**GPU-accelerated AI home server on an obscure AMD APU — Vulkan inference, autonomous intelligence, Signal chat**
 
-`Zen 2 · RDNA 1 · 16 GB unified · Vulkan · 14B @ 27 tok/s · 38 autonomous tasks/day`
+`Zen 2 · RDNA 1 · 16 GB unified · Vulkan · 14B @ 27 tok/s · 336 autonomous jobs/cycle · 130 dashboard pages`
 
 </div>
 
-> A complete guide to running a personal AI stack on the AMD BC-250 — an obscure APU (Zen 2 + RDNA 1) from Samsung mining appliances. Covers Vulkan-based LLM inference, a Signal chat bot, image generation, and an autonomous monitoring ecosystem.
+> A complete guide to running a 14B-parameter LLM, image generation, and 336 autonomous jobs on the AMD BC-250 — an obscure APU (Zen 2 CPU + Cyan Skillfish RDNA 1 GPU) found in Samsung's blockchain/distributed-ledger rack appliances. Not a "crypto mining GPU," not a PS5 prototype — it's a custom SoC that Samsung used for private DLT infrastructure, repurposed here as a headless AI server with a community-patched BIOS.
 >
-> **February 2026** · Hardware-specific driver workarounds, memory tuning discoveries, and real-world benchmarks that aren't documented anywhere else.
+> **March 2026** · Hardware-specific driver workarounds, memory tuning discoveries, context window experiments, and real-world benchmarks that aren't documented anywhere else.
+
+> **What makes this unique:** The BC-250's Cyan Skillfish GPU (`GFX1013`) is possibly the only RDNA 1 silicon running production LLM inference. ROCm doesn't support it. OpenCL doesn't expose it. The only viable compute path is **Vulkan** — and even that required discovering two hidden kernel memory bottlenecks (GTT cap + TTM pages_limit) before 14B models would run.
 
 ---
 
@@ -31,15 +33,16 @@
 | [3](#3-ollama--vulkan-setup) | Ollama + Vulkan Setup | BC-250 owners | Install, GPU memory tuning (GTT + TTM) |
 | [4](#4-models--benchmarks) | Models & Benchmarks | LLM users | Model compatibility, speed, memory budget |
 | | **`PART II ─ AI STACK`** | | |
-| [5](#5-openclaw-signal-bot) | OpenClaw Signal Bot | Bot builders | Model config, Signal channel, tools, skills |
-| [6](#6-image-generation) | Image Generation | Creative users | FLUX.1-schnell + SD-Turbo, async pipeline |
+| [5](#5-signal-chat-bot) | Signal Chat Bot | Bot builders | Direct Signal chat via queue-runner, LLM tool use |
+| [6](#6-image-generation) | Image Generation | Creative users | FLUX.1-schnell, synchronous pipeline |
 | | **`PART III ─ MONITORING & INTEL`** | | |
-| [7](#7-netscan-ecosystem) | Netscan Ecosystem | Home lab admins | 20+ scripts, dashboard, cron schedule |
+| [7](#7-netscan-ecosystem) | Netscan Ecosystem | Home lab admins | 336 jobs, queue-runner v7, 130-page dashboard |
 | [8](#8-career-intelligence) | Career Intelligence | Job seekers | Two-phase scanner, salary, patents |
 | | **`PART IV ─ REFERENCE`** | | |
 | [9](#9-repository-structure) | Repository Structure | Contributors | File layout, deployment paths |
 | [10](#10-troubleshooting) | Troubleshooting | Everyone | Common issues and fixes |
 | [11](#11-known-limitations--todo) | Known Limitations & TODO | Maintainers | What's broken, what's planned |
+| [A](#appendix-a-openclaw-archive) | OpenClaw Archive | Historical | Original architecture, why we ditched it |
 
 ---
 
@@ -47,7 +50,11 @@
 
 ## 1. Hardware Overview
 
-The AMD BC-250 is a custom APU originally designed for Samsung crypto-mining appliances, repurposed as a hobbyist compute board.
+The AMD BC-250 is a custom APU originally designed for Samsung's blockchain/distributed-ledger rack appliances (not a traditional "mining GPU"). It's a full SoC — Zen 2 CPU and Cyan Skillfish RDNA 1 GPU on a single package, with 16 GB of on-package unified memory. Samsung deployed these in rack-mount enclosures for private DLT workloads; decommissioned boards now sell for ~$100–150 on the secondhand market, making them possibly the cheapest way to run 14B LLMs on dedicated hardware.
+
+> **Not a PlayStation 5.** Despite superficial similarities (both use Zen 2 + 16 GB memory), the BC-250 has nothing to do with the PS5. The PS5's Oberon SoC is **RDNA 2** (GFX10.3, gfx1030+) with hardware ray tracing; the BC-250's Cyan Skillfish is **RDNA 1** (GFX10.1, gfx1013) — one full GPU architecture generation earlier, no RT hardware. LLVM's AMDGPU processor table lists GFX1013 as product "TBA" under GFX10.1, confirming it was never a retail part. Samsung also licensed RDNA 2 for mobile (Exynos 2200 / Xclipse 920) — that's a completely separate deal.
+
+> **BIOS and CPU governor are not stock.** The board ships with a minimal Samsung BIOS meant for rack operation. A community-patched BIOS (from [Miyconst's YouTube tutorial](https://www.youtube.com/watch?v=YLO3fYyCo2s)) enables standard UEFI features (boot menu, NVMe boot, fan control). The CPU `performance` governor is set explicitly — the stock `schedutil` governor causes latency spikes during LLM inference.
 
 | Component | Details |
 |-----------|---------|
@@ -55,12 +62,13 @@ The AMD BC-250 is a custom APU originally designed for Samsung crypto-mining app
 | **GPU** | Cyan Skillfish — RDNA 1, `GFX1013`, 24 CUs (1536 SPs) |
 | **Memory** | **16 GB unified** (16 × 1 GB on-package), shared CPU/GPU |
 | **VRAM** | 512 MB dedicated framebuffer |
-| **GTT** | **12 GiB** (tuned, default 7.4 GiB) — `amdgpu.gttsize=12288` |
-| **Vulkan total** | **12.5 GiB** after tuning |
+| **GTT** | **14 GiB** (tuned, default 7.4 GiB) — `amdgpu.gttsize=14336` |
+| **Vulkan total** | **14.5 GiB** after tuning |
 | **Storage** | 475 GB NVMe |
 | **OS** | Fedora 43, kernel 6.18.9, headless |
 | **TDP** | 220W board (idle: 35–45W) |
-| **IP** | `192.168.3.151` |
+| **BIOS** | Community-patched UEFI (not Samsung stock) — [Miyconst tutorial](https://www.youtube.com/watch?v=YLO3fYyCo2s) |
+| **CPU governor** | `performance` (stock `schedutil` causes LLM latency spikes) |
 
 ### Unified memory is your friend (but needs tuning)
 
@@ -68,10 +76,10 @@ CPU and GPU share the same 16 GB pool. Only 512 MB is carved out as VRAM — the
 
 **Two bottlenecks must be fixed:**
 
-1. **GTT cap** — `amdgpu` driver defaults to 50% of RAM (~7.4 GiB). Fix: `amdgpu.gttsize=12288` in kernel cmdline → GPU gets 12 GiB GTT.
-2. **TTM pages_limit** — kernel TTM memory manager independently caps allocations at ~7.4 GiB. Fix: `ttm.pages_limit=3145728` (12 GiB in 4K pages).
+1. **GTT cap** — `amdgpu` driver defaults to 50% of RAM (~7.4 GiB). Fix: `amdgpu.gttsize=14336` in kernel cmdline → GPU gets 14 GiB GTT.
+2. **TTM pages_limit** — kernel TTM memory manager independently caps allocations at ~7.4 GiB. Fix: `ttm.pages_limit=4194304` (16 GiB in 4K pages).
 
-After both fixes: Vulkan sees **12.5 GiB** — enough for **14B parameter models at 100% GPU**.
+After both fixes: Vulkan sees **14.5 GiB** — enough for **14B parameter models at 24K context, 100% GPU**.
 
 ---
 
@@ -96,7 +104,7 @@ vulkaninfo --summary
 # → GPU0: AMD BC-250 (RADV GFX1013), Vulkan 1.4.328, INTEGRATED_GPU
 
 cat /sys/class/drm/card1/device/mem_info_vram_total   # → 536870912 (512 MB)
-cat /sys/class/drm/card1/device/mem_info_gtt_total    # → 12884901888 (12 GiB)
+cat /sys/class/drm/card1/device/mem_info_gtt_total    # → 15032385536 (14 GiB)
 ```
 
 </details>
@@ -118,19 +126,24 @@ Environment=OLLAMA_VULKAN=1
 Environment=OLLAMA_HOST=0.0.0.0:11434
 Environment=OLLAMA_KEEP_ALIVE=30m
 Environment=OLLAMA_MAX_LOADED_MODELS=1
-Environment=OLLAMA_LOAD_TIMEOUT=15m
+Environment=OLLAMA_FLASH_ATTENTION=1
+Environment=OLLAMA_GPU_OVERHEAD=0
+Environment=OLLAMA_CONTEXT_LENGTH=24576
+OOMScoreAdjust=-1000
 EOF
 sudo systemctl daemon-reload && sudo systemctl restart ollama
 ```
+
+> `OOMScoreAdjust=-1000` protects Ollama from the OOM killer — the model process must survive at all costs (see §3.4).
 
 > ROCm will crash during startup — expected and harmless. Ollama catches it and uses Vulkan.
 
 ### 3.2 Tune GTT size
 
 ```bash
-sudo grubby --update-kernel=ALL --args="amdgpu.gttsize=12288"
+sudo grubby --update-kernel=ALL --args="amdgpu.gttsize=14336"
 # Reboot required. Verify:
-cat /sys/class/drm/card1/device/mem_info_gtt_total  # → 12884901888 (12 GiB)
+cat /sys/class/drm/card1/device/mem_info_gtt_total  # → 15032385536 (14 GiB)
 ```
 
 ### 3.3 Tune TTM pages_limit ← *unlocks 14B models*
@@ -139,47 +152,104 @@ This was the breakthrough. Without this fix, 14B models load fine but produce HT
 
 ```bash
 # Runtime (immediate)
-echo 3145728 | sudo tee /sys/module/ttm/parameters/pages_limit
-echo 3145728 | sudo tee /sys/module/ttm/parameters/page_pool_size
+echo 4194304 | sudo tee /sys/module/ttm/parameters/pages_limit
+echo 4194304 | sudo tee /sys/module/ttm/parameters/page_pool_size
 
 # Persistent
-echo "options ttm pages_limit=3145728 page_pool_size=3145728" | \
+echo "options ttm pages_limit=4194304 page_pool_size=4194304" | \
   sudo tee /etc/modprobe.d/ttm-gpu-memory.conf
-printf "w /sys/module/ttm/parameters/pages_limit - - - - 3145728\n\
-w /sys/module/ttm/parameters/page_pool_size - - - - 3145728\n" | \
+printf "w /sys/module/ttm/parameters/pages_limit - - - - 4194304\n\
+w /sys/module/ttm/parameters/page_pool_size - - - - 4194304\n" | \
   sudo tee /etc/tmpfiles.d/gpu-ttm-memory.conf
 sudo dracut -f
 ```
 
-### 3.4 Verify
+### 3.4 Context window — the silent OOM killer
+
+Ollama allocates KV cache based on the model's declared context window. The default `qwen3-abliterated:14b` declares `num_ctx 40960` — that's **16 GB** of KV cache + weights, exceeding available RAM and triggering OOM kills.
+
+**Fix:** Set `OLLAMA_CONTEXT_LENGTH=24576` in the Ollama systemd override (see §3.3). This caps all inference to 24K context regardless of model defaults.
+
+This reduces total memory from **~16 GB** (40960 ctx) to **~12.3 GB** (24576 ctx). The standard `qwen3:14b` model is used directly — no custom Modelfile needed.
+
+> **Why 24K?** Systematic testing (see §4.4) showed 24K is the maximum context that runs at full speed (~27 tok/s) with adequate headroom. 26K works but is 10% slower due to swap pressure. 28K+ deadlocks.
+
+### 3.5 Swap — NVMe-backed safety net
+
+With the model consuming 11+ GB on a 14 GB system, disk swap is essential for surviving inference peaks.
+
+```bash
+# Create 16 GB swap file (btrfs requires dd, not fallocate)
+sudo dd if=/dev/zero of=/swapfile bs=1M count=16384 status=progress
+sudo chattr +C /swapfile   # disable btrfs copy-on-write
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon -p 10 /swapfile
+
+# Make permanent
+echo '/swapfile none swap sw,pri=10 0 0' | sudo tee -a /etc/fstab
+```
+
+**Disable/reduce zram** — zram compresses pages in *physical* RAM, competing with the model:
+
+```bash
+sudo mkdir -p /etc/systemd/zram-generator.conf.d
+echo -e '[zram0]\nzram-size = 2048' | sudo tee /etc/systemd/zram-generator.conf.d/small.conf
+# Or disable entirely: zram-size = 0
+```
+
+### 3.6 Verify
 
 ```bash
 sudo journalctl -u ollama -n 20 | grep total
-# → total="12.5 GiB" available="12.5 GiB"
+# → total="11.1 GiB" available="11.1 GiB"  (with qwen3-14b-16k)
+free -h
+# → Swap: 15Gi total, ~1.4Gi used
 ```
 
-### 3.5 Disable GUI (saves ~1 GB)
+### 3.7 Disable GUI (saves ~1 GB)
 
 ```bash
 sudo systemctl set-default multi-user.target && sudo reboot
 ```
 
+### 3.8 CPU governor — lock to `performance`
+
+The stock `schedutil` governor down-clocks during idle, causing 50–100ms latency spikes at inference start. Lock all cores to full speed:
+
+```bash
+# Runtime (immediate)
+echo performance | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
+
+# Persistent (systemd-tmpfiles)
+echo 'w /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor - - - - performance' | \
+  sudo tee /etc/tmpfiles.d/cpu-governor.conf
+```
+
 ### Memory layout after tuning
 
-```
-┌──────────────────────────────────────────────────┐
-│              16 GB Unified Memory                │
-├──────────────────────────────────────────────────┤
-│  VRAM carveout ········· 512 MB                  │
-│  GTT ··················· 12 GiB  (tuned ▲)       │
-│  TTM pages_limit ······· 12 GiB  (tuned ▲)       │
-├──────────────────────────────────────────────────┤
-│  Vulkan device-local ··· 8.33 GiB                │
-│  Vulkan host-visible ··· 4.17 GiB                │
-│  Total ················· 12.5 GiB                │
-│  → 14B models fit ····· 100% GPU, zero-copy      │
-└──────────────────────────────────────────────────┘
-```
+**16 GB Unified Memory**
+
+| Region | Size | Notes |
+|--------|------|-------|
+| VRAM carveout | 512 MB | Dedicated framebuffer |
+| GTT | **14 GiB** | Tuned ▲ (default 7.4 GiB) — `amdgpu.gttsize=14336` |
+| TTM pages_limit | **16 GiB** | Tuned ▲ (default ~7.4 GiB) — `ttm.pages_limit=4194304` |
+
+| Vulkan heap | Size |
+|-------------|------|
+| Device-local | 8.33 GiB |
+| Host-visible | 4.17 GiB |
+| **Total** | **12.5 GiB** → 14B models fit, 100% GPU, zero-copy |
+
+| Consumer | Usage | Notes |
+|----------|-------|-------|
+| Model (qwen3:14b @ 24K) | ~12.3 GiB | GPU memory (GTT) |
+| signal-cli + queue-runner | ~1.0 GiB | System RAM |
+| OS + services | ~1.5 GiB | System RAM |
+| NVMe swap | 16 GiB | Safety net |
+| zram | 2 GiB | Boot-limited ▼ |
+| **Status** | **Stable** | 24K context, ~1.5 GB free RAM |
 
 ---
 
@@ -187,215 +257,279 @@ sudo systemctl set-default multi-user.target && sudo reboot
 
 ### 4.1 Compatibility table
 
-> Ollama 0.16.1 · Vulkan · RADV Mesa 25.3.4
+> Ollama 0.16.1 · Vulkan · RADV Mesa 25.3.4 · March 2026
 
-| Model | VRAM | GPU | tok/s | Notes |
-|-------|:----:|:---:|:-----:|-------|
-| qwen2.5:3b | 2.4 GB | 100% | **101** | Fast, lightweight |
-| qwen2.5:7b | 4.9 GB | 100% | **59** | Great quality/speed |
-| llama3.1:8b | 5.5 GB | 100% | **75** | Fastest 8B |
-| qwen3:8b | 5.9 GB | 100% | **44** | Thinking mode |
-| **qwen3-abliterated:14b** | **11 GB** | **100%** | **27.7** | **← primary** |
-| qwen3:14b | 12 GB | 100% | **27** | Largest that fits |
-| mistral-nemo:12b | 10 GB | 100% | **34** | Good 12B alt |
-| gemma2:9b | 8.1 GB | 91% | 26 | Spills to CPU |
+| Model | Params | Quant | VRAM | GPU | tok/s | Status |
+|-------|:------:|:-----:|:----:|:---:|:-----:|--------|
+| qwen2.5:3b | 3B | Q4_K_M | 2.4 GB | 100% | **101** | ✅ Fast, lightweight |
+| qwen2.5:7b | 7B | Q4_K_M | 4.7 GB | 100% | **59** | ✅ Great quality/speed |
+| qwen2.5-coder:7b | 7B | Q4_K_M | 4.7 GB | 100% | **57** | ✅ Code-focused |
+| llama3.1:8b | 8B | Q4_K_M | 4.9 GB | 100% | **75** | ✅ Fastest 8B |
+| mannix/llama3.1-8b-lexi | 8B | Q4_K_M | 4.7 GB | 100% | **73** | ✅ Uncensored 8B |
+| huihui_ai/seed-coder-abliterate | 8B | Q4_K_M | 5.1 GB | 100% | **52** | ✅ Code gen, uncensored |
+| qwen3:8b | 8B | Q4_K_M | 5.2 GB | 100% | **44** | ✅ Thinking mode |
+| gemma2:9b | 9B | Q4_K_M | 5.4 GB | 91% | **26** | ⚠️ Spills to CPU |
+| mistral-nemo:12b | 12B | Q4_K_M | 7.1 GB | 100% | **34** | ✅ Good 12B alternative |
+| phi4:14b | 14B | Q4_K_M | 9.1 GB | 100% | **25** | ✅ Strong reasoning |
+| **qwen3:14b** | **14B** | **Q4_K_M** | **9.3 GB** | **100%** | **27** | **✅ Primary model** |
+| huihui_ai/qwen3-abliterated:14b | 14B | Q4_K_M | 9.0 GB | 100% | **27.5** | ✅ Uncensored variant |
+| Qwen3-30B-A3B (Q2_K) | 30B | Q2_K | 11 GB | 100% | **~12** | ⚠️ Fits but slow, heavy quant |
 
-> ⚠️ 14B models require both GTT (§3.2) and TTM (§3.3) tuning.
+> ⚠️ 14B models require both GTT (§3.2) and TTM (§3.3) tuning. 30B MoE fits only at Q2_K (heavy quality loss).
+
+### 4.2 Benchmark visualization
+
+**Token generation speed (tok/s) — higher is better:**
+
+| Model | tok/s | VRAM |
+|-------|------:|-----:|
+| qwen2.5:3b | 101 | 2.4 GB |
+| llama3.1:8b | 75 | 4.9 GB |
+| lexi-8b | 73 | 4.9 GB |
+| qwen2.5:7b | 59 | 4.7 GB |
+| qwen2.5-coder:7b | 57 | 4.7 GB |
+| seed-coder:8b | 52 | 5.0 GB |
+| qwen3:8b | 44 | 5.2 GB |
+| mistral-nemo:12b | 34 | 7.1 GB |
+| **qwen3:14b** ← prod | **27** | **9.3 GB** |
+| gemma2:9b | 26 | 5.4 GB |
+| phi4:14b | 25 | 9.1 GB |
+| Qwen3-30B-A3B Q2_K | 12 | 11.0 GB |
+
+> Vulkan max: 14.5 GB. All 14B models at 100% GPU offload. 30B MoE barely fits at Q2_K (heavy quality loss).
+
+### 4.3 Model testing journey
+
+The path to running 14B models on this hardware was non-trivial. Here's the chronological evolution, documented through git history and trial-and-error:
+
+```
+  Feb 17 ─── Initial setup: Ollama + Vulkan on BC-250
+  │          Only 7–8B models worked. 14B loaded but hung during inference.
+  │          → Committed: dfc9179 "BC-250 setup: Ollama+Vulkan, OpenClaw+Signal"
+  │
+  Feb 18 ─── THE BREAKTHROUGH: TTM pages_limit discovery
+  │          Found kernel TTM memory manager secretly caps GPU allocs at 50% RAM.
+  │          Fix: ttm.pages_limit=3145728 (12 GiB) → 14B models compute!
+  │          → Committed: bbe052f "unlock 14B models via TTM fix"
+  │          Results: qwen3-14b-abl-nothink 27.5 tok/s, mistral-nemo:12b 34.4 tok/s
+  │
+  Feb 18 ─── Image generation: FLUX.1-schnell via sd.cpp + Vulkan
+  │          512×512 in 48s, 4 steps. GFX1013 bug: hangs after write → poll+kill.
+  │          → Committed: 339a936 "FLUX.1-schnell image gen"
+  │
+  Feb 22 ─── Single model decision: qwen3-abliterated:14b only
+  │          Eliminated fallback chains (caused timeout doom loops).
+  │          → Committed: c4a2599 "Single model, no fallbacks"
+  │
+  Feb 25 ─── Context window experiment: 16K → 24K
+  │          Enabled flash attention. KV cache 3.8 GB, weights 8 GB = 12.3 GB.
+  │          → Committed: 4c01574 "enable flash attention, bump context 16384→24576"
+  │
+  Feb 26 ─── REVERT: 24K context causes deadlock ❌
+  │          12.3 GB total exceeded headroom. Weights spilled to CPU (417 MB),
+  │          Vulkan inference hung. 140 consecutive HTTP 500 errors over 8 hours.
+  │          → Committed: 4b6836f "revert num_ctx 24576→16384"
+  │
+  Feb 26 ─── Conservative: drop to 12K context
+  │          Saves 640 MiB KV cache. Extra safety margin.
+  │          → Committed: d85a823 "num_ctx 16384→12288"
+  │
+  Mar 5 ──── v7: Remove OpenClaw gateway, free 700 MB RAM
+  │          Bumped GTT 12→14 GiB, TTM 3M→4M pages. Context back to 16K.
+  │          → Committed: 4f41926 "v7: Replace OpenClaw with standalone Signal"
+  │
+  Mar 7 ──── Tested phi4:14b, Qwen3-30B-A3B (Q2_K), seed-coder
+  │          phi4: 25 tok/s, good reasoning but slower than qwen3.
+  │          30B MoE: fits at Q2_K (11 GB) but ~12 tok/s, heavy quality loss.
+  │          seed-coder: decent for code, 52 tok/s, but not general-purpose.
+  │          Decision: keep qwen3:14b as primary. ✅
+  │
+  Mar 10 ─── Context window re-test: 16K → 24K ✅
+             v7 freed 700 MB + 14 GB GTT = enough headroom for 24K.
+             Tested 16K–32K in 2K steps. 24K: full speed (26.7 t/s), 1.5 GB free.
+             26K: 10% slower. 28K+: deadlocks. Production bumped to 24K.
+```
+
+### 4.4 Context window experiments
+
+The context window directly controls KV cache size, and on 16 GB unified memory, every megabyte counts. After v7 (OpenClaw removal freed ~700 MB, GTT bumped to 14 GB), we re-tested all context sizes systematically:
+
+**Context window vs memory (qwen3:14b Q4_K_M, flash attention, 14 GB GTT)**
+
+| Context | RAM Used | Free | Swap | Speed | Status |
+|--------:|---------:|-----:|-----:|------:|--------|
+| 8192 | ~9.5 GB | 6.5 GB | — | ~27 t/s | ✅ Safe |
+| 12288 | ~10.3 GB | 5.7 GB | — | ~27 t/s | ✅ Conservative |
+| 16384 | ~11.1 GB | 4.9 GB | — | ~27 t/s | ✅ Comfortable |
+| 18432 | ~13.2 GB | 2.7 GB | 0.9 GB | 26.8 t/s | ✅ Works |
+| 20480 | ~13.7 GB | 2.3 GB | 0.9 GB | 26.8 t/s | ✅ Works |
+| 22528 | ~14.0 GB | 2.0 GB | 0.9 GB | 26.7 t/s | ✅ Works |
+| **24576** | **~14.4 GB** | **1.5 GB** | **0.9 GB** | **26.7 t/s** | **✅ Production** |
+| 26624 | ~14.6 GB | 1.3 GB | 1.0 GB | 23.9 t/s | ⚠️ 10% slower |
+| 28672 | ~14.2 GB | — | 1.7 GB | timeout | ❌ Deadlocks |
+| 32768 | ~15.7 GB | 0.2 GB | 2.1 GB | timeout | ❌ Deadlocks |
+| 40960 | ~16.0 GB | 0 | — | — | 💀 Instant OOM |
+
+> **24K is the sweet spot** — full speed (~27 tok/s), leaves ~1.5 GB for OS/services with stable swap at 0.9 GB. 26K works but inference drops 10% due to swap pressure. 28K+ deadlocks under Vulkan.
+
+> **History:** The original 24K experiment (Feb 25) deadlocked because OpenClaw gateway consumed ~700 MB. After v7 removed OpenClaw and bumped GTT to 14 GB (Mar 5), 24K became stable. Flash attention (`OLLAMA_FLASH_ATTENTION=1`) is essential — without it, 24K would not fit.
 
 ### 4.2 Memory budget
 
-```
-┌─────────────────────────────────────┐
-│  14B model loaded · headless server │
-├─────────────────────────────────────┤
-│  OS + services ····· ~0.8 GB        │
-│  Ollama process ···· ~0.5 GB        │
-│  Model (GPU) ······· ~11 GB         │
-│  Free RAM ·········· ~1.8–3 GB      │
-│  Swap ·············· 8 GB (unused)  │
-│  Status ············ tight ✓ stable │
-└─────────────────────────────────────┘
-```
+**qwen3:14b @ 24K context · headless server**
+
+| Component | Memory | Notes |
+|-----------|--------|-------|
+| OS + system | ~0.9 GB | Headless Fedora 43 |
+| Ollama + model (GPU) | ~12.3 GB | GTT allocation (24K ctx) |
+| signal-cli | ~0.1 GB | JSON-RPC daemon |
+| queue-runner | ~0.05 GB | Python process |
+| **Free RAM** | **~1.0–2.5 GB** | Fluctuates with inference |
+| NVMe swap | 16 GB (~0.9 used) | Safety net |
+| zram | 2 GB | Boot limit |
+| GTT (VRAM) | 14 GB | See §3.2 |
+| **Status** | **Stable ✓** | OOM protection: Ollama=-1000 |
+
+> **Why NVMe swap matters:** During inference peaks, the kernel pages out inactive memory (signal-cli heap, queue-runner) to swap. With 16 GB NVMe swap at ~500 MB/s, this is transparent. Without it, the OOM killer terminates services. Removing OpenClaw freed ~700 MB of RAM — see [Appendix A](#appendix-a--openclaw-archive).
 
 ### 4.3 Abliterated models
 
 "Abliterated" models have refusal mechanisms removed — identical intelligence, zero quality loss, no safety refusals. The abliterated 14B is the primary model for all tasks.
 
 ```bash
-ollama pull huihui_ai/qwen3-abliterated:14b
+ollama pull qwen3:14b
+# Context is capped via OLLAMA_CONTEXT_LENGTH=24576 in systemd (see §3.3, §3.4)
+# No custom Modelfile needed — the env var caps all models
 ```
 
 ---
 
 # `PART II` — AI Stack
 
-## 5. OpenClaw Signal Bot
+## 5. Signal Chat Bot
 
-OpenClaw turns the BC-250 into a personal AI assistant accessible via Signal messenger.
+The BC-250 runs a personal AI assistant accessible via Signal messenger — no gateway, no middleware. signal-cli runs as a standalone systemd service exposing a JSON-RPC API, and queue-runner handles all LLM interaction directly.
 
 ```
-  📱 Signal ──→ signal-cli ──→ OpenClaw Gateway ──→ Ollama ──→ GPU (Vulkan)
+  Signal --> signal-cli (JSON-RPC :8080) --> queue-runner --> Ollama --> GPU (Vulkan)
 ```
 
-> **Software:** OpenClaw v2026.2.17 · Node.js 22 · signal-cli v0.13.24 (native) · Ollama 0.16.1
+> **Software:** signal-cli v0.13.24 (native binary) · Ollama 0.16+ · queue-runner v7
 
-### 5.1 Installation
+### 5.1 Why not OpenClaw
 
-```bash
-sudo dnf install -y nodejs npm
-sudo npm install -g openclaw@latest
+OpenClaw was the original gateway (v2026.2.26, Node.js). It was replaced because:
 
-openclaw onboard \
-  --non-interactive --accept-risk --auth-choice skip \
-  --install-daemon --skip-channels --skip-skills --skip-ui --skip-health \
-  --daemon-runtime node --gateway-bind loopback
+| Problem | Impact |
+|---------|--------|
+| **~700 MB RSS** | On a 16 GB system, that's 4.4% of RAM wasted on a routing layer |
+| **15+ second overhead per job** | Agent turn setup, tool resolution, system prompt injection — for every cron job |
+| **Unreliable model routing** | Fallback chains and timeout cascades caused 5-min "fetch failed" errors |
+| **No subprocess support** | Couldn't run Python/bash scripts directly — had to shell out through the agent |
+| **9.6K system prompt** | Couldn't be trimmed below ~4K tokens without breaking tool dispatch |
+| **Orphan processes** | signal-cli children survived gateway OOM kills, holding port 8080 |
+
+The replacement: queue-runner talks to signal-cli and Ollama directly via HTTP APIs. Zero middleware.
+
+> See [Appendix A](#appendix-a--openclaw-archive) for the original OpenClaw configuration.
+
+### 5.2 signal-cli service
+
+signal-cli runs as a standalone systemd daemon with JSON-RPC:
+
+```ini
+# /etc/systemd/system/signal-cli.service
+[Unit]
+Description=signal-cli JSON-RPC daemon
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/opt/signal-cli/bin/signal-cli --output=json \
+  -u +<BOT_PHONE> jsonRpc --socket http://127.0.0.1:8080
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
 ```
 
-<details>
-<summary>▸ Install signal-cli</summary>
+Register a separate phone number for the bot via `signal-cli register` or `signal-cli link`.
 
-```bash
-VERSION=$(curl -Ls -o /dev/null -w %{url_effective} \
-  https://github.com/AsamK/signal-cli/releases/latest | sed -e 's/^.*\/v//')
-curl -L -O "https://github.com/AsamK/signal-cli/releases/download/v${VERSION}/signal-cli-${VERSION}-Linux-native.tar.gz"
-sudo tar xf "signal-cli-${VERSION}-Linux-native.tar.gz" -C /opt
-sudo ln -sf /opt/signal-cli /usr/local/bin/signal-cli
+### 5.3 Chat architecture
+
+Between every queued job, `queue-runner.py` polls the signal-cli journal for incoming messages:
+
+```
+queue-runner v7 — continuous loop
+
+  job N  →  check Signal inbox  →  chat (if msg)  →  job N+1
+                    |                     |
+                    v                     v
+            journalctl -u           Ollama /api/chat
+            signal-cli              (16K ctx, /think)
+                    |                     |
+                    |               EXEC cmd ← tool use
+                    |                     |
+                    v                     v
+            signal-cli              signal-cli
+            JSON-RPC :8080          send reply
 ```
 
-</details>
+**Key parameters:**
 
-### 5.2 Model configuration
+| Setting | Value | Purpose |
+|---------|:-----:|---------|
+| `SIGNAL_CHAT_CTX` | 24576 | Full 24K context window for reasoning |
+| `SIGNAL_CHAT_MAX_EXEC` | 3 | Max shell commands per message (search → fetch → verify) |
+| `SIGNAL_EXEC_TIMEOUT_S` | 30 | Per-command timeout |
+| `SIGNAL_MAX_REPLY` | 1800 | Signal message character limit |
 
-`~/.openclaw/openclaw.json`:
+### 5.4 Tool use — EXEC
 
-```json
-{
-  "models": {
-    "providers": {
-      "ollama": {
-        "baseUrl": "http://127.0.0.1:11434",
-        "apiKey": "ollama-local",
-        "api": "ollama",
-        "models": [
-          {
-            "id": "huihui_ai/qwen3-abliterated:14b",
-            "name": "Qwen 3 14B Abliterated",
-            "contextWindow": 24576,
-            "maxTokens": 12288,
-            "reasoning": true
-          }
-        ]
-      }
-    }
-  },
-  "agents": {
-    "defaults": {
-      "model": { "primary": "ollama/huihui_ai/qwen3-abliterated:14b" },
-      "thinkingDefault": "high",
-      "timeoutSeconds": 1800
-    }
-  }
-}
+The LLM can request shell commands via `EXEC(command)` in its response. queue-runner intercepts these, runs them, feeds stdout back into the conversation, and lets the LLM synthesize a final answer:
+
+```
+  User: "what's the disk usage?"
+  LLM:  [thinking...] EXEC(df -h /)
+  Runner: executes → feeds output back
+  LLM:  "Root is 67% full, 48G free on your 128GB NVMe."
 ```
 
-**Key settings:**
-- `reasoning: true` — enables native thinking support
-- `thinkingDefault: "high"` — deep reasoning on interactive messages
-- `contextWindow: 24576` — at 24k, KV cache is ~3.8 GB. Beyond 32k wastes VRAM.
-- `timeoutSeconds: 1800` — generous timeout for complex agent turns
-- Single model, no fallbacks. `MAX_LOADED_MODELS=1` keeps it hot.
+Supported patterns: web search (`ddgr`), file reads (`cat`, `head`), system diagnostics (`journalctl`, `systemctl`, `df`, `free`), data queries (`jq` on JSON files). Up to 3 commands per turn.
 
-### 5.3 Tool optimization
+### 5.5 Image generation via chat
 
-Cut system prompt from ~11k to ~4k tokens:
+When the LLM detects an image request, it emits `EXEC(/opt/stable-diffusion.cpp/generate-and-send "prompt")`. queue-runner intercepts this pattern and handles it synchronously:
 
-```json
-{
-  "tools": {
-    "profile": "coding",
-    "alsoAllow": ["message", "group:messaging"],
-    "deny": ["browser", "canvas", "nodes", "cron", "gateway"]
-  },
-  "skills": { "allowBundled": [] }
-}
-```
+1. Stop Ollama (free GPU VRAM)
+2. Run sd-cli with FLUX.1-schnell (4 steps, 512×512, ~48s)
+3. Send image as Signal attachment
+4. Restart Ollama
 
-> **Important:** Use `alsoAllow` (additive), not `allow` (restrictive whitelist).
+Bot is offline during generation (~60s total including model reload).
 
-### 5.4 Agent identity
+> ⚠️ **GFX1013 bug:** sd-cli hangs after writing the output image (Vulkan cleanup). queue-runner polls for the file and kills the process.
 
-```json
-{
-  "agents": {
-    "list": [{
-      "id": "main",
-      "default": true,
-      "identity": {
-        "name": "Clawd",
-        "theme": "helpful AI running on a tiny AMD BC-250 mining rig",
-        "emoji": "🦞"
-      }
-    }]
-  }
-}
-```
+### 5.6 Personality — "Clawd"
 
-Personality lives in workspace markdown files (`~/.openclaw/workspace/`):
+The system prompt defines a cynical, darkly funny personality ("House MD meets a sysadmin lobster"). Key traits:
+- Direct, no corporate speak, no disclaimers
+- Dark humor about the hardware constraints
+- Full access to `/opt/netscan/data/` for grounded answers
+- Knows AK's professional context (embedded Linux, camera drivers, V4L2/libcamera)
+- Uncensored creative generation (abliterated model, no safety filters)
 
-| File | What | Size |
-|------|------|:----:|
-| `WORKFLOW_AUTO.md` | Cron bypass rules, session start grounding | 730 B |
-| `SOUL.md` | Core personality — direct, no corporate speak | 1.0 KB |
-| `IDENTITY.md` | Name, creature type, emoji | 550 B |
-| `USER.md` | Human info — timezone, preferences | 1.7 KB |
-| `TOOLS.md` | Explicit tool commands (image, web, diagnostics) | 2.1 KB |
-| `AGENTS.md` | Grounding — "only report facts you can verify" | 1.4 KB |
-
-> **Context budget:** All root `.md` files are injected into the system prompt. Total ~7.5 KB. Larger reference docs live in `docs/` subdirectory to avoid bloating cron context.
-
-### 5.5 Signal channel setup
-
-```json
-{
-  "channels": {
-    "signal": {
-      "enabled": true,
-      "account": "+<BOT_PHONE>",
-      "cliPath": "/usr/local/bin/signal-cli",
-      "dmPolicy": "pairing",
-      "allowFrom": ["+<YOUR_PHONE>"],
-      "sendReadReceipts": true,
-      "textChunkLimit": 4000
-    }
-  }
-}
-```
-
-Register a **separate** phone number for the bot, then pair:
-
-```bash
-systemctl --user restart openclaw-gateway
-# Send any message from your phone → bot replies with pairing code
-openclaw pairing approve signal <CODE>
-```
-
-### 5.6 Service management
-
-```bash
-systemctl --user status openclaw-gateway   # status
-openclaw logs --follow                     # live logs
-openclaw doctor                            # diagnostics
-openclaw channels status --probe           # signal health
-```
+The personality is baked into `queue-runner.py`'s `SYSTEM_PROMPT` — no external workspace files needed.
 
 ### 5.7 Response times
 
 | Scenario | Latency |
 |----------|:-------:|
-| Cold start (first msg) | 60–90s |
-| Warm, simple query | 10–30s |
-| Warm, complex reasoning | 30–90s |
-| Image generation (FLUX) | ~48s |
+| Text reply (warm) | 10–30s |
+| Complex reasoning with tool use | 30–90s |
+| Image generation (FLUX) | ~60s |
+| Cold start (model reload) | 30–60s |
 
 ---
 
@@ -445,20 +579,20 @@ curl -L -o sd-turbo.safetensors \
 | **FLUX.1-schnell Q4_K** | 512² | 4 | **~48s** | ★★★★★ |
 | SD-Turbo | 512² | 1 | **~3s** | ★★☆☆☆ |
 
-### 6.3 Signal integration — async pipeline
+### 6.3 Signal integration — synchronous pipeline
 
-SD and Ollama can't run simultaneously (shared VRAM). The bot uses an async two-script architecture:
+SD and Ollama can't run simultaneously (shared 16 GB VRAM). queue-runner handles this synchronously — no worker scripts, no delays:
 
 ```
   "draw a cyberpunk cat"
-  ╰─→ exec wrapper (returns instantly) → "Generating..."
-       ╰─→ worker: wait 45s → stop Ollama → run SD → send image → restart Ollama
-            ╰─→ 📱 image arrives (~100s total)
+    +-> queue-runner intercepts EXEC(generate-and-send "...")
+         +-> stop Ollama -> run sd-cli -> send image via Signal -> restart Ollama
+              +-> image arrives (~60s total)
 ```
 
-The 45s delay ensures Ollama finishes its response before the worker takes the GPU. Bot is offline during generation (~50s).
+The pipeline is triggered when the LLM emits an `EXEC()` call matching the SD script path. queue-runner stops Ollama first (freeing ~11 GB VRAM), generates the image, sends it as a Signal attachment, then restarts Ollama. Total downtime ~60s.
 
-> ⚠️ **GFX1013 bug:** sd-cli hangs after writing the output image (Vulkan cleanup). Worker polls for the file, then kills the process.
+> ⚠️ **GFX1013 bug:** sd-cli hangs after writing the output image (Vulkan cleanup). queue-runner polls for the file, then kills the process.
 
 ---
 
@@ -466,108 +600,164 @@ The 45s delay ensures Ollama finishes its response before the worker takes the G
 
 ## 7. Netscan Ecosystem
 
-A comprehensive research, monitoring, and intelligence system. Dashboard at `http://192.168.3.151:8888`.
+A comprehensive research, monitoring, and intelligence system with **336 autonomous jobs** running on a GPU-constrained single-board computer. Dashboard at `http://<LAN_IP>:8888` — 29 main pages + 101 per-host detail pages.
 
-### 7.1 Architecture
+### 7.1 Architecture — queue-runner v7
+
+The BC-250 has 14 GB GTT shared with the CPU — only **one LLM job can run at a time**. `queue-runner.py` (systemd service) orchestrates all 336 jobs in a continuous loop, with Signal chat between every job:
 
 ```
-  ┌─────────────────────────────────────────────────────────────┐
-  │  openclaw cron (38 jobs/day)                                │
-  │    → Clawd agent turns → shell tools → scripts → Ollama    │
-  │    → JSON data → generate-html.py → Dashboard (nginx)      │
-  │    → Signal alerts (9 jobs: leaks, career, salary, ...)    │
-  ├─────────────────────────────────────────────────────────────┤
-  │  Signal (phone) → gateway (24/7) → agent turn              │
-  │    → queued if cron job running                             │
-  └─────────────────────────────────────────────────────────────┘
+queue-runner v7 -- Continuous Loop + Signal Chat
+
+Cycle N:
+  336 jobs sequential, ordered by category:
+  scrape -> infra -> lore -> academic -> repo -> company -> career
+         -> think -> meta -> market -> report
+  HA observations interleaved every 50 jobs
+  Signal inbox checked between EVERY job
+  Chat processed with LLM (EXEC tool use + image gen)
+  Crash recovery: resumes from last completed job
+
+Cycle N+1:
+  Immediately starts -- no pause, no idle windows
+  No nightly/daytime distinction
 ```
 
-The system runs **autonomously** — 38 GPU tasks/day, all routed through Clawd. The gateway runs 24/7. Signal messages queue until the current task completes.
+**Key design decisions (v5 → v7):**
+
+| v5 (OpenClaw era) | v7 (current) |
+|--------------------|--------------|
+| Nightly batch + daytime fill | Continuous loop, no distinction |
+| 354 jobs (including duplicates) | 336 jobs (deduped, expanded) |
+| LLM jobs routed through `openclaw cron run` | All jobs run as direct subprocesses |
+| Signal via OpenClaw gateway (~700 MB) | signal-cli standalone (~100 MB) |
+| Chat only when gateway available | Chat between every job |
+| Async SD pipeline (worker scripts, 45s delay) | Synchronous SD (stop Ollama → generate → restart) |
+| GPU idle detection for user chat preemption | No preemption needed — chat is interleaved |
+
+**All jobs run as direct subprocesses** — `subprocess.Popen` for Python/bash scripts, no LLM agent routing. This is 3–10× faster than the old `openclaw cron run` path and eliminates the gateway dependency entirely.
+
+### 7.1.1 Queue ordering
+
+The queue prioritizes **data diversity** — all dashboard tabs get fresh data even if the cycle is interrupted:
+
+```
+ SCRAPE (data gathering, no LLM) ----------- career-scan, salary, patents, events, repos, lore
+ INFRA (6 jobs, ~0.6h) --------------------- leak-monitor, netscan, watchdog
+ LORE-ANALYSIS (12 jobs) ------------------- lkml, soc, jetson, libcamera, dri, usb, riscv, dt
+ ACADEMIC (17 jobs) ------------------------ publications, dissertations, patents
+ REPO-THINK (22 jobs) ---------------------- LLM analysis of repo changes
+ OTHER (11 jobs) --------------------------- car-tracker, city-watch, csi-sensor
+ COMPANY (46 jobs) ------------------------- company-think per entity
+ CAREER (49 jobs) -------------------------- career-think per domain
+ THINK (37 jobs, ~2.2h) -------------------- research, trends, crawl, crossfeed
+ META (5 jobs) ----------------------------- life-advisor, system-think
+ MARKET (21 jobs) -------------------------- market-watch + sector analysis
+ REPORT (1 job) ---------------------------- daily-summary -> Signal
+   + HA observations interleaved every 50 jobs (ha-correlate, ha-journal)
+   + Signal chat checked between EVERY job
+```
+
+### 7.1.2 GPU idle detection
+
+GPU idle detection is used for legacy `--daytime` mode and Ollama health checks:
+
+```python
+# Three-tier detection:
+# 1. Ollama /api/ps → no models loaded → definitely idle
+# 2. sysfs pp_dpm_sclk → clock < 1200 MHz → model loaded but not computing
+# 3. Ollama expires_at → model about to unload → idle for 3+ min
+```
+
+In continuous loop mode (default), GPU detection is only used for pre-flight health checks — not for yielding to user chat, since chat is interleaved between jobs.
 
 ### 7.2 Scripts
 
-| Script | Purpose | GPU |
-|--------|---------|:---:|
-| `career-scan.py` | Two-phase career scanner (§8) | ● |
-| `salary-tracker.py` | Salary intelligence — NoFluffJobs, career-scan extraction | ● |
-| `company-intel.py` | Deep company intel — GoWork, DDG news, layoffs (13 entities) | ● |
-| `patent-watch.py` | IR/RGB camera patent monitor — Google Patents, Lens.org | ● |
-| `event-scout.py` | Meetup/conference tracker — the local area, Warsaw, Poland, Europe | ● |
-| `leak-monitor.py` | CTI: ransomware, HIBP, Hudson Rock, GitHub, Telegram, CISA KEV | ● |
-| `idle-think.sh` | Research brain — 8 task types → JSON notes | ● |
-| `ha-journal.py` | Home Assistant analysis (climate, sensors, anomalies) | ● |
-| `ha-correlate.py` | HA cross-sensor correlation | ● |
-| `lore-digest.sh` | Kernel mailing list digests | ● |
-| `repo-watch.sh` | Upstream repos (GStreamer, libcamera, v4l-utils, FFmpeg, LinuxTV) | ○ |
-| `scan.sh` / `enumerate.sh` | Network scan + enumeration | ○ |
-| `vulnscan.sh` | Weekly vulnerability scan | ○ |
-| `presence.sh` | Phone presence tracker | ○ |
-| `gpu-monitor.sh` / `.py` | Per-minute GPU utilization (3-state) | ○ |
-| `syslog.sh` | System health logger | ○ |
-| `watchdog.py` | Integrity checks — cron health, disk, services | ○ |
-| `generate-html.py` | Dashboard builder | ○ |
+**GPU jobs** (queue-runner — sequential, one at a time):
 
-`●` GPU (openclaw cron) · `○` CPU-only (system cron)
+| Script | Purpose | Jobs |
+|--------|---------|:----:|
+| `career-scan.py` | Two-phase career scanner (§8) | 1 |
+| `career-think.py` | Per-company career deep analysis | 81 |
+| `salary-tracker.py` | Salary intel — NoFluffJobs, career-scan extraction | 1 |
+| `company-intel.py` | Deep company intel — GoWork, DDG news, layoffs (13 entities) | 46 |
+| `company-think-*` | Focused company deep-dives | 76 |
+| `patent-watch.py` | IR/RGB camera patent monitor — Google Patents, Lens.org | 1 |
+| `event-scout.py` | Meetup/conference tracker — the local area, Warsaw, Poland, Europe | 1 |
+| `leak-monitor.py` | CTI: 11 OSINT sources — HIBP, Hudson Rock, GitHub dorks, Ahmia dark web, CISA KEV, ransomware, Telegram | 1 |
+| `idle-think.sh` | Research brain — 8 task types → JSON notes | 37 |
+| `ha-journal.py` | Home Assistant analysis (climate, sensors, anomalies) | 1 |
+| `ha-correlate.py` | HA cross-sensor correlation | 1 |
+| `city-watch.py` | the local area/SkyscraperCity construction tracker | 1 |
+| `csi-sensor-watch.py` | CSI camera sensor patent/news monitor | 1 |
+| `lore-digest.sh` | Kernel mailing list digests (8 feeds) | 12 |
+| `repo-watch.sh` | Upstream repos (GStreamer, libcamera, v4l-utils, FFmpeg, LinuxTV) | 8 |
+| `repo-think.py` | LLM analysis of repo changes | 22 |
+| `market-think.py` | Market sector analysis + synthesis | 21 |
+| `life-think.py` | Cross-domain life advisor | 2 |
+| `system-think.py` | GPU/security/health system intelligence | 3 |
+| `radio-scan.py` | SDR spectrum monitoring | 1 |
+| `daily-summary.py` | End-of-cycle summary → Signal | 1 |
 
-### 7.3 Cron schedule — 38 GPU jobs
+**CPU jobs** (system crontab — independent of queue-runner):
 
-All GPU tasks use `[cron]` directive prefix (no startup rituals), `thinking: off` (scripts handle their own Ollama calls). Dashboard reads live config from `~/.openclaw/cron/jobs.json`.
+| Script | Frequency | Purpose |
+|--------|-----------|---------|
+| `gpu-monitor.sh` + `.py` | 1 min | GPU utilization sampling (3-state) |
+| `presence.sh` | 5 min | Phone presence tracker |
+| `syslog.sh` | 5 min | System health logger |
+| `watchdog.py` | 30 min (live), 06:00 (full) | Integrity checks — cron, disk, services |
+| `scan.sh` + `enumerate.sh` | 04:00 | Network scan + enumeration (nmap) |
+| `vulnscan.sh` | Weekly (Sun) | Vulnerability scan |
+| `repo-watch.sh` | 08:00, 14:00, 18:00 | Upstream repo data collection |
+| `report.sh` | 08:30 | Morning report rebuild |
+| `generate-html.py` | After each queue-runner job | Dashboard HTML builder (6900+ lines) |
+| `gpu-monitor.py chart` | 22:55 | Daily GPU utilization chart |
 
-<details>
-<summary>▸ Night batch — 23:00–07:59 — 24 jobs, ~20 min spacing</summary>
+### 7.3 Job scheduling — queue-runner v7
 
-| Time | Job | Timeout |
-|:----:|-----|:-------:|
-| 23:00 | leak-monitor-night | 30 min |
-| 23:20 | think-trends-n1 | 60 min |
-| 23:40 | think-research-n1 | 60 min |
-| 00:00 | ha-journal-n1 | 30 min |
-| 00:20 | career-scan | 120 min |
-| 01:30 | salary-tracker | 30 min |
-| 01:50 | company-intel | 30 min |
-| 02:10 | patent-watch | 30 min |
-| 02:30 | event-scout | 30 min |
-| 02:50 | think-crossfeed-n1 | 60 min |
-| 03:10 | think-career-n1 | 60 min |
-| 03:30 | think-crawl-n1 | 60 min |
-| 03:50 | think-learn | 60 min |
-| 04:10 | think-weekly | 60 min |
-| 04:30 | lore-digest | 60 min |
-| 05:00 | think-research-n2 | 60 min |
-| 05:20 | think-trends-n2 | 60 min |
-| 05:40 | ha-correlate | 60 min |
-| 06:00 | think-crossfeed-n2 | 60 min |
-| 06:20 | think-research-n3 | 60 min |
-| 06:40 | ha-journal-n2 | 30 min |
-| 07:00 | think-crawl-n2 | 60 min |
-| 07:20 | think-research-n4 | 60 min |
-| 07:40 | leak-monitor-morning | 30 min |
+All 336 jobs are defined in `~/.openclaw/cron/jobs.json` and scheduled dynamically by `queue-runner.py` (systemd service, `WatchdogSec=14400`). There are **no fixed cron times** — jobs run sequentially as fast as the GPU allows, in a continuous loop.
 
-</details>
+**Job categories** (auto-classified by name pattern):
 
-<details>
-<summary>▸ Daytime — 08:00–22:59 — 14 jobs, hourly</summary>
+| Category | Jobs | Typical GPU time | Examples |
+|----------|:----:|:----------------:|---------|
+| `scrape` | 35 | 0.1h | career-scan, salary, patents, events, repo-scan (no LLM) |
+| `infra` | 6 | 0.6h | leak-monitor, netscan, watchdog, event-scout, radio-scan |
+| `lore` | 12 | 0.7h | lore-digest per mailing list feed |
+| `academic` | 17 | — | academic-watch per topic |
+| `repo-think` | 22 | 0.2h | LLM analysis of repo changes |
+| `company` | 46 | 0.4h | company-think per entity |
+| `career` | 49 | 1.4h | career-think per domain |
+| `think` | 37 | 2.2h | research, trends, crawl, crossfeed |
+| `meta` | 5 | — | life-think, system-think |
+| `market` | 21 | 1.0h | market-watch + sector analysis |
+| `ha` | 2 | 0.5h | ha-correlate, ha-journal (interleaved) |
+| `report` | 1 | — | daily-summary → Signal |
+| `weekly` | 3 | — | vulnscan, csi-sensor-discover/improve |
+| **Total** | **336** | **~11h** | |
 
-| Time | Job | Timeout |
-|:----:|-----|:-------:|
-| 09:00 | ha-journal-d1 | 30 min |
-| 10:00 | think-research-d1 | 60 min |
-| 11:00 | leak-monitor-midday | 30 min |
-| 12:00 | ha-journal-d2 | 30 min |
-| 13:00 | think-trends-d1 | 60 min |
-| 14:00 | think-crossfeed-d1 | 60 min |
-| 15:00 | ha-journal-d3 | 30 min |
-| 16:00 | think-crawl-d1 | 60 min |
-| 17:00 | think-career-d1 | 60 min |
-| 18:00 | ha-journal-d4 | 30 min |
-| 19:00 | think-signal 📱 | 60 min |
-| 20:00 | think-research-d2 | 60 min |
-| 21:00 | ha-journal-d5 | 30 min |
-| 22:00 | think-research-d3 | 60 min |
+**Data flow:**
 
-</details>
-
-**Signal delivery:** 9 jobs announce to Signal (best-effort) — leak-monitor ×3, career-scan, salary-tracker, company-intel, patent-watch, event-scout, lore-digest. The other 29 write silently to files.
+```
+jobs.json (336 jobs)
+  |
+  v
+queue-runner.py
+  |
+  |-- All jobs -> subprocess.Popen -> python3/bash /opt/netscan/...
+  |                                         |
+  |       JSON results <--------------------+
+  |         |
+  |         |-- /opt/netscan/data/{category}/*.json
+  |         |
+  |         +-- generate-html.py -> /opt/netscan/web/*.html -> nginx :8888
+  |
+  |-- Signal chat (between every job)
+  |     via JSON-RPC http://127.0.0.1:8080/api/v1/rpc
+  |
+  +-- Signal alerts (career matches, leaks, events, daily summary)
+```
 
 ### 7.4 System crontab — non-GPU
 
@@ -585,43 +775,73 @@ All GPU tasks use `[cron]` directive prefix (no startup rituals), `thinking: off
 | 18:00 | `repo-watch.sh --all --notify` |
 | 22:55 | `gpu-monitor.py chart` |
 
-### 7.5 Data locations
+### 7.5 Data flow & locations
 
 All paths relative to `/opt/netscan/`:
 
-| Data | Path |
-|------|------|
-| Research notes | `data/think/note-*.json` + `notes-index.json` |
-| Career scans | `data/career/scan-*.json` + `latest-scan.json` |
-| Salary | `data/salary/salary-*.json` (180-day history) |
-| Company intel | `data/intel/intel-*.json` + `company-intel-deep.json` |
-| Patents | `data/patents/patents-*.json` + `patent-db.json` |
-| Events | `data/events/events-*.json` + `event-db.json` |
-| Leaks / CTI | `data/leaks/leak-intel.json` |
-| Correlations | `data/correlate/correlate-*.json` |
-| GPU load | `data/gpu-load.tsv` |
-| System health | `data/syslog/health-*.tsv` (30-day retention) |
-| Network hosts | `data/hosts-db.json` |
-| Presence | `data/presence-state.json` |
+| Data | Path | Source |
+|------|------|--------|
+| Research notes | `data/think/note-*.json` + `notes-index.json` | idle-think.sh |
+| Career scans | `data/career/scan-*.json` + `latest-scan.json` | career-scan.py |
+| Career analysis | `data/career/think-*.json` | career-think.py |
+| Salary | `data/salary/salary-*.json` (180-day history) | salary-tracker.py |
+| Company intel | `data/intel/intel-*.json` + `company-intel-deep.json` | company-intel.py |
+| Patents | `data/patents/patents-*.json` + `patent-db.json` | patent-watch.py |
+| Events | `data/events/events-*.json` + `event-db.json` | event-scout.py |
+| Leaks / CTI | `data/leaks/leak-intel.json` | leak-monitor.py |
+| City watch | `data/city/city-watch-*.json` | city-watch.py |
+| CSI sensors | `data/csi-sensors/csi-sensor-*.json` | csi-sensor-watch.py |
+| HA correlations | `data/correlate/correlate-*.json` | ha-correlate.py |
+| HA journal | `data/ha-journal-*.json` | ha-journal.py |
+| Mailing lists | `data/{lkml,soc,jetson,libcamera,dri,usb,riscv,dt}/` | lore-digest.sh |
+| Repos | `data/repos/` | repo-watch.sh, repo-think.py |
+| Market | `data/market/` | market-think.py |
+| Academic | `data/academic/` | academic-watch (LLM) |
+| GPU load | `data/gpu-load.tsv` | gpu-monitor.sh |
+| System health | `data/syslog/health-*.tsv` (30-day retention) | syslog.sh |
+| Network hosts | `data/hosts-db.json` | scan.sh |
+| Presence | `data/presence-state.json` | presence.sh |
+| Radio | `data/radio/` | radio-scan.py |
+| Queue state | `data/queue-runner-state.json` | queue-runner.py |
 
-### 7.6 Dashboard pages
+### 7.6 Dashboard — 29 main pages + 101 host detail pages
 
-Served by nginx at `:8888`:
+Served by nginx at `:8888`, generated by `generate-html.py` (6900+ lines):
 
-| Page | Content |
-|------|---------|
-| `index.html` | Overview — host count, presence, latest notes |
-| `hosts.html` | Network device inventory |
-| `presence.html` | Phone detection timeline |
-| `security.html` | Host security scoring |
-| `career.html` | Career scan results |
-| `leaks.html` | CTI / leak monitor |
-| `notes.html` | Research notes |
-| `load.html` | GPU utilization heatmap + dynamic cron schedule |
-| `issues.html` | Repo issue tracking |
-| `lkml.html` | Mailing list / repo digests |
-| `history.html` | Changelog |
-| `log.html` | Raw scan logs |
+| Page | Content | Data source |
+|------|---------|-------------|
+| `index.html` | Overview — hosts, presence, latest notes, status | aggregated |
+| `home.html` | Home Assistant — climate, energy, anomalies | ha-journal, ha-correlate |
+| `career.html` | Career intelligence — matches, trends | career-scan, career-think |
+| `market.html` | Market analysis — sectors, commodities, crypto | market-think |
+| `advisor.html` | Life advisor — cross-domain synthesis | life-think |
+| `notes.html` | Research brain — all think notes | idle-think |
+| `leaks.html` | CTI / leak monitor | leak-monitor |
+| `issues.html` | Upstream issue tracking | repo-think |
+| `events.html` | Events calendar — the local area, Warsaw, Poland | event-scout |
+| `lkml.html` | Linux Media mailing list digest | lore-digest (linux-media) |
+| `soc.html` | SoC bringup mailing list | lore-digest (soc-bringup) |
+| `jetson.html` | Jetson/Tegra mailing list | lore-digest (jetson-tegra) |
+| `libcamera.html` | libcamera mailing list | lore-digest (libcamera) |
+| `dri.html` | DRI-devel mailing list | lore-digest (dri-devel) |
+| `usb.html` | Linux USB mailing list | lore-digest (linux-usb) |
+| `riscv.html` | Linux RISC-V mailing list | lore-digest (linux-riscv) |
+| `dt.html` | Devicetree mailing list | lore-digest (devicetree) |
+| `academic.html` | Academic publications | academic-watch |
+| `hosts.html` | Network device inventory | scan.sh |
+| `security.html` | Host security scoring | vulnscan.sh |
+| `presence.html` | Phone detection timeline | presence.sh |
+| `load.html` | GPU utilization heatmap + schedule | gpu-monitor |
+| `radio.html` | SDR spectrum monitoring | radio-scan.py |
+| `car.html` | Car tracker | car-tracker |
+| `weather.html` | Weather forecast + HA sensor correlation | weather-watch.py |
+| `news.html` | Tech news aggregation + RSS | news-watch.py |
+| `health.html` | System health assessment (services, data freshness, LLM quality) | bc250-extended-health.py |
+| `history.html` | Changelog | — |
+| `log.html` | Raw scan logs | — |
+| `host/*.html` | Per-host detail pages (101 hosts) | scan.sh, enumerate.sh |
+
+> **Mailing list feeds** are configured in `digest-feeds.json` — 8 feeds from `lore.kernel.org`, each with relevance scoring keywords.
 
 ### 7.7 GPU monitoring — 3-state
 
@@ -633,15 +853,32 @@ Per-minute sampling via `pp_dpm_sclk`:
 | `loaded` | 1000 MHz | ~56°C | Model in VRAM, idle |
 | `idle` | 1000 MHz | <50°C | No model loaded |
 
-### 7.8 Configuration files
+### 7.8 Configuration & state files
 
 | File | Purpose |
 |------|---------|
 | `profile.json` | Public interests — tracked repos, keywords, technologies |
 | `profile-private.json` | Career context — target companies, salary expectations *(gitignored)* |
 | `watchlist.json` | Auto-evolving interest tracker |
-| `digest-feeds.json` | Mailing list feed URLs |
+| `digest-feeds.json` | Mailing list feed URLs (8 feeds from lore.kernel.org) |
 | `repo-feeds.json` | Repository API endpoints |
+| `sensor-watchlist.json` | CSI camera sensor tracking list |
+| `queue-runner-state.json` | Cycle count, resume index *(in data/)* |
+| `~/.openclaw/cron/jobs.json` | All 336 job definitions *(legacy path, may be migrated)* |
+
+### 7.9 Resilience
+
+| Mechanism | Details |
+|-----------|---------|
+| **Systemd watchdog** | `WatchdogSec=14400` (4h) — queue-runner pings every 30s during job execution |
+| **Crash recovery** | State file records nightly batch progress; on restart, resumes from last completed job |
+| **Midnight crossing** | Resume index valid for both today and yesterday's date (batch starts 23:00 day N, may crash after midnight day N+1) |
+| **Atomic state writes** | Write to `.tmp` file, `fsync()`, then `rename()` — survives SIGABRT/power loss |
+| **Ollama health checks** | Pre-flight check before each job; exponential backoff wait if unhealthy |
+| **Network down** | Detects network loss, waits with backoff up to 10min |
+| **GPU deadlock protection** | If GPU busy for > 60min continuously, breaks and moves on |
+| **OOM protection** | Ollama `OOMScoreAdjust=-1000`, 16 GB NVMe swap, zram limited to 2 GB |
+| **Signal delivery** | `--best-effort-deliver` flag — delivery failures don't mark job as failed |
 
 ---
 
@@ -653,11 +890,11 @@ Automated career opportunity scanner with a two-phase anti-hallucination archite
 
 ```
   HTML page
-   ╰─→ Phase 1: extract jobs (NO candidate profile) → raw job list
-                                                           │
-  Candidate Profile + single job ──────────────────────────╯
-   ╰─→ Phase 2: score match → repeat per job
-                                  ╰─→ aggregate → JSON + Signal alerts
+    +-> Phase 1: extract jobs (NO candidate profile) -> raw job list
+                                                            |
+  Candidate Profile + single job ---------------------------+
+    +-> Phase 2: score match -> repeat per job
+                                   +-> aggregate -> JSON + Signal alerts
 ```
 
 **Phase 1** extracts jobs from raw HTML without seeing the candidate profile — prevents the LLM from inventing matching jobs. **Phase 2** scores each job individually against the profile.
@@ -703,20 +940,39 @@ Nightly at 02:30. Discovers tech events with geographic scoring (the local area 
 bc250/
 ├── README.md                       ← you are here
 ├── netscan/                        → /opt/netscan/
+│   ├── queue-runner.py             # v7 — continuous loop + Signal chat (336 jobs)
 │   ├── career-scan.py              # Two-phase career scanner
+│   ├── career-think.py             # Per-company career analysis
 │   ├── salary-tracker.py           # Salary intelligence
 │   ├── company-intel.py            # Company deep-dive
+│   ├── company-think.py            # Per-entity company analysis
 │   ├── patent-watch.py             # Patent monitor
 │   ├── event-scout.py              # Event tracker
-│   ├── leak-monitor.py             # CTI: 8 breach/leak sources
+│   ├── city-watch.py               # SkyscraperCity the local area construction monitor
+│   ├── leak-monitor.py             # CTI: 11 OSINT sources + Ahmia dark web
 │   ├── ha-journal.py               # Home Assistant journal
 │   ├── ha-correlate.py             # HA cross-sensor correlation
 │   ├── ha-observe.py               # Quick HA queries
-│   ├── generate-html.py            # Dashboard builder
+│   ├── csi-sensor-watch.py         # CSI camera sensor patent/news
+│   ├── radio-scan.py               # SDR spectrum monitoring
+│   ├── market-think.py             # Market sector analysis
+│   ├── life-think.py               # Cross-domain life advisor
+│   ├── system-think.py             # GPU/security/health system intelligence
+│   ├── daily-summary.py            # End-of-cycle Signal summary
+│   ├── repo-think.py               # LLM analysis of repo changes
+│   ├── academic-watch.py           # Academic publication monitor
+│   ├── news-watch.py               # Tech news aggregation + RSS feeds
+│   ├── book-watch.py               # Book/publication tracker
+│   ├── weather-watch.py            # Weather forecast + HA sensor correlation
+│   ├── car-tracker.py              # GPS car tracker (SinoTrack API, trip/stop detection)
+│   ├── bc250-extended-health.py    # System health assessment (services, data freshness, LLM quality)
+│   ├── llm_sanitize.py             # LLM output sanitizer (thinking tags, JSON repair)
+│   ├── generate-html.py            # Dashboard builder (6900+ lines, 29 main + 101 host pages)
 │   ├── gpu-monitor.py              # GPU data collector
 │   ├── idle-think.sh               # Research brain (8 task types)
 │   ├── repo-watch.sh               # Upstream repo monitor
-│   ├── lore-digest.sh              # Mailing list digests
+│   ├── lore-digest.sh              # Mailing list digests (8 feeds)
+│   ├── bc250-health-check.sh       # Quick health check (systemd timer, triggers extended health)
 │   ├── gpu-monitor.sh              # Per-minute GPU sampler
 │   ├── scan.sh / enumerate.sh      # Network scanning
 │   ├── vulnscan.sh                 # Weekly vulnerability scan
@@ -724,33 +980,32 @@ bc250/
 │   ├── syslog.sh                   # System health logger
 │   ├── watchdog.py                 # Integrity checker
 │   ├── report.sh                   # Morning report rebuild
-│   ├── profile.json                # Public interests
+│   ├── profile.json                # Public interests + Signal config
 │   ├── profile-private.json        # Career context (gitignored)
 │   ├── watchlist.json              # Auto-evolving interest tracker
-│   ├── digest-feeds.json           # Feed URLs
-│   └── repo-feeds.json             # Repository endpoints
-├── openclaw/
-│   ├── workspace/
-│   │   ├── WORKFLOW_AUTO.md        # Slim cron-aware behavior rules
-│   │   ├── AGENTS.md               # Grounding rules
-│   │   ├── SOUL.md                 # Personality
-│   │   ├── IDENTITY.md             # Name/emoji
-│   │   └── docs/                   # Reference docs (not in system prompt)
-│   │       ├── ECOSYSTEM.md
-│   │       ├── HEARTBEAT.md
-│   │       └── WORKFLOW_AUTO_FULL.md
-│   ├── TOOLS.md                    → ~/.openclaw/workspace/TOOLS.md
-│   └── skills/
-│       ├── sd-image/SKILL.md
-│       └── web-search/SKILL.md
-├── openclaw.json                   → ~/.openclaw/openclaw.json
+│   ├── digest-feeds.json           # Feed URLs (8 mailing lists)
+│   ├── repo-feeds.json             # Repository endpoints
+│   └── sensor-watchlist.json       # CSI sensor tracking list
+├── openclaw/                       # ARCHIVED — see Appendix A
+│   └── (historical OpenClaw config, no longer deployed)
 ├── systemd/
+│   ├── queue-runner.service        # v7 — continuous loop + Signal chat
+│   ├── queue-runner-nightly.service # Nightly batch trigger
+│   ├── queue-runner-nightly.timer
+│   ├── signal-cli.service          # Standalone JSON-RPC daemon
+│   ├── bc250-health.service        # Health check timer
+│   ├── bc250-health.timer
 │   ├── ollama.service
+│   ├── ollama-watchdog.service     # Ollama restart watchdog
+│   ├── ollama-watchdog.timer
+│   ├── ollama-proxy.service        # LAN proxy for Ollama API
 │   └── ollama.service.d/
 │       └── override.conf           # Vulkan + memory settings
+├── scripts/
+│   ├── generate-and-send.sh        # SD image generation pipeline
+│   └── generate.sh                 # SD generation wrapper
 ├── generate-and-send.sh            → /opt/stable-diffusion.cpp/
-├── generate-and-send-worker.sh     → /opt/stable-diffusion.cpp/
-└── ollama-proxy.py                 # DEPRECATED
+└── generate-and-send-worker.sh     → /opt/stable-diffusion.cpp/
 ```
 
 </details>
@@ -760,12 +1015,16 @@ bc250/
 | Local | → bc250 |
 |-------|---------|
 | `netscan/*` | `/opt/netscan/` |
-| `openclaw.json` | `~/.openclaw/openclaw.json` |
-| `openclaw/workspace/*` | `~/.openclaw/workspace/` |
-| `openclaw/TOOLS.md` | `~/.openclaw/workspace/TOOLS.md` |
-| `openclaw/skills/*` | `~/.openclaw/workspace/skills/` |
+| `systemd/queue-runner.service` | `/etc/systemd/system/queue-runner.service` |
+| `systemd/signal-cli.service` | `/etc/systemd/system/signal-cli.service` |
 | `systemd/ollama.*` | `/etc/systemd/system/ollama.*` |
 | `generate-and-send*.sh` | `/opt/stable-diffusion.cpp/` |
+
+```bash
+# Typical deploy workflow
+scp netscan/queue-runner.py bc250:/tmp/
+ssh bc250 'sudo cp /tmp/queue-runner.py /opt/netscan/ && sudo systemctl restart queue-runner'
+```
 
 ---
 
@@ -779,7 +1038,7 @@ Expected — Ollama tries ROCm, it crashes on GFX1013, falls back to Vulkan. No 
 </details>
 
 <details>
-<summary><b>▸ Only 7.9 GiB GPU memory instead of 12.5 GiB</b></summary>
+<summary><b>▸ Only 7.9 GiB GPU memory instead of 14 GiB</b></summary>
 
 GTT tuning not applied. Check: `cat /proc/cmdline | grep gttsize`
 
@@ -788,7 +1047,7 @@ GTT tuning not applied. Check: `cat /proc/cmdline | grep gttsize`
 <details>
 <summary><b>▸ 14B model loads but inference returns HTTP 500</b></summary>
 
-TTM pages_limit bottleneck. Fix: `echo 3145728 | sudo tee /sys/module/ttm/parameters/pages_limit` (see §3.3).
+TTM pages_limit bottleneck. Fix: `echo 4194304 | sudo tee /sys/module/ttm/parameters/pages_limit` (see §3.3).
 
 </details>
 
@@ -800,9 +1059,46 @@ Check `OLLAMA_VULKAN=1`: `sudo systemctl show ollama | grep Environment`
 </details>
 
 <details>
-<summary><b>▸ Context window OOM kills</b></summary>
+<summary><b>▸ Context window OOM kills (the biggest gotcha on 16 GB)</b></summary>
 
-Don't use 128k context on 16 GB. Cap at 24576 via `OLLAMA_CONTEXT_LENGTH` in Ollama's systemd override.
+Ollama allocates KV cache based on `num_ctx`. Many models default to 32K–40K context, which on a 14B Q4_K model means 14–16 GB *just for the model* — leaving nothing for the OS.
+
+**Symptoms:** Gateway gets OOM-killed, Ollama journal shows 500 errors, `dmesg` shows `oom-kill`.
+
+**Root cause:** The abliterated Qwen3 14B declares `num_ctx 40960` → 16 GB total model memory.
+
+**Fix:** Create a custom model with context baked in:
+```bash
+cat > /tmp/Modelfile.16k << 'EOF'
+FROM huihui_ai/qwen3-abliterated:14b
+PARAMETER num_ctx 16384
+EOF
+ollama create qwen3-14b-16k -f /tmp/Modelfile.16k
+```
+
+This drops memory from ~16 GB → ~11.1 GB. Do **not** rely on `OLLAMA_CONTEXT_LENGTH` — it doesn't reliably override API requests from the gateway.
+
+</details>
+
+<details>
+<summary><b>▸ signal-cli not responding on port 8080</b></summary>
+
+Check the service: `systemctl status signal-cli`. If it crashed, restart: `sudo systemctl restart signal-cli`. Verify JSON-RPC:
+```bash
+curl -s http://127.0.0.1:8080/api/v1/rpc \
+  -d '{"jsonrpc":"2.0","method":"listAccounts","id":"1"}'
+```
+
+</details>
+
+<details>
+<summary><b>▸ zram competing with model for physical RAM</b></summary>
+
+Fedora defaults to ~8 GB zram. zram compresses pages but stores them in *physical* RAM — directly competing with the model. On 16 GB systems running 14B models, disable or limit zram and use NVMe file swap instead:
+```bash
+sudo mkdir -p /etc/systemd/zram-generator.conf.d
+echo -e '[zram0]\nzram-size = 2048' | sudo tee /etc/systemd/zram-generator.conf.d/small.conf
+```
 
 </details>
 
@@ -840,26 +1136,178 @@ curl -X POST http://127.0.0.1:8080/api/v1/rpc \
 
 | Issue | Impact |
 |-------|--------|
-| Shared VRAM | Image gen requires stopping Ollama. Bot offline ~50s. |
-| 14B memory pressure | ~2 GB free when loaded. Tight but stable. |
-| Signal preemption | Messages queue during cron (2–5 min typical, 120 min max at 00:20). |
-| sd-cli hangs on GFX1013 | Vulkan cleanup bug → background kill workaround. |
+| Shared VRAM | Image gen requires stopping Ollama. Bot offline ~60s. |
+| 14B memory pressure | ~1.5–3.8 GB free when loaded. NVMe swap essential. |
+| Context cap at 16K | Hard limit to stay within 11.1 GB. Can't use 32K+ context. |
+| Signal latency | Messages queue during job execution (typical job 2–15 min). Chat checked between every job. |
+| sd-cli hangs on GFX1013 | Vulkan cleanup bug → poll + kill workaround. |
 | Cold start latency | 30–60s after Ollama restart (model loading). |
 | Chinese thinking leak | Qwen3 occasionally outputs Chinese reasoning. Cosmetic. |
 | KV cache quantization | `q8_0`/`q4_0` no-op on Vulkan (CUDA/Metal only). |
-| Night GPU utilization | ~22–33% — room for more tasks. |
 
 ### ☐ TODO
 
-- [ ] Increase night GPU utilization beyond 30%
+- [x] Fix OOM kills — custom 16K context model + NVMe swap + OOM score protection
+- [x] Fix gateway orphan processes — KillMode=control-group
+- [x] Scale from 38 → 56 → 58 → 354 → 309 → **336** jobs/cycle (deduped)
+- [x] Add best-effort-deliver to all announce jobs
+- [x] Queue-runner v2 → v3 → v4 → v5 → v6 → **v7** — continuous loop, Signal chat, synchronous SD
+- [x] Fix nightly resume across midnight (batch_date accepts today or yesterday)
+- [x] Dense daytime GPU mode → replaced by continuous loop (v7)
+- [x] Leak-monitor: added Ahmia dark web, GitHub dorks, Hudson Rock retry, model fix
+- [x] Dashboard audit — XSS fixes, dead code removal, queue-runner references
+- [x] 29 main + 101 host detail dashboard pages including 8 mailing list feeds, academic, market, advisor, radio, car, weather, news, health
+- [x] Replace OpenClaw gateway with standalone signal-cli + direct Ollama API calls
+- [x] Signal chat between every job (no separate gateway process)
+- [x] Synchronous SD image generation in queue-runner (no async worker scripts)
+- [x] Bump GTT from 12 → 14 GiB, TTM pages_limit 3M → 4M
+- [x] Disable 7 unnecessary services (~113 MB freed)
+- [x] System prompt with cynical personality + full data directory map
+- [x] Signal notification dedup — sent-items tracker (career, book, news, radio), cooldown+hash (weather, ha-correlate), daily flag (city-watch)
+- [x] Extended health monitoring — automated hourly via bc250-health-check.sh
+- [x] report.sh midnight-crossing fallback — uses yesterday's scan if today's missing
 - [ ] Try FLUX at 768×768
 - [ ] Weekly career summary digest via Signal
-- [ ] Reduce OpenClaw system prompt overhead (~9.6K chars)
+- [ ] Migrate jobs.json away from ~/.openclaw/ path
+- [ ] Evaluate if zram can be fully disabled (currently 2 GB boot limit)
+
+---
+
+## Appendix A — OpenClaw Archive
+
+<details>
+<summary><b>▸ Historical: OpenClaw gateway configuration (replaced in v7)</b></summary>
+
+OpenClaw v2026.2.26 was used as the Signal ↔ Ollama gateway from project inception through queue-runner v6. It was a Node.js daemon that managed signal-cli as a child process, routed messages to the LLM, and provided an agent framework with tool dispatch.
+
+**Why it was replaced:**
+- ~700 MB RSS on a 16 GB system (4.4% of total RAM)
+- 15+ second overhead per agent turn (system prompt injection, tool resolution)
+- Unreliable fallback chains caused "fetch failed" timeout cascades
+- Could not run scripts as direct subprocesses — everything went through the LLM agent
+- signal-cli children survived gateway OOM kills, holding port 8080 as orphans
+- 9.6K system prompt that couldn't be reduced below ~4K without breaking tools
+
+**What replaced it:**
+- signal-cli runs as standalone systemd service (JSON-RPC on :8080)
+- queue-runner.py talks to Ollama `/api/chat` directly
+- System prompt is a Python string in queue-runner.py (~3K tokens)
+- All 336 jobs run as `subprocess.Popen` — no agent routing
+- SD image generation handled synchronously by queue-runner
+
+### A.1 Installation (historical)
+
+```bash
+sudo dnf install -y nodejs npm
+sudo npm install -g openclaw@latest
+
+openclaw onboard \
+  --non-interactive --accept-risk --auth-choice skip \
+  --install-daemon --skip-channels --skip-skills --skip-ui --skip-health \
+  --daemon-runtime node --gateway-bind loopback
+```
+
+### A.2 Model configuration (historical)
+
+`~/.openclaw/openclaw.json`:
+
+```json
+{
+  "models": {
+    "providers": {
+      "ollama": {
+        "baseUrl": "http://127.0.0.1:11434",
+        "apiKey": "ollama-local",
+        "api": "ollama",
+        "models": [{
+          "id": "qwen3-14b-16k",
+          "name": "Qwen 3 14B (16K ctx)",
+          "contextWindow": 16384,
+          "maxTokens": 8192,
+          "reasoning": true
+        }]
+      }
+    }
+  },
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "ollama/qwen3-14b-16k",
+        "fallbacks": ["ollama/qwen3-14b-abl-nothink:latest", "ollama/mistral-nemo:12b"]
+      },
+      "thinkingDefault": "high",
+      "timeoutSeconds": 1800
+    }
+  }
+}
+```
+
+### A.3 Tool optimization (historical)
+
+```json
+{
+  "tools": {
+    "profile": "coding",
+    "alsoAllow": ["message", "group:messaging"],
+    "deny": ["browser", "canvas", "nodes", "cron", "gateway"]
+  },
+  "skills": { "allowBundled": [] }
+}
+```
+
+### A.4 Agent identity (historical)
+
+Personality lived in workspace markdown files (`~/.openclaw/workspace/`):
+
+| File | Purpose | Size |
+|------|---------|:----:|
+| `SOUL.md` | Core personality | 1.0 KB |
+| `IDENTITY.md` | Name/emoji | 550 B |
+| `USER.md` | Human info | 1.7 KB |
+| `TOOLS.md` | Tool commands | 2.1 KB |
+| `AGENTS.md` | Grounding rules | 1.4 KB |
+| `WORKFLOW_AUTO.md` | Cron bypass rules | 730 B |
+
+### A.5 Signal channel (historical)
+
+```json
+{
+  "channels": {
+    "signal": {
+      "enabled": true,
+      "account": "+<BOT_PHONE>",
+      "cliPath": "/usr/local/bin/signal-cli",
+      "dmPolicy": "pairing",
+      "allowFrom": ["+<YOUR_PHONE>"],
+      "sendReadReceipts": true,
+      "textChunkLimit": 4000
+    }
+  }
+}
+```
+
+### A.6 Service management (historical)
+
+```bash
+systemctl --user status openclaw-gateway   # status
+openclaw logs --follow                     # live logs
+openclaw doctor                            # diagnostics
+openclaw channels status --probe           # signal health
+```
+
+The gateway service (`openclaw-gateway.service`) ran as a user-level systemd unit. It has been disabled and masked:
+
+```bash
+systemctl --user disable --now openclaw-gateway
+systemctl --user mask openclaw-gateway
+```
+
+</details>
 
 ---
 
 <div align="center">
 
-`bc250` · AMD Cyan Skillfish · *hack the planet* 🦞
+`bc250` · AMD Cyan Skillfish · 336 autonomous jobs · *hack the planet* 🦞
 
 </div>

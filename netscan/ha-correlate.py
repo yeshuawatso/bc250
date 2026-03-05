@@ -20,6 +20,7 @@ Cron: 30 7 * * * flock -w 1200 /tmp/ollama-gpu.lock python3 /opt/netscan/ha-corr
 Location on bc250: /opt/netscan/ha-correlate.py
 """
 
+import argparse
 import json
 import math
 import os
@@ -33,11 +34,12 @@ import urllib.error
 from datetime import datetime, timedelta, timezone
 from collections import defaultdict
 from pathlib import Path
+from llm_sanitize import sanitize_llm_output
 
 # ── Config ─────────────────────────────────────────────────────────────────
 OLLAMA_URL = "http://localhost:11434"
 OLLAMA_CHAT = f"{OLLAMA_URL}/api/chat"
-OLLAMA_MODEL = "huihui_ai/qwen3-abliterated:14b"
+OLLAMA_MODEL = "qwen3:14b"
 
 HASS_URL = os.environ.get("HASS_URL", "http://homeassistant:8123")
 HASS_TOKEN = os.environ.get("HASS_TOKEN", "")
@@ -47,6 +49,7 @@ SIGNAL_FROM = "+<BOT_PHONE>"
 SIGNAL_TO = "+<OWNER_PHONE>"
 
 DATA_DIR = Path("/opt/netscan/data/correlate")
+RAW_CORRELATE_FILE = DATA_DIR / "raw-correlate.json"
 THINK_DIR = Path("/opt/netscan/data/think")
 HISTORY_HOURS = 24        # look back to cover since-last-analysis window
 MIN_SAMPLES = 4           # minimum data points for per-sensor stats
@@ -69,8 +72,9 @@ if os.path.exists(ENV_FILE):
 # ── Garage car tracker ──────────────────────────────────────────────────────
 # Detects car leaving/returning by correlating gate+door events with temp signature:
 #   Gate opens → garage door opens → temp dips (cold air) → door closes
-#   → If temp then climbs rapidly (+1°C in <30min): car RETURNED (warm engine)
-#   → If temp stays flat or keeps dropping: car LEFT
+#   → If temp then climbs rapidly (+0.8°C in <30min): car RETURNED (warm engine)
+#   → If temp drops suddenly (≥1°C cold air ingress): car LEFT
+#   → Small temp change (<1°C drop, <0.8°C rise): just a door button press
 GARAGE_TEMP_SENSOR = "sensor.1000becdc2_t"    # Garaż termometr
 GARAGE_HUMIDITY    = "sensor.1000becdc2_h"    # Garaż humidity
 GARAGE_DOOR_SWITCH = "switch.10014d3a8b_2"    # Bramy garazowe-Garaz
@@ -79,6 +83,7 @@ GATE_SWITCH        = "switch.1000aa2079"       # Brama (driveway gate)
 
 # Detection thresholds
 GARAGE_TEMP_RISE_THRESHOLD = 0.8    # °C rise within window → car returned
+GARAGE_TEMP_DROP_THRESHOLD = 1.0    # °C drop required to confirm garage opened (cold air)
 GARAGE_TEMP_WINDOW_MIN = 30         # minutes after door event to look for temp change
 GARAGE_EVENT_MERGE_SEC = 300        # merge gate+door events within 5min as one event
 
@@ -395,6 +400,78 @@ def compute_duty_cycle(onoff_series, hours=24):
     }
 
 
+def compute_duty_heatmap(onoff_series):
+    """Compute hourly duty cycle heatmap (24 bins) from on/off state series.
+    Returns dict with hour (0-23) → fraction of time ON in that hour."""
+    if not onoff_series:
+        return None
+
+    # Build minute-resolution on/off timeline
+    hour_on = [0.0] * 24   # seconds ON per hour
+    hour_total = [0.0] * 24  # seconds observed per hour
+
+    prev_ts = None
+    prev_state = None
+
+    for ts_str, is_on in onoff_series:
+        try:
+            ts = datetime.fromisoformat(ts_str)
+            if ts.tzinfo is None:
+                ts = ts.replace(tzinfo=timezone.utc)
+        except Exception:
+            continue
+
+        if prev_ts is not None and prev_state is not None:
+            # Walk through each hour boundary between prev_ts and ts
+            cursor = prev_ts
+            while cursor < ts:
+                h = cursor.hour
+                next_hour = cursor.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+                end = min(next_hour, ts)
+                secs = (end - cursor).total_seconds()
+                if secs > 0:
+                    hour_total[h] += secs
+                    if prev_state:
+                        hour_on[h] += secs
+                cursor = end
+
+        prev_ts = ts
+        prev_state = is_on
+
+    # Account for time from last change to now
+    if prev_ts is not None and prev_state is not None:
+        now = datetime.now(timezone.utc)
+        cursor = prev_ts
+        while cursor < now:
+            h = cursor.hour
+            next_hour = cursor.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+            end = min(next_hour, now)
+            secs = (end - cursor).total_seconds()
+            if secs > 0:
+                hour_total[h] += secs
+                if prev_state:
+                    hour_on[h] += secs
+            cursor = end
+
+    heatmap = {}
+    for h in range(24):
+        if hour_total[h] > 0:
+            heatmap[h] = round(hour_on[h] / hour_total[h] * 100, 1)
+        else:
+            heatmap[h] = 0.0
+
+    # Find peak usage hours (>50% on)
+    peak_hours = [h for h in range(24) if heatmap.get(h, 0) > 50]
+    # Find idle hours (0% on)
+    idle_hours = [h for h in range(24) if heatmap.get(h, 0) == 0 and hour_total[h] > 0]
+
+    return {
+        "hourly_pct": heatmap,
+        "peak_hours": peak_hours,
+        "idle_hours": idle_hours,
+    }
+
+
 def detect_anomalies(series, label=""):
     """Detect anomalies in a numeric time series using z-score."""
     if len(series) < MIN_SAMPLES:
@@ -679,7 +756,7 @@ def call_ollama(system_prompt, user_prompt, temperature=0.3, max_tokens=2500):
             {"role": "user", "content": "/nothink\n" + user_prompt},
         ],
         "stream": False,
-        "options": {"temperature": temperature, "num_predict": max_tokens, "num_ctx": 12288},
+        "options": {"temperature": temperature, "num_predict": max_tokens, "num_ctx": 24576},
     }).encode()
 
     req = urllib.request.Request(OLLAMA_CHAT, data=payload, headers={
@@ -703,16 +780,20 @@ def call_ollama(system_prompt, user_prompt, temperature=0.3, max_tokens=2500):
 
 # ── Garage car tracker ─────────────────────────────────────────────────────
 
+# Outdoor reference sensor — Dach (roof/attic, unheated, tracks outdoor temp)
+OUTDOOR_REF_SENSORS = ["sensor.1000bec2f1_t"]  # Dach sensor (exposed)
+
 def detect_garage_events(all_history):
-    """Detect car leaving/returning events from garage door + temperature data.
+    """Collect garage door activations + temperature context for LLM analysis.
 
-    Pattern:
-      1. Gate/door switch activates (on→off pulse = momentary relay)
-      2. Garage temp briefly dips (cold air ingress)
-      3. If temp then rises sharply within 30min → warm car parked = CAR RETURNED
-      4. If temp stays flat / drops → car drove away = CAR LEFT
+    Instead of hardcoded thresholds, we collect raw data:
+    - Door/gate activation times (merged)
+    - Garage temp before, during, and after each event
+    - Outdoor reference temperature
+    - Temp trend (5-min, 15-min, 30-min after)
 
-    Returns list of event dicts with timestamp, type, temp_before, temp_after, delta.
+    The LLM analyzes the data considering season, outdoor temp, and context
+    to determine car_returned / car_left / door_event classification.
     """
     events = []
 
@@ -765,43 +846,59 @@ def detect_garage_events(all_history):
 
     temp_points.sort(key=lambda x: x[0])
 
-    def temp_at(target_ts, tolerance_min=20):
-        """Find closest temp reading within tolerance of target time."""
+    # Get outdoor reference temp history
+    outdoor_points = []
+    for ref_sensor in OUTDOOR_REF_SENSORS:
+        if ref_sensor not in all_history:
+            continue
+        for p in all_history[ref_sensor]:
+            try:
+                v = float(p["state"])
+                ts_str = p.get("last_changed", "")
+                ts = datetime.fromisoformat(
+                    ts_str.replace("+00:00", "").replace("Z", "")
+                ).replace(tzinfo=timezone.utc)
+                outdoor_points.append((ts, v))
+            except (ValueError, TypeError, KeyError):
+                pass
+    outdoor_points.sort(key=lambda x: x[0])
+
+    def temp_at(points, target_ts, tolerance_min=20):
+        """Find closest reading within tolerance of target time."""
         best = None
         best_delta = timedelta(minutes=tolerance_min)
-        for ts, v in temp_points:
+        for ts, v in points:
             d = abs(ts - target_ts)
             if d < best_delta:
                 best = v
                 best_delta = d
         return best
 
-    def temp_max_after(target_ts, window_min=GARAGE_TEMP_WINDOW_MIN):
+    def temp_series_after(points, target_ts, windows=(5, 15, 30)):
+        """Get temp readings at specific minute offsets after target time."""
+        result = {}
+        for w in windows:
+            v = temp_at(points, target_ts + timedelta(minutes=w), tolerance_min=10)
+            if v is not None:
+                result[f"+{w}min"] = round(v, 1)
+        return result
+
+    def temp_max_after(points, target_ts, window_min=30):
         """Find max temp within window after target time."""
         cutoff = target_ts + timedelta(minutes=window_min)
-        temps_in_window = [
-            v for ts, v in temp_points
-            if target_ts <= ts <= cutoff
-        ]
-        return max(temps_in_window) if temps_in_window else None
+        temps_in_window = [v for ts, v in points if target_ts <= ts <= cutoff]
+        return round(max(temps_in_window), 1) if temps_in_window else None
 
-    def temp_at_after(target_ts, window_min=GARAGE_TEMP_WINDOW_MIN):
-        """Find temp reading closest to end of window (for trend check)."""
+    def temp_min_after(points, target_ts, window_min=30):
+        """Find min temp within window after target time."""
         cutoff = target_ts + timedelta(minutes=window_min)
-        candidates = [
-            (ts, v) for ts, v in temp_points
-            if target_ts + timedelta(minutes=5) <= ts <= cutoff
-        ]
-        if not candidates:
-            return None
-        # Return the latest reading in the window
-        return candidates[-1][1]
+        temps_in_window = [v for ts, v in points if target_ts <= ts <= cutoff]
+        return round(min(temps_in_window), 1) if temps_in_window else None
 
-    # Analyze each door event
+    # Analyze each door event — collect raw data, no classification
     for door_ts in merged:
-        temp_before = temp_at(door_ts - timedelta(minutes=10), tolerance_min=30)
-        temp_peak = temp_max_after(door_ts, window_min=GARAGE_TEMP_WINDOW_MIN)
-        temp_end = temp_at_after(door_ts, window_min=GARAGE_TEMP_WINDOW_MIN)
+        temp_before = temp_at(temp_points, door_ts - timedelta(minutes=5), tolerance_min=30)
+        outdoor_temp = temp_at(outdoor_points, door_ts, tolerance_min=60)
 
         if temp_before is None:
             continue
@@ -810,37 +907,46 @@ def detect_garage_events(all_history):
             "timestamp": door_ts.isoformat(timespec="seconds"),
             "time_local": door_ts.strftime("%H:%M"),
             "temp_before": round(temp_before, 1),
+            "outdoor_temp": outdoor_temp,
+            "temp_after": temp_series_after(temp_points, door_ts),
+            "temp_peak_30min": temp_max_after(temp_points, door_ts, 30),
+            "temp_min_30min": temp_min_after(temp_points, door_ts, 30),
         }
 
-        if temp_peak is not None:
-            delta = temp_peak - temp_before
-            event["temp_peak"] = round(temp_peak, 1)
+        # Compute simple delta for backward compat + logging
+        peak = event["temp_peak_30min"]
+        if peak is not None:
+            delta = peak - temp_before
             event["delta"] = round(delta, 1)
+        else:
+            event["delta"] = 0.0
 
-            if delta >= GARAGE_TEMP_RISE_THRESHOLD:
-                event["type"] = "car_returned"
-                event["detail"] = (
-                    f"Temp rose {delta:+.1f}°C "
-                    f"({temp_before:.1f}→{temp_peak:.1f}°C) "
-                    f"within {GARAGE_TEMP_WINDOW_MIN}min — warm engine parked"
-                )
-            else:
-                event["type"] = "car_left"
-                event["detail"] = (
-                    f"Temp change {delta:+.1f}°C "
-                    f"({temp_before:.1f}→{temp_peak:.1f}°C) — "
-                    f"no warm engine detected, car likely left"
-                )
-        elif temp_end is not None:
-            delta = temp_end - temp_before
-            event["temp_end"] = round(temp_end, 1)
-            event["delta"] = round(delta, 1)
-            event["type"] = "car_left" if delta < GARAGE_TEMP_RISE_THRESHOLD else "car_returned"
-            event["detail"] = f"Temp went {delta:+.1f}°C after door event"
+        # LLM will classify — provide a preliminary label based on simple heuristic
+        # but mark it as "preliminary" so LLM can override
+        delta = event["delta"]
+        if delta >= 1.5:
+            event["type"] = "car_returned"
+            event["preliminary"] = True
+            event["detail"] = (
+                f"Temp rose {delta:+.1f}°C ({temp_before:.1f}→{peak:.1f}°C) "
+                f"within 30min (outdoor: {outdoor_temp}°C)"
+            )
+        elif delta <= -1.5:
+            event["type"] = "car_left"
+            event["preliminary"] = True
+            event["detail"] = (
+                f"Temp dropped {delta:+.1f}°C ({temp_before:.1f}→{peak:.1f}°C) "
+                f"(outdoor: {outdoor_temp}°C)"
+            )
         else:
             event["type"] = "door_event"
-            event["delta"] = 0.0
-            event["detail"] = "Door activated but no temperature data in follow-up window"
+            event["preliminary"] = True
+            peak_str = f"{peak:.1f}" if peak else "?"
+            event["detail"] = (
+                f"Temp change {delta:+.1f}°C ({temp_before:.1f}→"
+                f"{peak_str}°C) — "
+                f"outdoor: {outdoor_temp}°C — needs LLM analysis"
+            )
 
         events.append(event)
 
@@ -875,13 +981,14 @@ def signal_send(msg):
 
 # ── Main analysis ──────────────────────────────────────────────────────────
 
-def main():
+def run_scrape():
+    """Collect HA sensor data, compute statistics and correlations. Save raw JSON (no LLM)."""
     t_start = time.time()
     now = datetime.now()
     dt_label = now.strftime("%d %b %Y, %H:%M")
     dt_file = now.strftime("%Y%m%d-%H%M")
 
-    print(f"[{now:%Y-%m-%d %H:%M:%S}] ha-correlate starting")
+    print(f"[{now:%Y-%m-%d %H:%M:%S}] ha-correlate scrape starting")
     print(f"  Analyzing last {HISTORY_HOURS}h of HA sensor data")
 
     # Load previous analysis for delta comparison
@@ -1059,6 +1166,7 @@ def main():
     # ── Step 5: Duty cycle analysis ───────────────────────────────────────
     log("Analyzing switch duty cycles...")
     duty_cycles = {}
+    duty_heatmaps = {}
 
     for eid, ts in switch_ts.items():
         info = switch_entities[eid]
@@ -1069,7 +1177,14 @@ def main():
             dc["known_behavior"] = KNOWN_DEVICES.get(eid, {}).get("behavior", "")
             duty_cycles[eid] = dc
 
-    log(f"Analyzed {len(duty_cycles)} switch duty cycles")
+            # Compute hourly heatmap for interesting switches
+            heatmap = compute_duty_heatmap(ts)
+            if heatmap:
+                heatmap["fname"] = info["fname"]
+                heatmap["room"] = info["room"]
+                duty_heatmaps[eid] = heatmap
+
+    log(f"Analyzed {len(duty_cycles)} switch duty cycles, {len(duty_heatmaps)} heatmaps")
 
     # ── Step 5.5: Room occupancy estimation ────────────────────────────────
     log("Estimating room usage from light activity...")
@@ -1223,6 +1338,7 @@ def main():
         "sensor_stats": sensor_stats,
         "sparse_sensors": sparse_sensors,
         "duty_cycles": duty_cycles,
+        "duty_heatmaps": duty_heatmaps,
         "correlations": correlations[:20],  # top 20
         "anomalies": all_anomalies[:30],    # max 30
         "garage_events": garage_events,
@@ -1231,6 +1347,74 @@ def main():
         "env_deltas": env_deltas,
         "prev_analysis_time": prev_analysis.get("generated") if prev_analysis else None,
     }
+
+    # Save raw intermediate data
+    scrape_duration = int(time.time() - t_start)
+    raw_data = {
+        "scrape_timestamp": now.isoformat(timespec="seconds"),
+        "scrape_duration_seconds": scrape_duration,
+        "scrape_version": 1,
+        "data": report,
+        "scrape_errors": [],
+    }
+    tmp = RAW_CORRELATE_FILE.with_suffix(".tmp")
+    with open(tmp, "w") as f:
+        json.dump(raw_data, f, indent=2, default=str)
+    tmp.rename(RAW_CORRELATE_FILE)
+
+    log(f"Scrape done: {len(sensor_stats)} sensors, {len(correlations)} correlations, "
+        f"{len(all_anomalies)} anomalies ({scrape_duration}s)")
+
+
+def run_analyze():
+    """Load raw data, run LLM synthesis, save final output. Signal on concerns."""
+    t_start = time.time()
+    dt = datetime.now()
+    dt_label = dt.strftime("%d %b %Y, %H:%M")
+    dt_file = dt.strftime("%Y%m%d-%H%M")
+
+    print(f"[{dt:%Y-%m-%d %H:%M:%S}] ha-correlate analyze starting")
+
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+    if not RAW_CORRELATE_FILE.exists():
+        log(f"ERROR: Raw data file not found: {RAW_CORRELATE_FILE}")
+        log("Run with --scrape-only first.")
+        sys.exit(1)
+
+    try:
+        with open(RAW_CORRELATE_FILE) as f:
+            raw = json.load(f)
+    except (json.JSONDecodeError, OSError) as e:
+        log(f"ERROR: Failed to read raw data: {e}")
+        sys.exit(1)
+
+    scrape_ts = raw.get("scrape_timestamp", "")
+    report = raw.get("data", {})
+
+    # Check staleness
+    if scrape_ts:
+        try:
+            scrape_dt = datetime.fromisoformat(scrape_ts)
+            age_hours = (dt - scrape_dt).total_seconds() / 3600
+            if age_hours > 48:
+                log(f"WARNING: Raw data is {age_hours:.0f}h old (scraped {scrape_ts})")
+        except ValueError:
+            pass
+
+    log(f"Loaded raw data: {report.get('sensor_count', 0)} sensors (scraped {scrape_ts})")
+
+    # Extract data from report
+    sensor_stats = report.get("sensor_stats", {})
+    sparse_sensors = report.get("sparse_sensors", {})
+    duty_cycles = report.get("duty_cycles", {})
+    duty_heatmaps = report.get("duty_heatmaps", {})
+    correlations = report.get("correlations", [])
+    all_anomalies = report.get("anomalies", [])
+    garage_events = report.get("garage_events", [])
+    room_usage = report.get("room_usage", {})
+    room_timeline = report.get("room_timeline", [])
+    env_deltas = report.get("env_deltas", {})
 
     # ── Step 8: LLM synthesis ─────────────────────────────────────────────
     log("Synthesizing insights with LLM...")
@@ -1280,14 +1464,27 @@ def main():
                 f"({s['samples']} samples: [{vals_str}])"
             )
 
-    # Garage car tracker
+    # Garage car tracker — raw data for LLM classification
     if garage_events:
-        summary_parts.append("\n🚗 GARAGE CAR TRACKER:")
+        summary_parts.append("\n🚗 GARAGE DOOR EVENTS (classify using temp + outdoor context):")
         for ge in garage_events:
-            emoji = "🚗" if ge["type"] == "car_returned" else "🚙💨"
-            summary_parts.append(
-                f"  {emoji} {ge['time_local']} — {ge['type'].replace('_', ' ').upper()}: {ge['detail']}"
-            )
+            parts = [f"  {ge['time_local']} — garage temp before: {ge['temp_before']}°C"]
+            if ge.get("outdoor_temp") is not None:
+                parts.append(f"outdoor: {ge['outdoor_temp']}°C")
+            if ge.get("temp_after"):
+                after_str = ", ".join(f"{k}={v}°C" for k, v in ge["temp_after"].items())
+                parts.append(f"temp after: {after_str}")
+            if ge.get("temp_peak_30min") is not None:
+                parts.append(f"peak(30min): {ge['temp_peak_30min']}°C")
+            if ge.get("temp_min_30min") is not None:
+                parts.append(f"min(30min): {ge['temp_min_30min']}°C")
+            parts.append(f"delta: {ge.get('delta', 0):+.1f}°C")
+            parts.append(f"(preliminary: {ge.get('type', '?')})")
+            summary_parts.append(", ".join(parts))
+        summary_parts.append("  NOTE: Classify each event as car_returned/car_left/door_only.")
+        summary_parts.append("  Consider: outdoor temp vs garage temp, season, time of day,")
+        summary_parts.append("  temp delta relative to outdoor-indoor difference.")
+        summary_parts.append("  In warm weather, small deltas are expected even with car movement.")
 
     # Duty cycles
     interesting_dc = {eid: dc for eid, dc in duty_cycles.items()
@@ -1301,6 +1498,24 @@ def main():
                 f"{dc['toggle_count']} toggles, "
                 f"total {dc['total_on_min']:.0f}min on{known}"
             )
+
+    # Duty cycle heatmaps — hourly usage patterns
+    if duty_heatmaps:
+        # Show heatmaps for switches with >2 toggles (interesting patterns only)
+        interesting_hm = {eid: hm for eid, hm in duty_heatmaps.items()
+                         if eid in interesting_dc and interesting_dc[eid]["toggle_count"] >= 2}
+        if interesting_hm:
+            summary_parts.append("\nAPPLIANCE HOURLY HEATMAPS (% on per hour, 0-23):")
+            for eid, hm in sorted(interesting_hm.items(),
+                                   key=lambda x: len(x[1].get("peak_hours", [])), reverse=True):
+                hourly = hm["hourly_pct"]
+                # Compact format: show non-zero hours
+                active_hours = [f"{h}:{hourly[h]:.0f}%" for h in range(24) if hourly.get(h, 0) > 0]
+                if active_hours:
+                    summary_parts.append(f"  {hm['fname']} ({hm['room']}):")
+                    summary_parts.append(f"    active: {', '.join(active_hours)}")
+                    if hm.get("peak_hours"):
+                        summary_parts.append(f"    peak hours (>50%): {hm['peak_hours']}")
 
     # Room usage
     if room_usage:
@@ -1392,13 +1607,25 @@ Your report MUST include these sections:
 - Identify automation patterns vs. human behavior
 
 ## 🚗 Garage & Vehicle Activity
-- Car leaving/returning events with timing
-- Temperature signature analysis
+- Classify each garage door event as: CAR RETURNED / CAR LEFT / DOOR ONLY
+- Use temperature differential logic WITH outdoor temp context:
+  * Hot engine parked → garage temp rises ABOVE what outdoor temp alone would cause
+  * Car leaving → brief cold air ingress (outdoor air enters), then temp recovers
+  * Door-only → button pressed but temp barely changes relative to outdoor baseline
+- In WARM weather (outdoor >15°C), temp deltas will be SMALL even with car movement
+  because garage and outdoor are similar — look at temp TREND shape, not absolute delta
+- In COLD weather (outdoor <5°C), temp changes are dramatic — easier to classify
+- Consider time of day: 7-9 AM departures, 16-19 PM returns are typical commute patterns
+- The "preliminary" classification in the data is a rough heuristic — override it if your
+  analysis of the temperature curve and outdoor context suggests differently
 
 ## ⚡ Energy & Efficiency
 - Which switches have unusual duty cycles
 - Lights left on in unoccupied rooms = energy waste
 - Known automation devices (listed below) should NOT be flagged
+- Analyze APPLIANCE HOURLY HEATMAPS: identify usage patterns, peak hours, and suggest
+  scheduling optimizations (e.g., "dishwasher always runs at 20:00 — consider off-peak 02:00")
+- Flag pattern changes: if a switch normally active at certain hours is idle, note it
 
 Formatting rules:
 - Use emoji for quick scanning: 🌡️ temp, 💨 air, 💡 lights, ⚡ energy, 📊 pattern, ⚠️ warning, ✅ ok
@@ -1406,6 +1633,8 @@ Formatting rules:
 - End with 3-5 actionable recommendations
 - Be specific: "open bedroom window at 22:00" not "improve ventilation"
 - Write 400-600 words
+- NEVER repeat the same observation or sentence — each bullet must be unique
+- If a correlation appears in multiple rooms, consolidate into ONE statement
 
 Known devices (do NOT flag as anomalies):
 - Garaż termometr (garage heater): auto on when humidity high — dehumidification
@@ -1417,18 +1646,15 @@ Known devices (do NOT flag as anomalies):
 
     llm_analysis = call_ollama(system_prompt, data_summary)
 
-    # Sanitize LLM output — strip Chinese prefix / thinking tokens / artifacts
+    # Sanitize LLM output — strip Chinese / thinking tokens / artifacts / repetition
     if llm_analysis:
-        # Remove any leading Chinese characters or non-ASCII junk
-        llm_analysis = re.sub(r'^[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef：:]+\s*', '', llm_analysis)
-        llm_analysis = re.sub(r'^(?:sample output|example output)[:\s]*', '', llm_analysis, flags=re.IGNORECASE)
-        # Strip qwen3 thinking tags and duplicated content before </think>
-        if '</think>' in llm_analysis:
-            llm_analysis = llm_analysis.split('</think>')[-1]
-        llm_analysis = re.sub(r'<think>.*?</think>', '', llm_analysis, flags=re.DOTALL)
-        llm_analysis = llm_analysis.strip()
+        llm_analysis = sanitize_llm_output(llm_analysis)
 
     report["llm_analysis"] = llm_analysis
+
+    # Add dual timestamps to report
+    report["scrape_timestamp"] = scrape_ts
+    report["analyze_timestamp"] = dt.isoformat(timespec="seconds")
 
     # ── Step 9: Save output ───────────────────────────────────────────────
     output_path = DATA_DIR / f"correlate-{dt_file}.json"
@@ -1451,13 +1677,13 @@ Known devices (do NOT flag as anomalies):
             "generated": datetime.now().isoformat(timespec="seconds"),
             "model": OLLAMA_MODEL,
             "context": {
-                "sensors": len(numeric_ts),
-                "switches": len(switch_ts),
+                "sensors": report.get("sensor_count", 0),
+                "switches": report.get("switch_count", 0),
                 "correlations": len(correlations),
                 "anomalies": len(all_anomalies),
                 "rooms_active": len(room_usage),
                 "env_deltas": len(env_deltas),
-                "prev_analysis": prev_analysis.get("generated") if prev_analysis else None,
+                "prev_analysis": report.get("prev_analysis_time"),
             },
         }
         note_fname = f"note-home-insights-{dt_file}.json"
@@ -1487,49 +1713,77 @@ Known devices (do NOT flag as anomalies):
         with open(index_path, "w") as f:
             json.dump(index, f, indent=2)
 
-    # ── Step 10: Send Signal alert ────────────────────────────────────────
+    # ── Step 10: Send Signal alert (only when important) ─────────────────
     elapsed = time.time() - t_start
     log(f"Total time: {elapsed:.0f}s")
 
-    # Build compact Signal alert
-    alert_parts = [f"📊 Home Insights — {dt_label}"]
+    # Determine if anything is genuinely concerning (worth a Signal ping)
+    concerns = []
 
-    # Top findings
-    if room_temps:
-        temps = [f"{r}: {t['current']:.0f}°C" for r, t in sorted(room_temps.items())]
-        alert_parts.append(f"🌡️ {', '.join(temps[:5])}")
+    # Check air quality — CO₂ > 1200 ppm, VOC > 0.5 mg/m³, PM2.5 > 25 µg/m³
+    for eid, s in sensor_stats.items():
+        if s["group"] == "co2" and s["current"] > 1200:
+            concerns.append(f"⚠️ HIGH CO₂: {s['room']} at {s['current']} ppm")
+        elif s["group"] == "voc" and s["current"] > 0.5:
+            concerns.append(f"⚠️ HIGH VOC: {s['room']} at {s['current']} {s['unit']}")
+        elif s["group"] == "pm25" and s["current"] > 25:
+            concerns.append(f"⚠️ HIGH PM2.5: {s['room']} at {s['current']} {s['unit']}")
+    for eid, s in sparse_sensors.items():
+        if s["group"] == "co2" and s["current"] > 1200:
+            concerns.append(f"⚠️ HIGH CO₂: {s['room']} at {s['current']} ppm")
+        elif s["group"] == "voc" and s["current"] > 0.5:
+            concerns.append(f"⚠️ HIGH VOC: {s['room']} at {s['current']} {s['unit']}")
 
-    # Garage events
-    if garage_events:
-        for ge in garage_events:
-            emoji = "🚗" if ge["type"] == "car_returned" else "🚙💨"
-            alert_parts.append(f"{emoji} {ge['time_local']} {ge['type'].replace('_', ' ')}: {ge['detail']}")
+    # Check for anomalies
+    if len(all_anomalies) >= 3:
+        concerns.append(f"⚠️ {len(all_anomalies)} anomalies detected")
 
-    # Room activity
-    if room_usage:
-        active_rooms = sorted(room_usage.items(), key=lambda x: x[1]["lit_hours"], reverse=True)
-        room_str = ", ".join(f"{r}: {u['lit_hours']}h" for r, u in active_rooms[:4])
-        alert_parts.append(f"🏠 Rooms: {room_str}")
+    # Check for unusual temperature (rooms < 15°C or > 28°C)
+    for room, t in room_temps.items():
+        if t["current"] < 15 and room not in ("Garaż", "Strych", "Piwnica"):
+            concerns.append(f"🥶 COLD: {room} at {t['current']:.0f}°C")
+        elif t["current"] > 28:
+            concerns.append(f"🔥 HOT: {room} at {t['current']:.0f}°C")
 
-    if correlations:
-        alert_parts.append(f"🔗 {len(correlations)} correlations found")
-        top = correlations[0]
-        alert_parts.append(f"   Top: {top['sensor_a']} ↔ {top['sensor_b']} (r={top['r']:+.2f})")
+    # Garage events are always interesting (car left/returned)
+    for ge in garage_events:
+        emoji = "🚗" if ge["type"] == "car_returned" else "🚙💨"
+        concerns.append(f"{emoji} {ge['time_local']} {ge['type'].replace('_', ' ')}: {ge['detail']}")
 
-    if all_anomalies:
-        alert_parts.append(f"⚠️ {len(all_anomalies)} anomalies detected")
+    if concerns:
+        # Cooldown: suppress same concern types for 6 hours
+        cooldown_path = DATA_DIR / "alert-cooldown.json"
+        cooldown_data = {}
+        try:
+            cooldown_data = json.loads(cooldown_path.read_text())
+        except (FileNotFoundError, json.JSONDecodeError):
+            pass
+        now_ts = time.time()
+        cooldown_secs = 6 * 3600  # 6 hours
+        # Key each concern by its type prefix (emoji + category)
+        new_concerns = []
+        for c in concerns:
+            # Use first ~40 chars as the dedup key (covers emoji + metric + room)
+            ckey = c[:40]
+            last_sent = cooldown_data.get(ckey, 0)
+            if now_ts - last_sent > cooldown_secs:
+                new_concerns.append(c)
+                cooldown_data[ckey] = now_ts
+        # Garage events always pass through (time-specific, never duplicate)
+        garage = [c for c in concerns if "🚗" in c or "🚙" in c]
+        new_concerns = list(dict.fromkeys(new_concerns + garage))  # dedup, preserve order
 
-    interesting_switches = [dc for dc in duty_cycles.values()
-                           if dc["toggle_count"] >= 3 and not dc["known_behavior"]]
-    if interesting_switches:
-        alert_parts.append(
-            f"⚡ Active switches: " +
-            ", ".join(f"{s['fname']} ({s['on_pct']:.0f}%)" for s in interesting_switches[:3])
-        )
-
-    alert_parts.append(f"\n⏱ {elapsed:.0f}s, {len(numeric_ts)} sensors, {len(switch_ts)} switches")
-
-    signal_send("\n".join(alert_parts))
+        if new_concerns:
+            alert_parts = [f"🏠 Home Alert — {dt_label}"]
+            alert_parts.extend(new_concerns[:8])
+            alert_parts.append(f"\n⏱ {elapsed:.0f}s | Full report on dashboard HOME tab")
+            signal_send("\n".join(alert_parts))
+            cooldown_path.write_text(json.dumps(cooldown_data))
+            log(f"Signal alert sent: {len(new_concerns)} new concerns (of {len(concerns)} total)")
+        else:
+            log(f"All {len(concerns)} concerns already alerted within 6h — suppressed")
+    else:
+        log(f"No important concerns — skipping Signal alert (routine data saved to dashboard)")
 
     print(f"  Done. {len(correlations)} correlations, {len(all_anomalies)} anomalies, "
           f"{len(duty_cycles)} duty cycles, {len(room_usage)} active rooms analyzed.")
@@ -1542,6 +1796,25 @@ Known devices (do NOT flag as anomalies):
         print("  Dashboard HTML regenerated")
     except Exception:
         pass
+
+
+def main():
+    """Legacy wrapper / argparse entry point."""
+    parser = argparse.ArgumentParser(description="HA sensor time-series correlation analysis")
+    parser.add_argument('--scrape-only', action='store_true',
+                        help='Only collect HA data and compute stats, save raw (no LLM)')
+    parser.add_argument('--analyze-only', action='store_true',
+                        help='Only run LLM analysis on previously scraped raw data')
+    args = parser.parse_args()
+
+    if args.scrape_only:
+        run_scrape()
+    elif args.analyze_only:
+        run_analyze()
+    else:
+        # Legacy: full run (backward compatible)
+        run_scrape()
+        run_analyze()
 
 
 def interpret_correlation(group_a, group_b, r, lag):
