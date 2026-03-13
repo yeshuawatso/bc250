@@ -47,7 +47,7 @@ from datetime import datetime, date, timedelta, timezone
 from pathlib import Path
 
 # ─── Configuration ──────────────────────────────────────────────────────────
-JOBS_JSON = Path.home() / ".openclaw/cron/jobs.json"
+JOBS_JSON = Path("/opt/netscan/data/jobs.json")
 STATE_FILE = Path("/opt/netscan/data/queue-runner-state.json")
 LOG_FILE = Path("/tmp/queue-runner.log")
 
@@ -101,8 +101,8 @@ SD_NOTIFY = 'NOTIFY_SOCKET' in os.environ  # systemd watchdog support
 SIGNAL_RPC = "http://127.0.0.1:8080/api/v1/rpc"
 SIGNAL_ACCOUNT = os.environ.get('SIGNAL_ACCOUNT', '+<BOT_PHONE>')
 SIGNAL_OWNER = os.environ.get('SIGNAL_OWNER', '+<OWNER_PHONE>')
-SIGNAL_CHAT_MODEL = "qwen3:14b"
-SIGNAL_CHAT_CTX = 24576             # Context window for chat responses (matches OLLAMA_CONTEXT_LENGTH)
+SIGNAL_CHAT_MODEL = "qwen3.5-35b-a3b-iq2m"
+SIGNAL_CHAT_CTX = 16384             # Context window for chat responses (matches OLLAMA_CONTEXT_LENGTH)
 SIGNAL_CHAT_MAX_EXEC = 3            # Max shell commands per message (search+fetch+verify)
 SIGNAL_EXEC_TIMEOUT_S = 30          # Timeout for shell commands
 SIGNAL_MAX_REPLY = 1800             # Signal message char limit
@@ -115,6 +115,24 @@ SD_FLUX_DIR = "/opt/stable-diffusion.cpp/models/flux"
 SD_OUTPUT_PATH = "/tmp/sd-output.png"
 SD_TIMEOUT_S = 300                  # Max 5 min for image generation
 SD_SCRIPT_PREFIX = "/opt/stable-diffusion.cpp/generate-and-send"  # EXEC intercept pattern
+
+# ─── Video Generation (WAN 2.1 T2V) ────────────────────────────────────────
+SD_WAN_DIR = "/opt/stable-diffusion.cpp/models/wan"
+SD_VIDEO_OUTPUT_PATH = "/tmp/sd-output.avi"
+SD_VIDEO_TIMEOUT_S = 3000           # Max 50 min for video generation (~38 min typical)
+SD_VIDEO_SCRIPT_PREFIX = "/opt/stable-diffusion.cpp/generate-video"  # EXEC video intercept
+
+# ─── ESRGAN Upscale ────────────────────────────────────────────────────────
+SD_ESRGAN_MODEL = "/opt/stable-diffusion.cpp/models/esrgan/RealESRGAN_x4plus.pth"
+SD_UPSCALE_TILE_SIZE = 192       # Larger tiles = better seam quality. 128→15s, 192→25s, 256→41s @512²
+SD_UPSCALE_TIMEOUT_S = 120
+
+# ─── Kontext Image Editing ──────────────────────────────────────────────────
+SD_KONTEXT_MODEL = f"{SD_FLUX_DIR}/flux1-kontext-dev-Q4_0.gguf"
+SD_KONTEXT_TIMEOUT_S = 900          # Max 15 min for Kontext editing (~5 min typical @512²)
+SD_KONTEXT_STALL_S = 180            # Kill if no stdout progress for 3 min
+SD_EDIT_SCRIPT_PREFIX = "/opt/stable-diffusion.cpp/edit-image"  # EXEC edit intercept
+SIGNAL_ATTACHMENTS_DIR = os.path.expanduser("~/.local/share/signal-cli/attachments")
 
 # ─── Job name sets ──────────────────────────────────────────────────────────
 # HA jobs: run opportunistically when GPU is idle (2-3 times/day)
@@ -132,10 +150,16 @@ WEEKLY_JOBS = {
     'csi-sensor-discover': 2,   # Wednesday
     'csi-sensor-improve': 6,    # Sunday
     'vulnscan-weekly': 6,       # Sunday
+    'career-digest-weekly': 6,  # Sunday — weekly career summary via Signal
 }
 
 # ─── Globals ────────────────────────────────────────────────────────────────
 running = True
+
+# Deferred SD queue: when image/edit/video/upscale is requested during a GPU job
+# (allow_sd=False), save the request here instead of rejecting it.
+# Processed at the next between-jobs chat window.
+_deferred_sd_queue = []  # List of (action, args) tuples
 
 
 def signal_handler(sig, frame):
@@ -938,8 +962,21 @@ def check_signal_inbox():
                 dm = envelope.get('dataMessage', {})
                 text = dm.get('message', '')
                 ts = envelope.get('timestamp', 0)
-                if source == SIGNAL_OWNER and text:
-                    messages.append({'text': text, 'timestamp': ts})
+                # Extract attachments (images sent by user)
+                attachments = []
+                for att in dm.get('attachments', []):
+                    att_id = att.get('id', '')
+                    content_type = att.get('contentType', '')
+                    if att_id and content_type.startswith('image/'):
+                        att_path = os.path.join(SIGNAL_ATTACHMENTS_DIR, att_id)
+                        if os.path.exists(att_path):
+                            attachments.append(att_path)
+                if source == SIGNAL_OWNER and (text or attachments):
+                    messages.append({
+                        'text': text or '',
+                        'timestamp': ts,
+                        'attachments': attachments,
+                    })
             except (json.JSONDecodeError, KeyError, TypeError):
                 # Not a JSON message line (signal-cli log noise) — skip
                 continue
@@ -1089,22 +1126,480 @@ def generate_and_send_image(prompt):
     elapsed = int(time.time() - start_t)
     log(f"  SD: Image generated in {elapsed}s")
 
+    # Auto-upscale with ESRGAN (Ollama is already stopped — no extra swap cost)
+    upscaled_path = None
+    if os.path.exists(SD_ESRGAN_MODEL):
+        base, ext = os.path.splitext(SD_OUTPUT_PATH)
+        upscaled_path = f"{base}-4x{ext}"
+        try:
+            os.remove(upscaled_path)
+        except FileNotFoundError:
+            pass
+        upscale_cmd = [
+            SD_CLI, "-M", "upscale",
+            "--upscale-model", SD_ESRGAN_MODEL,
+            "--upscale-tile-size", str(SD_UPSCALE_TILE_SIZE),
+            "-i", SD_OUTPUT_PATH,
+            "-o", upscaled_path,
+        ]
+        log(f"  SD: Auto-upscaling with ESRGAN 4× (tile {SD_UPSCALE_TILE_SIZE})...")
+        up_start = time.time()
+        try:
+            proc = subprocess.Popen(upscale_cmd, stdout=subprocess.PIPE,
+                                    stderr=subprocess.STDOUT)
+            while time.time() - up_start < SD_UPSCALE_TIMEOUT_S:
+                if (os.path.exists(upscaled_path) and
+                        os.path.getsize(upscaled_path) > 1000):
+                    time.sleep(2)
+                    proc.kill()
+                    try:
+                        proc.wait(timeout=5)
+                    except Exception:
+                        pass
+                    subprocess.run(["killall", "-9", "sd-cli"],
+                                   capture_output=True, timeout=5)
+                    break
+                time.sleep(3)
+                sd_watchdog_ping()
+            else:
+                proc.kill()
+                subprocess.run(["killall", "-9", "sd-cli"],
+                               capture_output=True, timeout=5)
+                log("  SD: ESRGAN upscale timed out, skipping")
+                upscaled_path = None
+            if upscaled_path and os.path.exists(upscaled_path):
+                up_elapsed = int(time.time() - up_start)
+                up_kb = os.path.getsize(upscaled_path) // 1024
+                log(f"  SD: Upscaled in {up_elapsed}s ({up_kb}KB)")
+            else:
+                upscaled_path = None
+        except Exception as e:
+            log(f"  SD: ESRGAN error (skipping): {e}")
+            upscaled_path = None
+
     # Restart Ollama (start loading model while we send)
     log("  SD: Restarting Ollama...")
     subprocess.run(["sudo", "systemctl", "start", "ollama"],
                    timeout=30, capture_output=True)
 
-    # Send image via Signal
+    # Send original image via Signal
     log("  SD: Sending image via Signal...")
     if signal_send_attachment(prompt, SD_OUTPUT_PATH):
         log("  SD: Image sent successfully")
     else:
         log("  SD: WARNING: Failed to send image via Signal")
 
+    # Send upscaled version if available
+    if upscaled_path:
+        up_kb = os.path.getsize(upscaled_path) // 1024
+        caption = f"⬆️ 4× upscale ({up_kb}KB)"
+        if signal_send_attachment(caption, upscaled_path):
+            log("  SD: Upscaled image sent")
+        else:
+            log("  SD: WARNING: Failed to send upscaled image")
+
     # Wait for Ollama health before returning to job queue
     wait_for_ollama()
     sd_status('SD: complete, resuming jobs')
-    return f"\U0001f3a8 Image generated and sent! ({elapsed}s)"
+    extra = f" + 4× upscale" if upscaled_path else ""
+    return f"\U0001f3a8 Image generated and sent! ({elapsed}s{extra})"
+
+
+def generate_and_send_video(prompt):
+    """Synchronous WAN 2.1 T2V video generation: stop Ollama, run sd-cli, send, restart.
+
+    Similar to generate_and_send_image but uses WAN 2.1 T2V 1.3B model
+    in vid_gen mode. Takes ~38 minutes for 17 frames @480×320.
+    Output is AVI (MJPEG) regardless of -o extension.
+    """
+    log(f"  VID: Video generation requested: {prompt[:80]}")
+    sd_status('VID: generating video')
+
+    # Verify WAN model files exist
+    wan_diffusion = f"{SD_WAN_DIR}/Wan2.1-T2V-1.3B-Q4_0.gguf"
+    wan_vae = f"{SD_WAN_DIR}/wan_2.1_vae.safetensors"
+    wan_t5 = f"{SD_WAN_DIR}/umt5-xxl-encoder-Q4_K_M.gguf"
+
+    for model_f in (wan_diffusion, wan_vae, wan_t5):
+        if not os.path.exists(model_f):
+            log(f"  VID: Model not found: {model_f}")
+            return f"Video generation error: model not found ({os.path.basename(model_f)})"
+
+    # Notify user (video takes a long time)
+    signal_reply(f"\U0001f3ac Generating video... this takes ~35-40 min. Prompt: {prompt[:150]}")
+
+    # Stop Ollama to free VRAM
+    log("  VID: Stopping Ollama...")
+    try:
+        subprocess.run(["sudo", "systemctl", "stop", "ollama"],
+                       timeout=30, capture_output=True)
+        time.sleep(3)
+    except Exception as e:
+        log(f"  VID: Failed to stop Ollama: {e}")
+        return f"Failed to stop Ollama for video generation: {e}"
+
+    # Remove stale output (sd-cli produces .avi regardless of -o extension)
+    for ext in ('.avi', '.mp4.avi', '.mp4'):
+        try:
+            os.remove(SD_VIDEO_OUTPUT_PATH + ext.lstrip('.avi').rstrip('.avi'))
+        except FileNotFoundError:
+            pass
+    try:
+        os.remove(SD_VIDEO_OUTPUT_PATH)
+    except FileNotFoundError:
+        pass
+
+    cmd = [
+        SD_CLI, "-M", "vid_gen",
+        "--diffusion-model", wan_diffusion,
+        "--vae", wan_vae,
+        "--t5xxl", wan_t5,
+        "-p", prompt,
+        "--cfg-scale", "6.0",
+        "--sampling-method", "euler",
+        "-W", "480", "-H", "320",
+        "--diffusion-fa", "--offload-to-cpu",
+        "--video-frames", "17",
+        "--flow-shift", "3.0",
+        "-o", SD_VIDEO_OUTPUT_PATH,
+    ]
+
+    log("  VID: Running sd-cli vid_gen...")
+    start_t = time.time()
+    try:
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT)
+        # Poll for output file — sd-cli hangs after writing on GFX1013
+        # Video output is always .avi (MJPEG), sd-cli appends .avi to whatever -o says
+        # Check both /tmp/sd-output.avi and /tmp/sd-output.avi.avi
+        while time.time() - start_t < SD_VIDEO_TIMEOUT_S:
+            for candidate in (SD_VIDEO_OUTPUT_PATH,
+                              SD_VIDEO_OUTPUT_PATH + ".avi"):
+                if (os.path.exists(candidate) and
+                        os.path.getsize(candidate) > 10000):
+                    time.sleep(5)  # Let it finish writing (video is larger)
+                    proc.kill()
+                    try:
+                        proc.wait(timeout=5)
+                    except Exception:
+                        pass
+                    subprocess.run(["killall", "-9", "sd-cli"],
+                                   capture_output=True, timeout=5)
+                    actual_output = candidate
+                    break
+            else:
+                time.sleep(10)
+                sd_watchdog_ping()
+                continue
+            break  # Found the file, exit outer loop
+        else:
+            proc.kill()
+            subprocess.run(["killall", "-9", "sd-cli"],
+                           capture_output=True, timeout=5)
+            log("  VID: Generation timed out")
+            subprocess.run(["sudo", "systemctl", "start", "ollama"],
+                           timeout=30, capture_output=True)
+            wait_for_ollama()
+            return "Video generation timed out (50 min limit). Sorry!"
+    except Exception as e:
+        log(f"  VID: sd-cli error: {e}")
+        subprocess.run(["sudo", "systemctl", "start", "ollama"],
+                       timeout=30, capture_output=True)
+        wait_for_ollama()
+        return f"Video generation error: {e}"
+
+    elapsed_min = int((time.time() - start_t) / 60)
+    file_size = os.path.getsize(actual_output) // 1024
+    log(f"  VID: Video generated in {elapsed_min}min ({file_size} KB)")
+
+    # Restart Ollama
+    log("  VID: Restarting Ollama...")
+    subprocess.run(["sudo", "systemctl", "start", "ollama"],
+                   timeout=30, capture_output=True)
+
+    # Send video via Signal
+    log("  VID: Sending video via Signal...")
+    if signal_send_attachment(f"\U0001f3ac {prompt[:200]}", actual_output):
+        log("  VID: Video sent successfully")
+    else:
+        log("  VID: WARNING: Failed to send video via Signal")
+
+    wait_for_ollama()
+    sd_status('VID: complete, resuming jobs')
+    return f"\U0001f3ac Video generated and sent! ({elapsed_min}min, {file_size}KB)"
+
+
+def upscale_and_send(image_path, prompt=""):
+    """Upscale an existing image with ESRGAN and send via Signal.
+
+    Uses sd-cli -M upscale with RealESRGAN_x4plus (4× upscale).
+    Requires ESRGAN model on disk. Stops Ollama, upscales, sends, restarts.
+    """
+    if not os.path.exists(SD_ESRGAN_MODEL):
+        return "ESRGAN model not found. Download RealESRGAN_x4plus.pth first."
+
+    if not os.path.exists(image_path):
+        return f"Input image not found: {image_path}"
+
+    log(f"  ESRGAN: Upscaling {image_path}")
+    sd_status('ESRGAN: upscaling image')
+
+    signal_reply(f"⬆️ Upscaling image (4×)... ~30s")
+
+    # Stop Ollama
+    try:
+        subprocess.run(["sudo", "systemctl", "stop", "ollama"],
+                       timeout=30, capture_output=True)
+        time.sleep(3)
+    except Exception as e:
+        log(f"  ESRGAN: Failed to stop Ollama: {e}")
+        return f"Failed to stop Ollama: {e}"
+
+    # Output path: original name with -4x suffix
+    base, ext = os.path.splitext(image_path)
+    upscaled_path = f"{base}-4x{ext}"
+    try:
+        os.remove(upscaled_path)
+    except FileNotFoundError:
+        pass
+
+    cmd = [
+        SD_CLI, "-M", "upscale",
+        "--upscale-model", SD_ESRGAN_MODEL,
+        "--upscale-tile-size", str(SD_UPSCALE_TILE_SIZE),
+        "-i", image_path,
+        "-o", upscaled_path,
+    ]
+
+    log(f"  ESRGAN: Running sd-cli upscale (tile {SD_UPSCALE_TILE_SIZE})...")
+    start_t = time.time()
+    try:
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT)
+        # Poll for upscaled output
+        while time.time() - start_t < SD_UPSCALE_TIMEOUT_S:
+            if (os.path.exists(upscaled_path) and
+                    os.path.getsize(upscaled_path) > 1000):
+                time.sleep(2)
+                proc.kill()
+                try:
+                    proc.wait(timeout=5)
+                except Exception:
+                    pass
+                subprocess.run(["killall", "-9", "sd-cli"],
+                               capture_output=True, timeout=5)
+                break
+            time.sleep(3)
+            sd_watchdog_ping()
+        else:
+            proc.kill()
+            subprocess.run(["killall", "-9", "sd-cli"],
+                           capture_output=True, timeout=5)
+            log("  ESRGAN: Upscale timed out")
+            subprocess.run(["sudo", "systemctl", "start", "ollama"],
+                           timeout=30, capture_output=True)
+            wait_for_ollama()
+            return "ESRGAN upscale timed out."
+    except Exception as e:
+        log(f"  ESRGAN: error: {e}")
+        subprocess.run(["sudo", "systemctl", "start", "ollama"],
+                       timeout=30, capture_output=True)
+        wait_for_ollama()
+        return f"ESRGAN error: {e}"
+
+    elapsed = int(time.time() - start_t)
+    size_kb = os.path.getsize(upscaled_path) // 1024
+    log(f"  ESRGAN: Upscaled in {elapsed}s ({size_kb}KB)")
+
+    # Restart Ollama
+    subprocess.run(["sudo", "systemctl", "start", "ollama"],
+                   timeout=30, capture_output=True)
+
+    # Send upscaled image
+    caption = f"⬆️ 4× upscale ({size_kb}KB)"
+    if prompt:
+        caption = f"⬆️ {prompt[:150]} (4× upscale, {size_kb}KB)"
+    if signal_send_attachment(caption, upscaled_path):
+        log("  ESRGAN: Upscaled image sent")
+    else:
+        log("  ESRGAN: WARNING: Failed to send upscaled image")
+
+    wait_for_ollama()
+    sd_status('ESRGAN: complete, resuming jobs')
+    return f"⬆️ Image upscaled 4× and sent! ({elapsed}s, {size_kb}KB)"
+
+
+def edit_and_send_image(source_path, prompt):
+    """Edit an image using FLUX.1-Kontext-dev: stop Ollama, run sd-cli with -r, send, restart.
+
+    Uses the Kontext model which understands reference images and can edit them
+    based on text instructions. Flow mirrors generate_and_send_image().
+    """
+    if not os.path.exists(SD_KONTEXT_MODEL):
+        return "Kontext model not found. Download flux1-kontext-dev-Q4_0.gguf first."
+
+    if not os.path.exists(source_path):
+        return f"Source image not found: {source_path}"
+
+    log(f"  EDIT: Kontext edit requested: {prompt[:80]}")
+    sd_status('EDIT: editing image with Kontext')
+
+    # Resize input image to 512×512 — Kontext processes the full reference image
+    # through the model. A 1200×1600 input takes 3-4× longer than 512×512.
+    resized_path = "/tmp/sd-edit-input-resized.png"
+    try:
+        from PIL import Image
+        with Image.open(source_path) as img:
+            orig_size = img.size
+            img_resized = img.resize((512, 512), Image.LANCZOS)
+            img_resized.save(resized_path)
+        log(f"  EDIT: Resized input {orig_size[0]}×{orig_size[1]} → 512×512")
+    except Exception as e:
+        log(f"  EDIT: PIL resize failed ({e}), using original")
+        resized_path = source_path
+
+    signal_reply(f"\u270f\ufe0f Editing your image with Kontext... ~5 min. Instruction: {prompt[:200]}")
+
+    # Stop Ollama to free VRAM
+    log("  EDIT: Stopping Ollama...")
+    try:
+        subprocess.run(["sudo", "systemctl", "stop", "ollama"],
+                       timeout=30, capture_output=True)
+        time.sleep(3)
+    except Exception as e:
+        log(f"  EDIT: Failed to stop Ollama: {e}")
+        return f"Failed to stop Ollama for image editing: {e}"
+
+    # Reuse FLUX1 text encoders and VAE (same architecture as Kontext)
+    t5xxl = f"{SD_FLUX_DIR}/t5-v1_1-xxl-encoder-Q4_K_M.gguf"
+    clip_l = f"{SD_FLUX_DIR}/clip_l.safetensors"
+    vae = f"{SD_FLUX_DIR}/ae.safetensors"
+
+    for model_f in (t5xxl, clip_l, vae):
+        if not os.path.exists(model_f):
+            log(f"  EDIT: Model not found: {model_f}")
+            subprocess.run(["sudo", "systemctl", "start", "ollama"],
+                           timeout=30, capture_output=True)
+            wait_for_ollama()
+            return f"FLUX model file missing: {os.path.basename(model_f)}"
+
+    # Remove stale output
+    edit_output = "/tmp/sd-edit-output.png"
+    try:
+        os.remove(edit_output)
+    except FileNotFoundError:
+        pass
+
+    cmd = [
+        SD_CLI,
+        "--diffusion-model", SD_KONTEXT_MODEL,
+        "--vae", vae,
+        "--clip_l", clip_l,
+        "--t5xxl", t5xxl,
+        "--clip-on-cpu",
+        "-r", resized_path,
+        "-p", prompt,
+        "-o", edit_output,
+        "--steps", "28",
+        "-W", "512", "-H", "512",
+        "--cfg-scale", "3.5",
+        "--sampling-method", "euler",
+        "--offload-to-cpu", "--diffusion-fa",
+    ]
+
+    log("  EDIT: Running sd-cli Kontext...")
+    start_t = time.time()
+    last_output_t = start_t  # Track last stdout activity for stall detection
+    try:
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT)
+        import fcntl
+        fd = proc.stdout.fileno()
+        fl = fcntl.fcntl(fd, fcntl.F_GETFL)
+        fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
+
+        while time.time() - start_t < SD_KONTEXT_TIMEOUT_S:
+            # Check for stdout activity (progress)
+            try:
+                chunk = proc.stdout.read(4096)
+                if chunk:
+                    last_output_t = time.time()
+                    last_line = chunk.decode('utf-8', errors='replace').strip().split('\n')[-1]
+                    if 'step' in last_line.lower() or 'it/s' in last_line.lower():
+                        log(f"  EDIT: progress: {last_line[:120]}")
+            except (BlockingIOError, OSError):
+                pass
+
+            # Check for stall (no output for SD_KONTEXT_STALL_S)
+            stall_s = int(time.time() - last_output_t)
+            if stall_s > SD_KONTEXT_STALL_S and time.time() - start_t > 60:
+                proc.kill()
+                try:
+                    proc.wait(timeout=10)
+                except Exception:
+                    pass
+                subprocess.run(["killall", "-9", "sd-cli"],
+                               capture_output=True, timeout=5)
+                elapsed = int(time.time() - start_t)
+                log(f"  EDIT: sd-cli stalled (no output for {stall_s}s), killed after {elapsed}s")
+                subprocess.run(["sudo", "systemctl", "start", "ollama"],
+                               timeout=30, capture_output=True)
+                wait_for_ollama()
+                return f"Image editing stalled after {elapsed // 60} min (sd-cli stopped responding). Sorry!"
+
+            # Check if output file appeared (success)
+            if (os.path.exists(edit_output) and
+                    os.path.getsize(edit_output) > 1000):
+                time.sleep(2)
+                proc.kill()
+                try:
+                    proc.wait(timeout=5)
+                except Exception:
+                    pass
+                subprocess.run(["killall", "-9", "sd-cli"],
+                               capture_output=True, timeout=5)
+                break
+            time.sleep(3)
+            sd_watchdog_ping()
+        else:
+            proc.kill()
+            try:
+                proc.wait(timeout=10)
+            except Exception:
+                pass
+            subprocess.run(["killall", "-9", "sd-cli"],
+                           capture_output=True, timeout=5)
+            elapsed = int(time.time() - start_t)
+            log(f"  EDIT: Generation timed out after {elapsed}s")
+            subprocess.run(["sudo", "systemctl", "start", "ollama"],
+                           timeout=30, capture_output=True)
+            wait_for_ollama()
+            return f"Image editing timed out ({elapsed // 60} min). Sorry!"
+    except Exception as e:
+        log(f"  EDIT: sd-cli error: {e}")
+        subprocess.run(["sudo", "systemctl", "start", "ollama"],
+                       timeout=30, capture_output=True)
+        wait_for_ollama()
+        return f"Image editing error: {e}"
+
+    elapsed = int(time.time() - start_t)
+    log(f"  EDIT: Image edited in {elapsed}s")
+
+    # Restart Ollama
+    log("  EDIT: Restarting Ollama...")
+    subprocess.run(["sudo", "systemctl", "start", "ollama"],
+                   timeout=30, capture_output=True)
+
+    # Send edited image via Signal
+    log("  EDIT: Sending edited image via Signal...")
+    if signal_send_attachment(f"\u270f\ufe0f {prompt[:200]}", edit_output):
+        log("  EDIT: Edited image sent successfully")
+    else:
+        log("  EDIT: WARNING: Failed to send edited image via Signal")
+
+    wait_for_ollama()
+    sd_status('EDIT: complete, resuming jobs')
+    return f"\u270f\ufe0f Image edited and sent! ({elapsed}s)"
 
 
 def get_chat_context():
@@ -1142,7 +1637,7 @@ def clean_llm_reply(text):
     return text.strip()
 
 
-def chat_with_llm(user_text, allow_sd=True):
+def chat_with_llm(user_text, allow_sd=True, attachment_path=None):
     """Process a user message with LLM, optionally executing shell commands.
 
     Supports simple tool use: if the LLM outputs a line starting with EXEC:,
@@ -1151,6 +1646,9 @@ def chat_with_llm(user_text, allow_sd=True):
 
     When allow_sd=False (parallel chat during GPU-free jobs), image generation
     requests are deferred — the user is told to try again between jobs.
+
+    If attachment_path is set, the user sent an image — LLM is told about it
+    so it can trigger Kontext editing if appropriate.
 
     Returns the reply string to send via Signal.
     """
@@ -1190,6 +1688,28 @@ def chat_with_llm(user_text, allow_sd=True):
         "Example: 'a lobster CEO giving a TED talk about world domination, dramatic lighting, \n"
         "photorealistic, cinematic composition, red power tie'\n"
         "Do NOT use this unless explicitly asked to generate/create/draw an image.\n\n"
+
+        "== VIDEO GENERATION ==\n"
+        "When asked to generate/create a VIDEO or animation:\n"
+        "EXEC: /opt/stable-diffusion.cpp/generate-video <descriptive prompt in English>\n"
+        "Uses WAN 2.1 T2V 1.3B. Takes ~35-40 min! Produces a 17-frame clip @480x320.\n"
+        "Warn the user about the time. Only use when explicitly asked for video/animation.\n"
+        "Prompt tips: describe motion and scene changes — 'a cat walking across a sunny garden'.\n\n"
+
+        "== UPSCALE ==\n"
+        "When asked to upscale the last generated image:\n"
+        "EXEC: /opt/stable-diffusion.cpp/upscale /tmp/sd-output.png\n"
+        "Uses ESRGAN 4× upscale (512→2048). Takes ~30s. Only if asked.\n\n"
+
+        "== IMAGE EDITING (KONTEXT) ==\n"
+        "When the user sends a PHOTO with an edit instruction (or asks to edit an image):\n"
+        "EXEC: /opt/stable-diffusion.cpp/edit-image <edit instruction in English>\n"
+        "Uses FLUX.1-Kontext-dev to understand and edit the reference image.\n"
+        "Takes ~5-7 min. The source image is automatically the one the user sent.\n"
+        "Edit prompts: describe what to change — 'make it cyberpunk', 'add a hat',\n"
+        "'change background to sunset', 'make it look like an oil painting'.\n"
+        "ONLY use when the user sends a photo AND asks to modify/edit/change it.\n"
+        "If they just send a photo with no edit request, acknowledge it.\n\n"
 
         "== DAILY RESEARCH DATA ==\n"
         "bc250 runs 300+ automated monitoring jobs. All data in /opt/netscan/data/.\n"
@@ -1323,9 +1843,16 @@ def chat_with_llm(user_text, allow_sd=True):
         "  * If AK asks something serious/urgent, drop the act and be direct."
     )
 
+    # If user sent an image, prepend context about it
+    if attachment_path:
+        user_content = (f"[User sent a photo: {attachment_path}]\n"
+                        f"{user_text or 'edit this image'}")
+    else:
+        user_content = user_text
+
     messages = [
         {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_text}
+        {"role": "user", "content": user_content}
     ]
 
     reply = ""
@@ -1357,16 +1884,55 @@ def chat_with_llm(user_text, allow_sd=True):
 
             # Intercept image generation — handle synchronously
             if cmd.startswith(SD_SCRIPT_PREFIX):
-                if not allow_sd:
-                    return ("🦞 Can't generate images right now — GPU is busy "
-                            "with a background job. Ask me again in a few minutes "
-                            "when I'm between jobs.")
                 sd_prompt = re.sub(
                     r'^/opt/stable-diffusion\.cpp/generate-and-send\.sh\s*',
                     '', cmd).strip()
                 if not sd_prompt:
                     return "No image prompt provided. What should I draw?"
+                if not allow_sd:
+                    _deferred_sd_queue.append(('generate', sd_prompt))
+                    log(f"    SD deferred: generate '{sd_prompt[:60]}'")
+                    return "🦞 GPU is busy — queued your image request. I'll generate it between jobs (a few minutes)."
                 return generate_and_send_image(sd_prompt)
+
+            # Intercept video generation — WAN 2.1 T2V
+            if cmd.startswith(SD_VIDEO_SCRIPT_PREFIX):
+                vid_prompt = re.sub(
+                    r'^/opt/stable-diffusion\.cpp/generate-video\s*',
+                    '', cmd).strip()
+                if not vid_prompt:
+                    return "No video prompt provided. What should I animate?"
+                if not allow_sd:
+                    _deferred_sd_queue.append(('video', vid_prompt))
+                    log(f"    SD deferred: video '{vid_prompt[:60]}'")
+                    return "🦞 GPU is busy — queued your video request. I'll generate it between jobs."
+                return generate_and_send_video(vid_prompt)
+
+            # Intercept ESRGAN upscale
+            if cmd.startswith("/opt/stable-diffusion.cpp/upscale"):
+                parts = cmd.split(None, 1)
+                img_path = parts[1].strip() if len(parts) > 1 else SD_OUTPUT_PATH
+                if not allow_sd:
+                    _deferred_sd_queue.append(('upscale', img_path))
+                    log(f"    SD deferred: upscale '{img_path}'")
+                    return "🦞 GPU is busy — queued your upscale request. I'll process it between jobs."
+                return upscale_and_send(img_path)
+
+            # Intercept Kontext image editing
+            if cmd.startswith(SD_EDIT_SCRIPT_PREFIX):
+                edit_prompt = re.sub(
+                    r'^/opt/stable-diffusion\.cpp/edit-image\s*',
+                    '', cmd).strip()
+                if not edit_prompt:
+                    return "No edit instruction provided. What should I change?"
+                if not attachment_path:
+                    return ("No image attached. Send a photo with your edit "
+                            "instruction and I'll modify it with Kontext.")
+                if not allow_sd:
+                    _deferred_sd_queue.append(('edit', (attachment_path, edit_prompt)))
+                    log(f"    SD deferred: edit '{edit_prompt[:60]}'")
+                    return "🦞 GPU is busy — queued your image edit. I'll process it between jobs (a few minutes)."
+                return edit_and_send_image(attachment_path, edit_prompt)
 
             exec_count += 1
             log(f"    Chat EXEC ({exec_count}): {cmd[:80]}")
@@ -1408,13 +1974,32 @@ def process_signal_chat(tag=None):
     when tag='parallel'. Each message gets an LLM response with optional shell
     tool use.
 
-    When tag='parallel', image generation is blocked (would stop Ollama and
-    interfere with the next LLM job) — the user gets a "try again between jobs"
-    message instead.
+    When tag='parallel', SD requests are deferred to the next between-jobs
+    window instead of being rejected.
 
     Returns the number of messages processed.
     """
     messages = check_signal_inbox()
+
+    # Between jobs (tag=None, allow_sd=True): drain any deferred SD requests first
+    if tag is None and _deferred_sd_queue:
+        n_deferred = len(_deferred_sd_queue)
+        log(f"  📱 Processing {n_deferred} deferred SD request(s)")
+        while _deferred_sd_queue:
+            action, args = _deferred_sd_queue.pop(0)
+            if action == 'generate':
+                result = generate_and_send_image(args)
+            elif action == 'video':
+                result = generate_and_send_video(args)
+            elif action == 'upscale':
+                result = upscale_and_send(args)
+            elif action == 'edit':
+                result = edit_and_send_image(args[0], args[1])
+            else:
+                result = f"Unknown deferred action: {action}"
+            log(f"    Deferred {action}: {str(result)[:80]}")
+            sd_watchdog_ping()
+
     if not messages:
         return 0
 
@@ -1425,8 +2010,12 @@ def process_signal_chat(tag=None):
 
     for i, msg in enumerate(messages):
         text = msg['text']
-        log(f"    [{i+1}/{count}] {text[:80]}{'...' if len(text) > 80 else ''}")
-        reply = chat_with_llm(text, allow_sd=(tag != 'parallel'))
+        attachments = msg.get('attachments', [])
+        att_path = attachments[0] if attachments else None
+        att_info = f" [+image: {att_path}]" if att_path else ""
+        log(f"    [{i+1}/{count}] {text[:80]}{'...' if len(text) > 80 else ''}{att_info}")
+        reply = chat_with_llm(text, allow_sd=(tag != 'parallel'),
+                              attachment_path=att_path)
         signal_reply(reply)
         log(f"    Replied: {reply[:80]}{'...' if len(reply) > 80 else ''}")
         sd_watchdog_ping()
