@@ -11,38 +11,47 @@
 
 **GPU-accelerated AI home server on an obscure AMD APU — Vulkan inference, autonomous intelligence, Signal chat**
 
-`Zen 2 · RDNA 1.5 · 16 GB unified · Vulkan · 14B @ 27 tok/s · 337 autonomous jobs/cycle · 130 dashboard pages`
+`Zen 2 · RDNA 1.5 · 16 GB unified · Vulkan · 14B @ 27 tok/s · 330 autonomous jobs/cycle · 130 dashboard pages`
+
+[![Code: AGPL v3](https://img.shields.io/badge/Code-AGPL%20v3-blue.svg)](LICENSE)
+[![Docs: CC BY-SA 4.0](https://img.shields.io/badge/Docs-CC%20BY--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-sa/4.0/)
+
+<img src="images/bc250.jpg" width="600" alt="BC-250 test platform">
+
+*The BC-250 powered by an ATX supply, cooled by a broken AIO radiator with 3 fans just sitting on top of it. Somehow runs 24/7 without issues so far.*
 
 </div>
 
-> A complete guide to running a **35B-parameter MoE LLM**, **FLUX.2 image generation**, and 337 autonomous jobs on the AMD BC-250 — an obscure APU (Zen 2 CPU + Cyan Skillfish RDNA 1.5 GPU) found in Samsung's blockchain/distributed-ledger rack appliances. Not a "crypto mining GPU," not a PS5 prototype — it's a custom SoC that Samsung used for private DLT infrastructure, repurposed here as a headless AI server with a community-patched BIOS.
+> A complete guide to running a **35B-parameter MoE LLM**, **FLUX.2 image generation**, and 330 autonomous jobs on the AMD BC-250 — an obscure APU (Zen 2 CPU + Cyan Skillfish RDNA 1.5 GPU) found in Samsung's blockchain/distributed-ledger rack appliances. Not a "crypto mining GPU," not a PS5 prototype — it's a custom SoC that Samsung used for private DLT infrastructure, repurposed here as a headless AI server with a community-patched BIOS.
 >
-> **March 2026** · Qwen3.5-35B MoE at 38 tok/s, FLUX.2-klein-9B at best quality, hardware-specific driver workarounds, memory tuning discoveries, and real-world benchmarks that aren't documented anywhere else.
+> Qwen3.5-35B MoE at 38 tok/s, FLUX.2-klein-9B at best quality, hardware-specific driver workarounds, memory tuning notes, and real-world benchmarks on this niche hardware.
 
-> **What makes this unique:** The BC-250's Cyan Skillfish GPU (`GFX1013`) is possibly the only RDNA 1.5 silicon running production LLM inference. ROCm doesn't support it. OpenCL doesn't expose it. The only viable compute path is **Vulkan** — and even that required discovering two hidden kernel memory bottlenecks (GTT cap + TTM pages_limit) before 14B models would run.
+> **What makes this unusual:** The BC-250's Cyan Skillfish GPU (`GFX1013`) is one of the few documented cases of LLM inference on RDNA 1.5. ROCm doesn't support it. OpenCL doesn't expose it. The only viable compute path is **Vulkan** — and even that required working around two kernel memory bottlenecks (GTT cap + TTM pages_limit) before 14B models would run.
 
 ---
 
 ## ░░ Contents
 
-| § | Section | For | What you'll find |
-|:---:|---------|-----|------------------|
-| | **`PART I ─ HARDWARE & SETUP`** | | |
-| [1](#1-hardware-overview) | Hardware Overview | BC-250 owners | Specs, memory architecture, power |
-| [2](#2-driver--compute-stack) | Driver & Compute Stack | BC-250 owners | What works (Vulkan), what doesn't (ROCm) |
-| [3](#3-ollama--vulkan-setup) | Ollama + Vulkan Setup | BC-250 owners | Install, GPU memory tuning (GTT + TTM) |
-| [4](#4-models--benchmarks) | Models & Benchmarks | LLM users | Model compatibility, speed, memory budget |
-| | **`PART II ─ AI STACK`** | | |
-| [5](#5-signal-chat-bot) | Signal Chat Bot | Bot builders | Direct Signal chat via queue-runner, LLM tool use |
-| [6](#6-image-generation) | Image Generation | Creative users | FLUX.2-klein-9B, synchronous pipeline |
-| | **`PART III ─ MONITORING & INTEL`** | | |
-| [7](#7-netscan-ecosystem) | Netscan Ecosystem | Home lab admins | 337 jobs, queue-runner v7, 130-page dashboard |
-| [8](#8-career-intelligence) | Career Intelligence | Job seekers | Two-phase scanner, salary, patents |
-| | **`PART IV ─ REFERENCE`** | | |
-| [9](#9-repository-structure) | Repository Structure | Contributors | File layout, deployment paths |
-| [10](#10-troubleshooting) | Troubleshooting | Everyone | Common issues and fixes |
-| [11](#11-known-limitations--todo) | Known Limitations & TODO | Maintainers | What's broken, what's planned |
-| [A](#appendix-a-openclaw-archive) | OpenClaw Archive | Historical | Original architecture, why we ditched it |
+| § | Section | What you'll find |
+|:---:|---------|------------------|
+| | **`PART I ─ HARDWARE & SETUP`** | |
+| [1](#1-hardware-overview) | Hardware Overview | Specs, memory architecture, power |
+| [2](#2-driver--compute-stack) | Driver & Compute Stack | What works (Vulkan), what doesn't (ROCm) |
+| [3](#3-ollama--vulkan-setup) | Ollama + Vulkan Setup | Install, GPU memory tuning (GTT + TTM) |
+| [4](#4-models--benchmarks) | Models & Benchmarks | Model compatibility, speed, memory budget |
+| | **`PART II ─ AI STACK`** | |
+| [5](#5-signal-chat-bot) | Signal Chat Bot | Chat, vision analysis, audio transcription, smart routing |
+| [6](#6-image-generation) | Image Generation | FLUX.2-klein-9B, synchronous pipeline |
+| | **`PART III ─ MONITORING & INTEL`** | |
+| [7](#7-netscan-ecosystem) | Netscan Ecosystem | 330 jobs, queue-runner v7, 130-page dashboard |
+| [8](#8-career-intelligence) | Career Intelligence | Two-phase scanner, salary, patents |
+| | **`PART IV ─ REFERENCE`** | |
+| [9](#9-repository-structure) | Repository Structure | File layout, deployment paths |
+| [10](#10-troubleshooting) | Troubleshooting | Common issues and fixes |
+| [11](#11-known-limitations) | Known Limitations | What's broken, what to watch out for |
+| [12](#12-software-versions) | Software Versions | Pinned versions of all components |
+| [13](#13-references) | References | Links to all upstream projects and models |
+| [A](#appendix-a--openclaw-archive) | OpenClaw Archive | Original architecture, why it was ditched |
 
 ---
 
@@ -50,12 +59,12 @@
 
 ## 1. Hardware Overview
 
-The AMD BC-250 is a custom APU originally designed for Samsung's blockchain/distributed-ledger rack appliances (not a traditional "mining GPU"). It's a full SoC — Zen 2 CPU and Cyan Skillfish RDNA 1.5 GPU on a single package, with 16 GB of on-package unified memory. Samsung deployed these in rack-mount enclosures for private DLT workloads; decommissioned boards now sell for ~$100–150 on the secondhand market, making them possibly the cheapest way to run 14B LLMs on dedicated hardware.
+The AMD BC-250 is a custom APU originally designed for Samsung's blockchain/distributed-ledger rack appliances (not a traditional "mining GPU"). It's a full SoC — Zen 2 CPU and Cyan Skillfish RDNA 1.5 GPU on a single package, with 16 GB of on-package unified memory. Samsung deployed these in rack-mount enclosures for private DLT workloads; decommissioned boards now sell for ~$100–150 on the secondhand market, making them an affordable option for running 14B LLMs on dedicated hardware.
 
 <details>
 <summary><b>▸ Origin story — Samsung, 5G operators, and AliExpress</b></summary>
 
-**What it was built for:** Samsung commissioned these custom AMD SoCs to build rack-mount servers for **private DLT (Distributed Ledger Technology) infrastructure** — not public cryptocurrency mining. The target customers were **South Korean 5G operators** (SK Telecom and others), who were global pioneers in 5G deployment. Private blockchain solved several real problems for 5G telcos:
+**What it was built for:** Samsung commissioned these custom AMD SoCs to build rack-mount servers for **private DLT (Distributed Ledger Technology) infrastructure** — not public cryptocurrency mining. The target customers were **South Korean 5G operators** (SK Telecom and others), who were early adopters of 5G deployment. Private blockchain solved several real problems for 5G telcos:
 
 - **IoT microtransactions:** 5G networks connect millions of smart devices. DLT enables cheap, instant machine-to-machine contract settlement without overloading central databases.
 - **Digital identity & security:** Operators used DLT registries for cryptographic customer authentication and digital identity wallets (e.g. Samsung Pay integration).
@@ -69,7 +78,7 @@ The AMD BC-250 is a custom APU originally designed for Samsung's blockchain/dist
 
 > **Not a PlayStation 5.** Despite superficial similarities (both use Zen 2 + 16 GB memory), the BC-250 has nothing to do with the PS5. The PS5's Oberon SoC is **RDNA 2** (GFX10.3, gfx1030+); the BC-250's Cyan Skillfish is **RDNA 1.5** (GFX10.1, gfx1013) — a hybrid architecture: GFX10.1 instruction set (RDNA 1) but with **hardware ray tracing support** (full `VK_KHR_ray_tracing_pipeline`, `VK_KHR_acceleration_structure`, `VK_KHR_ray_query`). LLVM's AMDGPU processor table lists GFX1013 as product "TBA" under GFX10.1, confirming it was never a retail part. Samsung also licensed RDNA 2 for mobile (Exynos 2200 / Xclipse 920) — that's a completely separate deal.
 >
-> **Why "RDNA 1.5"?** GFX1013 doesn't fit cleanly into AMD's public RDNA generations. It has the RDNA 1 (GFX10.1) ISA and shader compiler target, but includes hardware ray tracing — a feature AMD only shipped publicly with RDNA 2 (GFX10.3). This makes Cyan Skillfish a transitional/custom design, likely built for Samsung's specific workload requirements. We call it "RDNA 1.5" as a practical label.
+> **Why "RDNA 1.5"?** GFX1013 doesn't fit cleanly into AMD's public RDNA generations. It has the RDNA 1 (GFX10.1) ISA and shader compiler target, but includes hardware ray tracing — a feature AMD only shipped publicly with RDNA 2 (GFX10.3). This makes Cyan Skillfish a transitional/custom design, likely built for Samsung's specific workload requirements. The label "RDNA 1.5" is used here as a practical shorthand.
 
 > **BIOS is not stock.** The board ships with a minimal Samsung BIOS meant for rack operation. A community-patched BIOS (from [AMD BC-250 docs](https://elektricm.github.io/amd-bc250-docs/)) enables standard UEFI features (boot menu, NVMe boot, fan control).
 
@@ -98,7 +107,7 @@ CPU and GPU share the same 16 GB physical pool (UMA — Unified Memory Architect
 1. **GTT cap** — `amdgpu` driver defaults to 50% of RAM (~7.4 GiB). The legacy fix was `amdgpu.gttsize=14336` in kernel cmdline, but this is no longer needed.
 2. **TTM pages_limit** — kernel TTM memory manager independently caps allocations at ~7.4 GiB. Fix: `ttm.pages_limit=4194304` (16 GiB in 4K pages). **This is the only tuning needed.**
 
-> ✅ **GTT migration complete (March 2026):** `amdgpu.gttsize` was removed from kernel cmdline. With `ttm.pages_limit=4194304` alone, GTT grew from 14→16 GiB and Vulkan available from 14.0→16.5 GiB. The deprecated parameter was actually *limiting* the allocation.
+> ✅ **GTT migration complete:** `amdgpu.gttsize` was removed from kernel cmdline. With `ttm.pages_limit=4194304` alone, GTT grew from 14→16 GiB and Vulkan available from 14.0→16.5 GiB. The deprecated parameter was actually *limiting* the allocation.
 
 After tuning: Vulkan sees **16.5 GiB** — enough for **14B parameter models at 40K context with Q4_0 KV cache, all inference on GPU**.
 
@@ -161,7 +170,7 @@ sudo systemctl daemon-reload && sudo systemctl restart ollama
 
 ### 3.2 Tune GTT size
 
-> ✅ **No longer needed.** The `amdgpu.gttsize` parameter was removed in March 2026. With `ttm.pages_limit=4194304` alone, GTT allocates 16 GiB (more than the old 14 GiB). Verify:
+> ✅ **No longer needed.** The `amdgpu.gttsize` parameter has been removed. With `ttm.pages_limit=4194304` alone, GTT allocates 16 GiB (more than the old 14 GiB). Verify:
 
 ```bash
 cat /sys/class/drm/card1/device/mem_info_gtt_total  # → 17179869184 (16 GiB)
@@ -171,7 +180,7 @@ sudo grubby --update-kernel=ALL --remove-args="amdgpu.gttsize=14336"
 
 ### 3.3 Tune TTM pages_limit ← *unlocks 14B models*
 
-This was the breakthrough. Without this fix, 14B models load fine but produce HTTP 500 during inference.
+This is the key fix. Without this fix, 14B models load fine but produce HTTP 500 during inference.
 
 ```bash
 # Runtime (immediate)
@@ -187,7 +196,7 @@ w /sys/module/ttm/parameters/page_pool_size - - - - 4194304\n" | \
 sudo dracut -f
 ```
 
-### 3.4 Context window — the silent killer
+### 3.4 Context window — the main gotcha
 
 Ollama allocates KV cache based on the model's declared context window. Without a cap, large models request more KV cache than the BC-250 can handle, causing TTM fragmentation, OOM kills, or deadlocks on this UMA system.
 
@@ -292,11 +301,11 @@ echo 'w /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor - - - - performanc
 
 ### 4.1 Compatibility table
 
-> Ollama 0.18.0 · Vulkan · RADV Mesa 25.3.4 · 16.5 GiB Vulkan · FP16 KV · March 14 2026
+> Ollama 0.18.0 · Vulkan · RADV Mesa 25.3.4 · 16.5 GiB Vulkan · FP16 KV
 
 | Model | Params | Quant | tok/s | Prefill | Max Ctx | VRAM @4K | Status |
 |-------|:------:|:-----:|:-----:|:-------:|:-------:|:--------:|--------|
-| **qwen3.5-35b-a3b-iq2m** | **35B/3B** | **UD-IQ2_M** | **38** | **233** | **16K** | **12.3 GiB** | **🏆 Smartest — MoE** |
+| **qwen3.5-35b-a3b-iq2m** | **35B/3B** | **UD-IQ2_M** | **38** | **233** | **16K** | **12.3 GiB** | **🏆 Primary — MoE** |
 | **qwen3.5:9b** | **9.7B** | **Q4_K_M** | **32** | **230** | **65K** | **8.6 GiB** | **🏆 Best context+vision** |
 | qwen2.5:3b | 3.1B | Q4_K_M | **104** | **515** | **64K** | 3.4 GiB | ✅ Fast, lightweight |
 | qwen2.5:7b | 7.6B | Q4_K_M | **56** | **248** | **64K** | 6.5 GiB | ✅ Great quality/speed |
@@ -320,7 +329,7 @@ echo 'w /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor - - - - performanc
 
 > **Prefill column:** Measured at ~400 tokens prompt size (warm model, FP16 KV). Prefill rate depends on prompt length — see §4.5 for detailed sweep. Smaller models (3B) saturate the GPU compute and achieve higher prefill. Larger models (14B) are memory-bandwidth-limited at ~128–137 tok/s. MoE and 9B land between at ~230 tok/s — the MoE benefits from only loading 3B active expert weights per token during prefill. Qwen3-30B-A3B and qwen3.5-27b not measured (deprecated/non-functional).
 
-> **March 14 — Qwen3.5 era:** Ollama upgraded 0.16.1→0.18.0 (required for Qwen3.5). The **qwen3.5-35b-a3b MoE** (35B total, 3B active per token) at IQ2_M quantization is now the smartest model on BC-250: 38 tok/s, 233 tok/s prefill, 16K context, multimodal (vision+tools+thinking). The **qwen3.5:9b** provides 65K context with vision when longer documents are needed. Both are Qwen3.5 architecture — dramatically newer than Qwen3.
+> **March 14 — Qwen3.5 era:** Ollama upgraded 0.16.1→0.18.0 (required for Qwen3.5). The **qwen3.5-35b-a3b MoE** (35B total, 3B active per token) at IQ2_M quantization is now the primary model on BC-250: 38 tok/s, 233 tok/s prefill, 16K context, multimodal (vision+tools+thinking). The **qwen3.5:9b** provides 65K context with vision when longer documents are needed. Both are Qwen3.5 architecture — a newer generation than Qwen3.
 
 > **⚠️ IQ2_M quality tradeoff:** The extreme quantization (~2.5 bits per parameter) is a significant quality compromise — perplexity increases and complex mathematical reasoning degrades compared to higher-precision quantizations. For everyday tasks (summarization, JSON extraction, tool use, chat) the quality is adequate. For tasks requiring precise reasoning, the `qwen3.5:9b` fallback (Q4_K_M, ~4.5 bits) provides substantially better accuracy. This is an informed tradeoff: more knowledge at lower precision vs less knowledge at higher precision.
 
@@ -340,7 +349,7 @@ seed-coder-abl:8b          52      64K  █████▏
 lexi-8b (uncensored)      51      48K  █████
 qwen3-abl:8b              46      64K  ████▌
 qwen3:8b                  44      64K  ████▍
-★ qwen3.5-35b-a3b MoE     38      16K  ███▊  ← SMARTEST (35B/3B)
+★ qwen3.5-35b-a3b MoE     38      16K  ███▊  ← PRIMARY (35B/3B)
 gemma2:9b                 38      48K  ███▊
 ★ qwen3.5:9b               32      65K  ███▏  ← best ctx + vision
 mistral-nemo:12b          34      24K  ███▍
@@ -390,7 +399,7 @@ qwen3.5-27b iq2m  ❌   —    —    —    —
 
 ### 4.3 Context window experiments
 
-The context window directly controls KV cache size, and on 16 GB unified memory, every megabyte counts. After v7 (OpenClaw removal freed ~700 MB, GTT bumped to 14 GB), we re-tested all context sizes systematically:
+The context window directly controls KV cache size, and on 16 GB unified memory, every megabyte counts. After v7 (OpenClaw removal freed ~700 MB, GTT bumped to 14 GB), all context sizes were re-tested systematically:
 
 **Context window vs memory (qwen3:14b Q4_K_M, flash attention, 16 GB GTT)**
 
@@ -416,7 +425,7 @@ The context window directly controls KV cache size, and on 16 GB unified memory,
 
 ### 4.4 KV cache quantization — breaking the context ceiling
 
-**UPDATE (March 2026):** KV cache quantization **WORKS on Vulkan**. Our README previously stated it was a no-op — that was wrong. Tested on Ollama 0.16.1 + RADV Mesa 25.3.4:
+**UPDATE:** KV cache quantization **WORKS on Vulkan**. Our README previously stated it was a no-op — that was wrong. Tested on Ollama 0.16.1 + RADV Mesa 25.3.4:
 
 | KV Type | 24K ctx | 32K ctx | 48K ctx | KV Cache Size @24K | Gen tok/s | Notes |
 |---------|:-------:|:-------:|:-------:|:------------------:|:---------:|-------|
@@ -477,7 +486,7 @@ On UMA, both prefill and generation share memory bandwidth (~51 GB/s DDR4-3200).
 | Medium | 384 | 229 tok/s | 33.0 | 1.7s |
 | Long | 1,179 | 225 tok/s | 32.5 | 5.2s |
 
-> **Observations:** Both production models converge to ~230 tok/s prefill at medium-to-long prompts — the DDR4 bandwidth ceiling. At tiny prompts (<50 tokens), GPU compute overhead dominates and prefill drops to 53–61 tok/s. Generation rate is remarkably stable: MoE holds 38–39 tok/s, 9B holds 32–33 tok/s regardless of prompt size. TTFT scales linearly: at 384 tokens it's ~1.7s, at 1.2K tokens it's ~5.2s. For real-world Signal chat (3K system prompt + conversation), expect TTFT of ~15–20s on cold start, <2s when the model is warm (prompt cached via `OLLAMA_KEEP_ALIVE=30m`).
+> **Observations:** Both production models converge to ~230 tok/s prefill at medium-to-long prompts — the DDR4 bandwidth ceiling. At tiny prompts (<50 tokens), GPU compute overhead dominates and prefill drops to 53–61 tok/s. Generation rate is stable: MoE holds 38–39 tok/s, 9B holds 32–33 tok/s regardless of prompt size. TTFT scales linearly: at 384 tokens it's ~1.7s, at 1.2K tokens it's ~5.2s. For real-world Signal chat (3K system prompt + conversation), expect TTFT of ~15–20s on cold start, <2s when the model is warm (prompt cached via `OLLAMA_KEEP_ALIVE=30m`).
 
 <details>
 <summary><b>Historical: qwen3:14b Q4_K_M (previous primary, 24K context)</b></summary>
@@ -528,9 +537,9 @@ On UMA, both prefill and generation share memory bandwidth (~51 GB/s DDR4-3200).
 
 | Use Case | Recommended Model | tok/s | Max Ctx | Why |
 |----------|-------------------|:-----:|:-------:|-----|
-| **🏆 General AI / smartest** | qwen3.5-35b-a3b-iq2m | 38 | 16K | 35B knowledge, 3B active, fastest reasoning |
-| **🏆 Long context / vision** | qwen3.5:9b | 32 | **65K** | Multimodal, perfect context scaling, vision |
-| **Long context (14B)** | phi4:14b | 29 | **40K** | Only 14B that reaches 40K context |
+| **🏆 General AI / primary** | qwen3.5-35b-a3b-iq2m | 38 | 16K | 35B knowledge, 3B active, fastest reasoning |
+| **🏆 Long context / vision** | qwen3.5:9b | 32 | **65K** | Multimodal, stable context scaling, vision |
+| **Long context (14B)** | phi4:14b | 29 | **40K** | Best 14B model for long context on this hardware |
 | **Fast batch jobs** | qwen2.5:7b | 56 | 64K | 2× faster than 14B, 64K context |
 | **Code generation** | qwen2.5-coder:7b | 56 | 64K | Same speed as base, code-specialized |
 | **Speed-critical** | qwen2.5:3b | 104 | 64K | 4× faster, use for simple tasks |
@@ -541,7 +550,7 @@ On UMA, both prefill and generation share memory bandwidth (~51 GB/s DDR4-3200).
 > The MoE wins over the 9B dense model in generation speed (38 vs 32 tok/s) because only 3B parameters activate per token on hardware without matrix cores — fewer multiplications wins. Both models achieve similar prefill rates (~230 tok/s at ~400 tokens), but the 9B wins in context capacity (65K vs 16K) because its smaller total weight leaves more room for KV cache.
 
 ```bash
-# Primary model (smartest, 35B MoE) — custom GGUF via Modelfile
+# Primary model (35B MoE) — custom GGUF via Modelfile
 # See tmp/Modelfile-qwen35-35b-a3b for setup
 ollama create qwen3.5-35b-a3b-iq2m -f Modelfile-qwen35-35b-a3b
 
@@ -552,7 +561,7 @@ ollama pull qwen3.5:9b
 # Individual requests can override with {"options": {"num_ctx": 65536}} when using 9b
 ```
 
-> **Why not a bigger MoE?** Even though only 3B params activate per token, **all 35B params must reside in memory** — the router decides per-token which experts to fire, so every weight must be loaded. At IQ2_M (~2.5 bits per parameter), 35B = 11 GB GGUF. The next MoE up — Qwen3-235B-A22B — would be ~44 GB at IQ2_M (2.7× too large). Mixtral 8×22B (141B) would be ~35 GB. Going below IQ2_M (e.g. IQ1_S at ~1.5 bits) causes quality collapse. The qwen3.5-35b-a3b at IQ2_M is the **largest MoE that fits 16 GB with usable quantization** — the Pareto frontier for this hardware.
+> **Why not a bigger MoE?** Even though only 3B params activate per token, **all 35B params must reside in memory** — the router decides per-token which experts to fire, so every weight must be loaded. At IQ2_M (~2.5 bits per parameter), 35B = 11 GB GGUF. The next MoE up — Qwen3-235B-A22B — would be ~44 GB at IQ2_M (2.7× too large). Mixtral 8×22B (141B) would be ~35 GB. Going below IQ2_M (e.g. IQ1_S at ~1.5 bits) causes quality collapse. The qwen3.5-35b-a3b at IQ2_M is the **largest MoE that fits 16 GB with usable quantization** on this hardware.
 
 ---
 
@@ -610,30 +619,39 @@ Register a separate phone number for the bot via `signal-cli register` or `signa
 
 ### 5.3 Chat architecture
 
-Between every queued job, `queue-runner.py` polls the signal-cli journal for incoming messages:
+Between every queued job, `queue-runner.py` polls the signal-cli journal for incoming messages. Messages are routed based on content type:
 
 ```
 queue-runner v7 — continuous loop
 
-  job N  →  check Signal inbox  →  chat (if msg)  →  job N+1
+  job N  →  check Signal inbox  →  route message  →  job N+1
                     |                     |
-                    v                     v
-            journalctl -u           Ollama /api/chat
-            signal-cli              (16K ctx, /think)
-                    |                     |
-                    |               EXEC cmd ← tool use
-                    |                     |
-                    v                     v
-            signal-cli              signal-cli
-            JSON-RPC :8080          send reply
+                    v                     |
+            journalctl -u          ┌──────┼──────┐
+            signal-cli             │      │      │
+                                audio  image   text
+                                   │      │      │
+                                   v      v      v
+                              whisper  qwen3.5  choose_model()
+                              -cli     :9b      MoE or 9B
+                              (Vulkan) vision   ↓
+                                   │      │   Ollama /api/chat
+                                   │      │      │
+                                   v      v      v
+                              signal-cli: send reply
 ```
+
+![Signal Pipeline](images/charts/signal-pipeline.png)
 
 **Key parameters:**
 
 | Setting | Value | Purpose |
 |---------|:-----:|---------|
-| `SIGNAL_CHAT_CTX` | 16384 | MoE model context window (use 65K for 9b fallback) |
-| `SIGNAL_CHAT_MAX_EXEC` | 3 | Max shell commands per message (search → fetch → verify) |
+| `SIGNAL_CHAT_CTX` | 16384 | MoE model context window |
+| `VISION_MODEL` | qwen3.5:9b | Vision analysis model (multimodal) |
+| `VISION_CTX` | 4096 | Vision context (image tokens are large) |
+| `ROUTING_TOKEN_THRESHOLD` | 8000 | Switch to 9B for long prompts |
+| `SIGNAL_CHAT_MAX_EXEC` | 3 | Max shell commands per message |
 | `SIGNAL_EXEC_TIMEOUT_S` | 30 | Per-command timeout |
 | `SIGNAL_MAX_REPLY` | 1800 | Signal message character limit |
 
@@ -692,6 +710,131 @@ The personality is baked into `queue-runner.py`'s `SYSTEM_PROMPT` — no externa
 | Video generation (WAN 2.1 480×320) | ~38 min |
 | ESRGAN 4× upscale (on-demand) | ~25s |
 | Cold start (model reload) | 30–60s |
+| Voice note transcription (≤40s) | 3–5s |
+| Vision analysis (photo → description) | ~40–80s |
+
+### 5.8 Vision analysis
+
+Send a photo to Signal **without** an edit keyword (no "draw", "generate", "create") and the bot analyzes it using `qwen3.5:9b`'s native multimodal vision. The 9B model processes base64-encoded images via Ollama's `/api/chat` endpoint.
+
+```
+  User: [photo of a circuit board] "what chip is this?"
+  Router: image + non-edit text → vision analysis (9B)
+  9B:    "That's an STM32F407 — the LQFP-100 package, 168 MHz Cortex-M4."
+```
+
+**How edit vs. analysis is decided:**
+
+| Input | Keywords detected | Action |
+|-------|:-----------------:|--------|
+| Photo + "make it cyberpunk" | ✓ edit | → Kontext image editing (§5.5) |
+| Photo + "what is this?" | ✗ | → qwen3.5:9b vision analysis |
+| Photo (no text) | ✗ | → qwen3.5:9b vision analysis |
+
+**Example — real vision output from the Signal chatbot:**
+
+![Shadow & Marshall on a floppy disk](images/shadow-marshall-floppy.jpg)
+
+This photo was sent to the bot with no text. The `qwen3.5:9b` model produced the following description (lightly edited for formatting):
+
+> This is a charming and nostalgic photo featuring two small figurines placed on a blue 3.5-inch floppy disk, which is resting on a gray outdoor table.
+>
+> **Figurines:**
+> - On the left: a black hedgehog with red stripes on his head and yellow muzzle — **Shadow the Hedgehog** from the *Sonic the Hedgehog* series, standing on a small black circular base.
+> - On the right: a white Dalmatian puppy wearing a red firefighter helmet and a yellow collar with a red heart tag — **Marshall** from *PAW Patrol*, sitting upright.
+>
+> **Floppy Disk:** A classic 3.5-inch disk labeled "2HD 1.44 MB" and "INDEX" (upside down in the image). The label area has horizontal lines like lined paper, adding to the retro aesthetic.
+>
+> **Background:** A blurred garden with green grass, bushes, and string lights with clear glass bulbs hanging above.
+>
+> **Overall Vibe:** The combination of modern pop culture characters (Shadow and Marshall) with retro tech (floppy disk) creates a fun, geeky, and slightly whimsical display. It's a great blend of nostalgia and fandom!
+
+This is raw model output from a 9.7B parameter model running entirely on the BC-250's Vulkan GPU — no cloud APIs, no preprocessing. The model correctly identifies both licensed characters, the floppy disk format, and scene composition.
+
+**Key detail:** qwen3.5:9b requires `"think": false` in the API call. With thinking enabled, the model produces only hidden thinking tokens and returns an empty visible response. Discovered via 7 iterative tests (tests 1–6 all returned empty content).
+
+> The MoE model (qwen3.5-35b-a3b-iq2m) has **no vision capability** — it returns HTTP 500 when given images. This is why model routing is essential.
+
+### 5.9 Audio transcription
+
+Send a voice note to Signal and the bot transcribes it using [whisper.cpp](https://github.com/ggerganov/whisper.cpp) with Vulkan GPU acceleration:
+
+```
+  User: [voice note, 15 seconds, Polish]
+  Router: audio/* → whisper-cli (auto language detection)
+  Whisper: "Hej, sprawdź mi pogodę na jutro" (pl, 15.2s audio)
+  Router: → feed transcription to LLM for response
+  LLM:   "Jutro 18°C, częściowe zachmurzenie..."
+```
+
+**Whisper setup on BC-250:**
+
+| Component | Value |
+|-----------|-------|
+| Runtime | whisper.cpp (Vulkan, built from source) |
+| Model | ggml-large-v3-turbo (1.6 GB) |
+| Binary | `/opt/whisper.cpp/build/bin/whisper-cli` |
+| Threads | 6 (all Zen 2 cores) |
+| Language | Auto-detect (EN/PL confirmed) |
+
+#### Why large-v3-turbo, not large-v3?
+
+Both models were benchmarked with real English TTS speech (flite) at three durations. The speed difference is modest (~2×), but **memory is the dealbreaker** — the larger model doesn't fit alongside Ollama in 16 GB.
+
+**Speed comparison:**
+
+![Whisper Wall Time](images/charts/whisper-wall-time.png)
+
+| Audio | large-v3-turbo | large-v3 | Speedup |
+|:-----:|:--------------:|:--------:|:-------:|
+| 3.6s | 3.3s | 7.9s | 2.4× |
+| 18.2s | 3.5s | 8.9s | 2.6× |
+| 39.2s | 4.3s | 8.1s | 1.9× |
+
+**The memory problem:**
+
+The BC-250 has 16 GB total (UMA — shared between CPU and GPU). The Ollama MoE model takes 10.6 GB. OS and buffers need ~3.5 GB. That leaves the memory budget looking like this:
+
+![Whisper Memory Budget](images/charts/whisper-memory-budget.png)
+
+| Scenario | Ollama | Whisper | OS/buffers | Total | Fits 16 GB? |
+|----------|:------:|:-------:|:----------:|:-----:|:-----------:|
+| Ollama only | 10.6 GB | — | 3.5 GB | 14.1 GB | ✅ 1.9 GB free |
+| + large-v3-turbo | 10.6 GB | 1.6 GB | 3.5 GB | 15.7 GB | ✅ 0.3 GB free |
+| + large-v3 | 10.6 GB | 2.9 GB | 3.5 GB | 17.0 GB | ❌ 1.0 GB overflow → swap |
+
+When the total exceeds 16 GB, the kernel pushes pages to NVMe swap. This shows up as a measurable swap delta:
+
+![Whisper Memory Impact](images/charts/whisper-memory.png)
+
+large-v3 pushes ~1 GB into swap on first load. large-v3-turbo causes zero swap. Once pages are evicted, subsequent large-v3 runs may show 0 swap delta (the 39s test) because those pages were already swapped out by earlier runs — but the damage (swap pressure, latency spikes) already happened.
+
+**Quality is comparable.** Both models tested on a 39s embedded-systems passage (flite TTS). Both made the same synthesis artifacts ("kilobots" for "kilobytes", "Wipcomer" for "libcamera"). Neither is clearly better on robotic TTS.
+
+**Verdict:** large-v3-turbo — 2× faster, 45% smaller, zero swap pressure. The quality tradeoff is negligible on BC-250's memory budget.
+
+### 5.10 Smart model routing
+
+queue-runner automatically selects the best model for each message based on content:
+
+```python
+def choose_chat_model(user_text, has_image=False):
+    if has_image:
+        return "qwen3.5:9b", 4096       # only model with vision
+    if estimate_tokens(user_text) > 8000:
+        return "qwen3.5:9b", 16384      # 9B handles 65K context
+    return "qwen3.5-35b-a3b-iq2m", 16384  # MoE — faster, smarter
+```
+
+![Model Routing Speed](images/charts/model-routing-speed.png)
+
+| Route | Model | Speed | When |
+|-------|-------|:-----:|------|
+| **Default** | qwen3.5-35b-a3b MoE | 37.7 tok/s | Normal chat (most messages) |
+| **Vision** | qwen3.5:9b | 31.8 tok/s | Photo attached (no edit keywords) |
+| **Long context** | qwen3.5:9b | 31.8 tok/s | Prompt > 8K tokens |
+
+The MoE activates only 3B of its 35B parameters per token, giving it faster generation than the dense 9B despite being a "larger" model. Both models are Qwen3.5-family and produce comparable text quality for short exchanges. The 9B is reserved for tasks that require vision or long context — capabilities the MoE lacks.
 
 ---
 
@@ -915,7 +1058,7 @@ sd.cpp (master-525+) supports more models. The BC-250 has ~16.5 GB with Ollama s
 
 | Model | Params | GGUF Size | Total RAM¹ | Frames | Time | Status |
 |-------|:------:|:---------:|:----------:|:------:|:----:|--------|
-| **WAN 2.1 T2V 1.3B Q4_0** | **1.3B** | **826 MB** | **~5 GB** | **17 @480×320** | **~38 min** | **✅ First video on BC-250!** |
+| **WAN 2.1 T2V 1.3B Q4_0** | **1.3B** | **826 MB** | **~5 GB** | **17 @480×320** | **~38 min** | **✅ Works on BC-250** |
 
 > WAN requires umt5-xxl text encoder (3.5 GB Q4_K_M) + WAN VAE (243 MB). Outputs raw AVI (MJPEG). No matrix cores = slow but works.
 
@@ -984,7 +1127,7 @@ sd-cli --diffusion-model models/sd3/sd3.5_medium-q4_0.gguf \
 
 > **⚠ BF16 VAE gotcha:** The upstream SD3 VAE (`diffusion_pytorch_model.safetensors`) uses BF16 tensors. GFX1013 Vulkan has no BF16 support — the output is a solid blue/yellow rectangle. Fix: convert to F16 with `python3 convert_vae_bf16_to_f16.py input.safetensors output.safetensors` (script in `/tmp/`).
 
-#### WAN 2.1 T2V 1.3B benchmark details — first video generation on BC-250
+#### WAN 2.1 T2V 1.3B benchmark details
 
 **Timing breakdown (480×320, 17 frames, 50 steps, seed 42):**
 
@@ -1026,7 +1169,7 @@ sd-cli -M vid_gen \
   <img src="images/wan-test.gif" alt="WAN 2.1 T2V — cat in garden" width="480">
 </p>
 
-> 17 frames @480×320, 50 steps, Q4_0 quantization, EUR scheduler, cfg-scale 6.0. Generated in **~38 minutes** on GFX1013 scalar Vulkan — no matrix/tensor cores. The BC-250 rendered every frame through pure ALU compute. Noisy but recognizable — a real video from a 1.3B parameter model on a $70 ex-telecom board.
+> 17 frames @480×320, 50 steps, Q4_0 quantization, EUR scheduler, cfg-scale 6.0. Generated in **~38 minutes** on GFX1013 scalar Vulkan — no matrix/tensor cores. The BC-250 rendered every frame through pure ALU compute. Noisy but recognizable — a real video from a 1.3B parameter model on a secondhand BC-250.
 
 #### ESRGAN 4× upscale benchmarks
 
@@ -1065,19 +1208,19 @@ End-to-end timing for all generation modes on BC-250:
 
 ## 7. Netscan Ecosystem
 
-A comprehensive research, monitoring, and intelligence system with **337 autonomous jobs** running on a GPU-constrained single-board computer. Dashboard at `http://<LAN_IP>:8888` — 29 main pages + 101 per-host detail pages.
+A research, monitoring, and data collection system with **330 autonomous jobs** running on a GPU-constrained single-board computer. Dashboard at `http://<LAN_IP>:8888` — 29 main pages + 101 per-host detail pages.
 
 ### 7.1 Architecture — queue-runner v7
 
-The BC-250 has 16 GB GTT shared with the CPU — only **one LLM job can run at a time**. `queue-runner.py` (systemd service) orchestrates all 337 jobs in a continuous loop, with Signal chat between every job:
+The BC-250 has 16 GB GTT shared with the CPU — only **one LLM job can run at a time**. `queue-runner.py` (systemd service) orchestrates all 330 jobs in a continuous loop, with Signal chat between every job:
 
 ```
 queue-runner v7 -- Continuous Loop + Signal Chat
 
 Cycle N:
-  337 jobs sequential, ordered by category:
+  330 jobs sequential, ordered by category:
   scrape -> infra -> lore -> academic -> repo -> company -> career
-         -> think -> meta -> market -> report
+         -> think -> csi -> meta -> market -> report
   HA observations interleaved every 50 jobs
   Signal inbox checked between EVERY job
   Chat processed with LLM (EXEC tool use + image gen)
@@ -1093,7 +1236,7 @@ Cycle N+1:
 | v5 (OpenClaw era) | v7 (current) |
 |--------------------|--------------|
 | Nightly batch + daytime fill | Continuous loop, no distinction |
-| 354 jobs (including duplicates) | 337 jobs (deduped, expanded) |
+| 354 jobs (including duplicates) | 330 jobs (deduped, expanded) |
 | LLM jobs routed through `openclaw cron run` | All jobs run as direct subprocesses |
 | Signal via OpenClaw gateway (~700 MB) | signal-cli standalone (~100 MB) |
 | Chat only when gateway available | Chat between every job |
@@ -1126,27 +1269,34 @@ In continuous loop mode (default), GPU detection is only used for pre-flight hea
 | Script | Purpose | Jobs |
 |--------|---------|:----:|
 | `career-scan.py` | Two-phase career scanner (§8) | 1 |
-| `career-think.py` | Per-company career deep analysis | 81 |
+| `career-think.py` | Per-company career deep analysis | 65 |
 | `salary-tracker.py` | Salary intel — NoFluffJobs, career-scan extraction | 1 |
-| `company-intel.py` | Deep company intel — GoWork, DDG news, layoffs (13 entities) | 46 |
-| `company-think-*` | Focused company deep-dives | 76 |
-| `patent-watch.py` | IR/RGB camera patent monitor — Google Patents, Lens.org | 1 |
-| `event-scout.py` | Meetup/conference tracker — the local area, Warsaw, Poland, Europe | 1 |
+| `company-intel.py` | Deep company intel — GoWork, DDG news, layoffs (43 entities) | 1 |
+| `company-think-*` | Focused company deep-dives | 106 |
+| `patent-watch.py` | IR/RGB camera patent monitor — Google Patents, EPO OPS, DuckDuckGo | 1 |
+| `event-scout.py` | Meetup/conference tracker — Poland, Europe | 1 |
 | `leak-monitor.py` | CTI: 11 OSINT sources — HIBP, Hudson Rock, GitHub dorks, Ahmia dark web, CISA KEV, ransomware, Telegram | 1 |
-| `idle-think.sh` | Research brain — 8 task types → JSON notes | 37 |
-| `ha-journal.py` | Home Assistant analysis (climate, sensors, anomalies) | 1 |
-| `ha-correlate.py` | HA cross-sensor correlation | 1 |
-| `city-watch.py` | the local area/SkyscraperCity construction tracker | 1 |
+| `idle-think.sh` | Research brain — 8 task types → JSON notes | 34 |
+| `ha-journal.py` | Home Assistant analysis (climate, sensors, anomalies) | 2 |
+| `ha-correlate.py` | HA cross-sensor correlation | 2 |
+| `city-watch.py` | SkyscraperCity local construction tracker | 1 |
 | `csi-sensor-watch.py` | CSI camera sensor patent/news monitor | 1 |
-| `lore-digest.sh` | Kernel mailing list digests (8 feeds) | 12 |
+| `csi-think.py` | CSI camera domain analysis (drivers, ISP, GMSL) | 6 |
+| `lore-digest.sh` | Kernel mailing list digests (8 feeds) | 8 |
 | `repo-watch.sh` | Upstream repos (GStreamer, libcamera, v4l-utils, FFmpeg, LinuxTV) | 8 |
-| `repo-think.py` | LLM analysis of repo changes | 22 |
-| `market-think.py` | Market sector analysis + synthesis | 21 |
+| `repo-think.py` | LLM analysis of repo changes | 26 |
+| `market-think.py` | Market sector analysis + synthesis | 19 |
 | `life-think.py` | Cross-domain life advisor | 2 |
 | `system-think.py` | GPU/security/health system intelligence | 3 |
-| `radio-scan.py` | SDR spectrum monitoring | 1 |
+| `radio-scan.py` | Radio hobbyist forum tracker | 1 |
 | `career-digest.py` | Weekly career digest → Signal (Sunday) | 1 |
-| `daily-summary.py` | End-of-cycle summary → Signal | 1 |
+| `daily-summary.py` | End-of-cycle summary → dashboard + Signal | 2 |
+| `academic-watch.py` | Academic publication monitor (4 topics × 3 types) | 12 |
+| `book-watch.py` | Book/publication tracker (11 subjects) | 11 |
+| `news-watch.py` | Tech news aggregation + RSS | 2 |
+| `weather-watch.py` | Weather forecast + HA sensor correlation | 2 |
+| `car-tracker.py` | GPS car tracker (SinoTrack API) | 1 |
+| `frost-guard.py` | Frost/freeze risk alerter | 1 |
 
 **CPU jobs** (system crontab — independent of queue-runner):
 
@@ -1155,7 +1305,7 @@ In continuous loop mode (default), GPU detection is only used for pre-flight hea
 | `gpu-monitor.sh` + `.py` | 1 min | GPU utilization sampling (3-state) |
 | `presence.sh` | 5 min | Phone presence tracker |
 | `syslog.sh` | 5 min | System health logger |
-| `watchdog.py` | 30 min (live), 06:00 (full) | Integrity checks — cron, disk, services |
+| `watchdog.py` | 30 min (live), 06:00 (full) | Network security — ARP, DNS, TLS, vulnerability scoring |
 | `scan.sh` + `enumerate.sh` | 04:00 | Network scan + enumeration (nmap) |
 | `vulnscan.sh` | Weekly (Sun) | Vulnerability scan |
 | `repo-watch.sh` | 08:00, 14:00, 18:00 | Upstream repo data collection |
@@ -1169,25 +1319,26 @@ In continuous loop mode (default), GPU detection is only used for pre-flight hea
 
 | Category | Jobs | Typical GPU time | Examples |
 |----------|:----:|:----------------:|---------|
-| `scrape` | 35 | 0.1h | career-scan, salary, patents, events, repo-scan (no LLM) |
-| `infra` | 6 | 0.6h | leak-monitor, netscan, watchdog, event-scout, radio-scan |
-| `lore` | 12 | 0.7h | lore-digest per mailing list feed |
-| `academic` | 17 | — | academic-watch per topic |
-| `repo-think` | 22 | 0.2h | LLM analysis of repo changes |
-| `company` | 46 | 0.4h | company-think per entity |
-| `career` | 49 | 1.4h | career-think per domain |
-| `think` | 37 | 2.2h | research, trends, crawl, crossfeed |
+| `scrape` | 29 | 0.1h | career-scan, salary, patents, book-watch, repo-scan (no LLM) |
+| `infra` | 6 | 0.6h | leak-monitor, netscan, watchdog, frost-guard, radio-scan |
+| `lore` | 8 | 0.5h | lore-digest per mailing list feed |
+| `academic` | 12 | — | academic-watch per topic × type |
+| `repo` | 27 | 0.3h | LLM analysis of repo changes + weekly digest |
+| `company` | 107 | 0.9h | company-intel + competitive/financial/strategy deep-dives |
+| `career` | 66 | 1.9h | career-think per company + weekly digest |
+| `think` | 34 | 2.0h | research, trends, crawl, crossfeed |
+| `csi` | 6 | 0.3h | CSI camera domain analysis |
 | `meta` | 5 | — | life-think, system-think |
-| `market` | 21 | 1.0h | market-watch + sector analysis |
-| `ha` | 2 | 0.5h | ha-correlate, ha-journal (interleaved) |
-| `report` | 1 | — | daily-summary → Signal |
+| `market` | 19 | 0.9h | market-think per asset + synthesis |
+| `ha` | 4 | 1.0h | ha-correlate, ha-journal (interleaved) |
+| `report` | 4 | — | daily-summary, news + weather analysis |
 | `weekly` | 3 | — | vulnscan, csi-sensor-discover/improve |
-| **Total** | **337** | **~11h** | |
+| **Total** | **330** | **~9h** | |
 
 **Data flow:**
 
 ```
-jobs.json (337 jobs)
+jobs.json (330 jobs)
   |
   v
 queue-runner.py
@@ -1249,7 +1400,7 @@ Served by nginx at `:8888`, generated by `generate-html.py` (6900+ lines):
 | `notes.html` | Research brain — all think notes | idle-think |
 | `leaks.html` | CTI / leak monitor | leak-monitor |
 | `issues.html` | Upstream issue tracking | repo-think |
-| `events.html` | Events calendar — the local area, Warsaw, Poland | event-scout |
+| `events.html` | Events calendar — Poland, Europe | event-scout |
 | `lkml.html` | Linux Media mailing list digest | lore-digest (linux-media) |
 | `soc.html` | SoC bringup mailing list | lore-digest (soc-bringup) |
 | `jetson.html` | Jetson/Tegra mailing list | lore-digest (jetson-tegra) |
@@ -1263,7 +1414,7 @@ Served by nginx at `:8888`, generated by `generate-html.py` (6900+ lines):
 | `security.html` | Host security scoring | vulnscan.sh |
 | `presence.html` | Phone detection timeline | presence.sh |
 | `load.html` | GPU utilization heatmap + schedule | gpu-monitor |
-| `radio.html` | SDR spectrum monitoring | radio-scan.py |
+| `radio.html` | Radio hobbyist activity | radio-scan.py |
 | `car.html` | Car tracker | car-tracker |
 | `weather.html` | Weather forecast + HA sensor correlation | weather-watch.py |
 | `news.html` | Tech news aggregation + RSS | news-watch.py |
@@ -1295,7 +1446,7 @@ Per-minute sampling via `pp_dpm_sclk`:
 | `repo-feeds.json` | Repository API endpoints |
 | `sensor-watchlist.json` | CSI camera sensor tracking list |
 | `queue-runner-state.json` | Cycle count, resume index *(in data/)* |
-| `/opt/netscan/data/jobs.json` | All 337 job definitions |
+| `/opt/netscan/data/jobs.json` | All 330 job definitions |
 
 ### 7.8 Resilience
 
@@ -1346,17 +1497,17 @@ Nightly at 01:30. Sources: career-scan extraction, NoFluffJobs API, JustJoinIT, 
 
 ### 8.4 Company intelligence · `company-intel.py`
 
-Nightly at 01:50. Deep-dives into 13 tracked companies across 7 sources: GoWork.pl reviews, DuckDuckGo news, Layoffs.fyi, company pages, 4programmers.net, Reddit, SemiWiki. LLM-scored sentiment (-5 to +5) with cross-company synthesis.
+Nightly at 01:50. Deep-dives into 43 tracked companies across 8 sources: GoWork.pl reviews, DuckDuckGo news, Layoffs.fyi, company pages, 4programmers.net, Reddit, SemiWiki, Hacker News. LLM-scored sentiment (-5 to +5) with cross-company synthesis.
 
 > **GoWork.pl:** New Next.js SPA breaks scrapers. Scanner uses the old `/opinie_czytaj,{entity_id}` URLs (still server-rendered).
 
 ### 8.5 Patent watch · `patent-watch.py`
 
-Nightly at 02:10. Monitors 6 search queries (MIPI CSI, IR/RGB dual camera, ISP pipeline, automotive ADAS, sensor fusion, V4L2/libcamera) across Google Patents and Lens.org. Scored by relevance keywords × watched assignee bonus.
+Nightly at 02:10. Monitors 6 search queries (MIPI CSI, IR/RGB dual camera, ISP pipeline, automotive ADAS, sensor fusion, V4L2/libcamera) across Google Patents, EPO OPS, and DuckDuckGo. Scored by relevance keywords × watched assignee bonus.
 
 ### 8.6 Event scout · `event-scout.py`
 
-Nightly at 02:30. Discovers tech events with geographic scoring (the local area 10, Warsaw 8, Poland 5, Europe 3, Online 9). Sources: Crossweb.pl, Konfeo, Meetup, Eventbrite, DDG, 9 known conference sites.
+Nightly at 02:30. Discovers tech events with geographic scoring (local 10, nearby 8, Poland 5, Europe 3, Online 9). Sources: Crossweb.pl, Konfeo, Meetup, Eventbrite, DDG, 14 known conference sites.
 
 ---
 
@@ -1371,7 +1522,7 @@ Nightly at 02:30. Discovers tech events with geographic scoring (the local area 
 bc250/
 ├── README.md                       ← you are here
 ├── netscan/                        → /opt/netscan/
-│   ├── queue-runner.py             # v7 — continuous loop + Signal chat (337 jobs)
+│   ├── queue-runner.py             # v7 — continuous loop + Signal chat (330 jobs)
 │   ├── career-scan.py              # Two-phase career scanner
 │   ├── career-think.py             # Per-company career analysis
 │   ├── salary-tracker.py           # Salary intelligence
@@ -1379,18 +1530,20 @@ bc250/
 │   ├── company-think.py            # Per-entity company analysis
 │   ├── patent-watch.py             # Patent monitor
 │   ├── event-scout.py              # Event tracker
-│   ├── city-watch.py               # SkyscraperCity the local area construction monitor
+│   ├── city-watch.py               # SkyscraperCity local construction monitor
 │   ├── leak-monitor.py             # CTI: 11 OSINT sources + Ahmia dark web
 │   ├── ha-journal.py               # Home Assistant journal
 │   ├── ha-correlate.py             # HA cross-sensor correlation
 │   ├── ha-observe.py               # Quick HA queries
 │   ├── csi-sensor-watch.py         # CSI camera sensor patent/news
-│   ├── radio-scan.py               # SDR spectrum monitoring
+│   ├── csi-think.py                # CSI camera domain analysis
+│   ├── radio-scan.py               # Radio hobbyist forum tracker
 │   ├── market-think.py             # Market sector analysis
 │   ├── life-think.py               # Cross-domain life advisor
 │   ├── system-think.py             # GPU/security/health system intelligence
 │   ├── career-digest.py            # Weekly career digest → Signal (Sunday)
 │   ├── daily-summary.py            # End-of-cycle Signal summary
+│   ├── frost-guard.py              # Frost/freeze risk alerter
 │   ├── repo-think.py               # LLM analysis of repo changes
 │   ├── academic-watch.py           # Academic publication monitor
 │   ├── news-watch.py               # Tech news aggregation + RSS feeds
@@ -1410,7 +1563,7 @@ bc250/
 │   ├── vulnscan.sh                 # Weekly vulnerability scan
 │   ├── presence.sh                 # Phone presence detection
 │   ├── syslog.sh                   # System health logger
-│   ├── watchdog.py                 # Integrity checker
+│   ├── watchdog.py                 # Network security checker
 │   ├── report.sh                   # Morning report rebuild
 │   ├── profile.json                # Public interests + Signal config
 │   ├── profile-private.json        # Career context (gitignored)
@@ -1418,8 +1571,6 @@ bc250/
 │   ├── digest-feeds.json           # Feed URLs (8 mailing lists)
 │   ├── repo-feeds.json             # Repository endpoints
 │   └── sensor-watchlist.json       # CSI sensor tracking list
-├── openclaw/                       # ARCHIVED — see Appendix A
-│   └── (historical OpenClaw config, no longer deployed)
 ├── systemd/
 │   ├── queue-runner.service        # v7 — continuous loop + Signal chat
 │   ├── queue-runner-nightly.service # Nightly batch trigger
@@ -1434,8 +1585,7 @@ bc250/
 │   └── ollama.service.d/
 │       └── override.conf           # Vulkan + memory settings
 ├── scripts/
-│   ├── generate-and-send.sh        # SD image generation pipeline
-│   └── generate.sh                 # SD generation wrapper
+│   └── ollama-proxy.py             # Reverse proxy (injects think:false for qwen3)
 ├── generate-and-send.sh            → /opt/stable-diffusion.cpp/ (legacy EXEC pattern, intercepted by queue-runner)
 └── generate-and-send-worker.sh     → legacy async worker (unused in v7, kept for EXEC pattern match)
 ```
@@ -1562,9 +1712,7 @@ curl -X POST http://127.0.0.1:8080/api/v1/rpc \
 
 ---
 
-## 11. Known Limitations & Ideas
-
-### ⚠ Limitations
+## 11. Known Limitations
 
 | Issue | Impact |
 |-------|--------|
@@ -1577,14 +1725,78 @@ curl -X POST http://127.0.0.1:8080/api/v1/rpc \
 | Prefill rate degrades with context | 128 tok/s at 1.3K → 70 tok/s at 10K tokens (UMA bandwidth + attention scaling). |
 | Gen speed degrades with context fill | 27 tok/s empty → 13 tok/s at 30K tokens. Partial model offload at KV limit causes cliff drop. |
 | Ollama caps KV auto-size at ~40K (Q4_0) | `num_ctx` > 40960 accepted but silently truncated. Actual limit = VRAM ÷ per-token KV size. |
+| Speculative decoding blocked | Ollama 0.18 has no `--draft-model`. Dual-model loading evicts the draft model. |
+| TTS not feasible | CPU-based TTS (Piper, Coqui) competes with GPU for the same 16 GB UMA pool. No Vulkan TTS exists. |
 
-### 💡 Ideas — untested frontiers
+---
 
-| Idea | What | Why it might work on BC-250 |
-|------|------|----------------------------|
-| **Speculative decoding** | 3B draft model + 35B MoE verifier | qwen2.5:3b runs at 104 tok/s, MoE at 38 tok/s. Draft proposes N tokens, MoE verifies in one pass. Ollama supports `--draft-model`. Could push effective throughput above 50 tok/s if draft acceptance rate is >60%. MoE's sparse activation makes verification cheap. |
-| **Vision analysis via Signal** | Send photo → qwen3.5:9b describes/analyzes it (no sd-cli) | 9B model has native vision (multimodal). No GPU swap needed — just pass the image via Ollama's `/api/chat` with base64 image. Different from Kontext (edit) — this is understanding. "What's in this photo?", "Read this receipt", "Identify this plant." |
-| **Smart model routing** | Auto-switch between MoE and 9B based on task | If prompt >8K tokens or contains an image → use 9B (65K context, vision). Otherwise → MoE (faster, smarter). queue-runner already manages both models. Could count tokens before sending and route automatically. |
+## 12. Software Versions
+
+Pinned versions as of March 2026. All components built/installed on Fedora 43.
+
+| Component | Version | Notes |
+|-----------|---------|-------|
+| **OS** | Fedora 43, kernel 6.18.9 | Headless, `performance` governor |
+| **Ollama** | 0.18.0 | Vulkan backend, `OLLAMA_FLASH_ATTENTION=1` |
+| **Mesa / RADV** | 25.3.4 | Vulkan 1.4.328, `RADV GFX1013` |
+| **stable-diffusion.cpp** | master-525 (`d6dd6d7`) | Built with `-DSD_VULKAN=ON` |
+| **whisper.cpp** | v1.8.3-198 (`30c5194c`) | Built with Vulkan, large-v3-turbo model |
+| **signal-cli** | 0.13.24 | Native binary, JSON-RPC at :8080 |
+| **Qwen3.5-35B-A3B** | IQ2_M (GGUF, 10.6 GB) | Primary MoE model, via [unsloth](https://huggingface.co/unsloth/Qwen3.5-35B-A3B-GGUF) |
+| **Qwen3.5:9b** | Q4_K_M (GGUF, 6.1 GB) | Vision + long context model |
+| **FLUX.2-klein-9B** | Q4_0 (GGUF, 5.3 GB) | Image generation, via [leejet](https://huggingface.co/leejet/FLUX.2-klein-9B-GGUF) |
+| **ggml-large-v3-turbo** | 1.6 GB | Whisper model for audio transcription |
+| **ESRGAN** | RealESRGAN_x4plus (64 MB) | 4× image upscaling |
+| **Python** | 3.13 | queue-runner, netscan scripts |
+
+---
+
+## 13. References
+
+### Hardware & Drivers
+
+| Resource | URL |
+|----------|-----|
+| AMD BC-250 community docs (BIOS, setup) | https://elektricm.github.io/amd-bc250-docs/ |
+| LLVM AMDGPU processor table (GFX1013) | https://llvm.org/docs/AMDGPUUsage.html#processors |
+| Mesa RADV Vulkan driver | https://docs.mesa3d.org/drivers/radv.html |
+| Linux TTM memory manager | https://www.kernel.org/doc/html/latest/gpu/drm-mm.html |
+
+### LLM Inference
+
+| Resource | URL |
+|----------|-----|
+| Ollama — local LLM runtime | https://github.com/ollama/ollama |
+| Qwen3.5 model family (Alibaba) | https://huggingface.co/Qwen |
+| Qwen3.5-35B-A3B GGUF (unsloth) | https://huggingface.co/unsloth/Qwen3.5-35B-A3B-GGUF |
+| Qwen3.5-9B (Ollama) | https://ollama.com/library/qwen3.5:9b |
+| GGUF quantization format | https://github.com/ggerganov/llama.cpp/blob/master/docs/gguf.md |
+
+### Image & Video Generation
+
+| Resource | URL |
+|----------|-----|
+| stable-diffusion.cpp (Vulkan) | https://github.com/leejet/stable-diffusion.cpp |
+| FLUX.2-klein-9B GGUF | https://huggingface.co/leejet/FLUX.2-klein-9B-GGUF |
+| FLUX.2-klein-4B GGUF | https://huggingface.co/leejet/FLUX.2-klein-4B-GGUF |
+| FLUX.1-Kontext-dev (image editing) | https://huggingface.co/black-forest-labs/FLUX.1-Kontext-dev |
+| Chroma (flash distilled) | https://huggingface.co/leejet/Chroma-GGUF |
+| WAN 2.1 T2V (video generation) | https://huggingface.co/Wan-AI |
+| Real-ESRGAN (image upscaling) | https://github.com/xinntao/Real-ESRGAN |
+
+### Audio & Speech
+
+| Resource | URL |
+|----------|-----|
+| whisper.cpp (Vulkan STT) | https://github.com/ggerganov/whisper.cpp |
+| Whisper large-v3-turbo model | https://huggingface.co/ggerganov/whisper-large-v3-turbo |
+
+### Messaging & Integration
+
+| Resource | URL |
+|----------|-----|
+| signal-cli (Signal messenger CLI) | https://github.com/AsamK/signal-cli |
+| Signal Protocol | https://signal.org/docs/ |
 
 ---
 
@@ -1718,6 +1930,10 @@ systemctl --user mask openclaw-gateway
 
 <div align="center">
 
-`bc250` · AMD Cyan Skillfish · 337 autonomous jobs · *hack the planet* 🦞
+**Artur Andrzejczak** · andrzejczak.artur@gmail.com · March 2026
+
+Development assisted by Claude Opus 4.6.
+
+Code: [AGPL-3.0](LICENSE) · Docs: [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
 
 </div>

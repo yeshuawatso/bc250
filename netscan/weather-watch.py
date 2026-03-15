@@ -2,7 +2,7 @@
 """
 weather-watch.py — Weather forecast + HA sensor correlation + air quality forecasting
 OpenMeteo free API (no key needed), correlate with Home Assistant sensors,
-predict heating needs, alert on severe weather for the local area.
+predict heating needs, alert on severe weather.
 Also does air quality forecasting: correlate CO2/PM2.5/VOC with weather conditions.
 """
 

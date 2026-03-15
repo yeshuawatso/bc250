@@ -42,6 +42,7 @@ import time
 import sys
 import signal
 import socket
+import base64
 import urllib.request
 from datetime import datetime, date, timedelta, timezone
 from pathlib import Path
@@ -133,6 +134,23 @@ SD_KONTEXT_TIMEOUT_S = 900          # Max 15 min for Kontext editing (~5 min typ
 SD_KONTEXT_STALL_S = 180            # Kill if no stdout progress for 3 min
 SD_EDIT_SCRIPT_PREFIX = "/opt/stable-diffusion.cpp/edit-image"  # EXEC edit intercept
 SIGNAL_ATTACHMENTS_DIR = os.path.expanduser("~/.local/share/signal-cli/attachments")
+
+# ─── Whisper Audio Transcription ────────────────────────────────────────────
+WHISPER_CLI = "/opt/whisper.cpp/build/bin/whisper-cli"
+WHISPER_MODEL = "/opt/whisper.cpp/models/ggml-large-v3-turbo.bin"
+WHISPER_TIMEOUT_S = 120              # Max 2 min for transcription
+WHISPER_THREADS = 6                  # Zen 2 6c
+
+# ─── Vision Analysis ────────────────────────────────────────────────────────
+VISION_MODEL = "qwen3.5:9b"          # Has native vision capability
+VISION_CTX = 4096                    # Enough for image + short prompt
+VISION_MAX_PREDICT = 500             # Max tokens for vision reply
+VISION_TIMEOUT_S = 120               # Vision analysis timeout
+
+# ─── Smart Model Routing ────────────────────────────────────────────────────
+# MoE (35B) = faster, smarter for text. 9B = vision, longer context.
+# Route to 9B when: image attached (vision), or estimated tokens >8K.
+ROUTING_TOKEN_THRESHOLD = 8000       # Switch to 9B if prompt > this many tokens
 
 # ─── Job name sets ──────────────────────────────────────────────────────────
 # HA jobs: run opportunistically when GPU is idle (2-3 times/day)
@@ -962,20 +980,27 @@ def check_signal_inbox():
                 dm = envelope.get('dataMessage', {})
                 text = dm.get('message', '')
                 ts = envelope.get('timestamp', 0)
-                # Extract attachments (images sent by user)
+                # Extract attachments (images AND audio sent by user)
                 attachments = []
+                audio_attachments = []
                 for att in dm.get('attachments', []):
                     att_id = att.get('id', '')
                     content_type = att.get('contentType', '')
-                    if att_id and content_type.startswith('image/'):
-                        att_path = os.path.join(SIGNAL_ATTACHMENTS_DIR, att_id)
-                        if os.path.exists(att_path):
-                            attachments.append(att_path)
-                if source == SIGNAL_OWNER and (text or attachments):
+                    if not att_id:
+                        continue
+                    att_path = os.path.join(SIGNAL_ATTACHMENTS_DIR, att_id)
+                    if not os.path.exists(att_path):
+                        continue
+                    if content_type.startswith('image/'):
+                        attachments.append(att_path)
+                    elif content_type.startswith('audio/'):
+                        audio_attachments.append(att_path)
+                if source == SIGNAL_OWNER and (text or attachments or audio_attachments):
                     messages.append({
                         'text': text or '',
                         'timestamp': ts,
                         'attachments': attachments,
+                        'audio': audio_attachments,
                     })
             except (json.JSONDecodeError, KeyError, TypeError):
                 # Not a JSON message line (signal-cli log noise) — skip
@@ -1027,6 +1052,179 @@ def signal_send_attachment(text, attachment_path):
     except Exception as e:
         log(f"  Signal attachment send error: {e}")
         return False
+
+
+def transcribe_audio(audio_path, language="auto"):
+    """Transcribe audio using whisper.cpp large-v3-turbo.
+
+    Converts input to WAV 16kHz mono (required by whisper), then runs
+    whisper-cli. Supports auto language detection or explicit en/pl.
+    Returns (transcription_text, detected_language, duration_s).
+    """
+    log(f"  Whisper: Transcribing {audio_path}")
+    if not os.path.exists(WHISPER_CLI) or not os.path.exists(WHISPER_MODEL):
+        return None, None, 0
+
+    # Convert to WAV 16kHz mono (whisper requirement)
+    wav_path = "/tmp/whisper-input.wav"
+    try:
+        subprocess.run(
+            ["ffmpeg", "-y", "-i", audio_path, "-ar", "16000", "-ac", "1",
+             "-c:a", "pcm_s16le", wav_path],
+            capture_output=True, timeout=30)
+    except Exception as e:
+        log(f"  Whisper: ffmpeg conversion failed: {e}")
+        return None, None, 0
+
+    if not os.path.exists(wav_path):
+        return None, None, 0
+
+    # Get audio duration
+    try:
+        probe = subprocess.run(
+            ["ffprobe", "-v", "quiet", "-show_entries", "format=duration",
+             "-of", "csv=p=0", wav_path],
+            capture_output=True, text=True, timeout=10)
+        audio_duration = float(probe.stdout.strip())
+    except Exception:
+        audio_duration = 0
+
+    # Language detection: constrain to en/pl only
+    # Whisper auto-detect sometimes picks wrong languages (e.g. Greek for English).
+    # If auto: run --detect-language first, then force en or pl.
+    ALLOWED_LANGS = {"en", "pl"}
+    if language == "auto":
+        detect_cmd = [
+            WHISPER_CLI, "-m", WHISPER_MODEL, "-f", wav_path,
+            "-l", "auto", "--detect-language", "-t", str(WHISPER_THREADS),
+        ]
+        try:
+            det = subprocess.run(detect_cmd, capture_output=True, text=True, timeout=30)
+            detected = None
+            for line in det.stderr.split("\n"):
+                if "auto-detected language:" in line:
+                    m = re.search(r'language:\s*(\w+)', line)
+                    if m:
+                        detected = m.group(1)
+            if detected in ALLOWED_LANGS:
+                language = detected
+                log(f"  Whisper: detected {language}, using it")
+            else:
+                language = "en"
+                log(f"  Whisper: detected '{detected}' (not en/pl), defaulting to en")
+        except Exception:
+            language = "en"
+            log(f"  Whisper: detect-language failed, defaulting to en")
+
+    # Run whisper-cli with resolved language
+    cmd = [
+        WHISPER_CLI,
+        "-m", WHISPER_MODEL,
+        "-f", wav_path,
+        "-l", language,
+        "--no-timestamps",
+        "-t", str(WHISPER_THREADS),
+    ]
+
+    start_t = time.time()
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True,
+                                timeout=WHISPER_TIMEOUT_S)
+    except subprocess.TimeoutExpired:
+        log(f"  Whisper: Timed out after {WHISPER_TIMEOUT_S}s")
+        return None, None, audio_duration
+    except Exception as e:
+        log(f"  Whisper: Error: {e}")
+        return None, None, audio_duration
+
+    elapsed = time.time() - start_t
+    detected_lang = language
+
+    # Extract transcription from stdout only
+    # (stdout has clean text; stderr has whisper_ system lines.)
+    transcription = result.stdout.strip()
+
+    log(f"  Whisper: {audio_duration:.0f}s audio → {elapsed:.1f}s "
+        f"({detected_lang}) \"{transcription[:60]}...\"")
+    return transcription, detected_lang, audio_duration
+
+
+def analyze_image_with_vision(image_path, user_prompt=""):
+    """Analyze an image using qwen3.5:9b's native vision capability.
+
+    The 9B model sees the image directly via Ollama's multimodal API.
+    No GPU swap needed — just a model switch. Uses think=false to get
+    direct output without reasoning traces.
+
+    Returns the analysis text or None on error.
+    """
+    log(f"  Vision: Analyzing {image_path}")
+    try:
+        with open(image_path, "rb") as f:
+            img_b64 = base64.b64encode(f.read()).decode()
+    except Exception as e:
+        log(f"  Vision: Failed to read image: {e}")
+        return None
+
+    prompt = user_prompt or "Describe what you see in this image. Be concise but thorough."
+
+    payload = json.dumps({
+        "model": VISION_MODEL,
+        "messages": [
+            {"role": "user", "content": prompt, "images": [img_b64]}
+        ],
+        "stream": False,
+        "think": False,
+        "options": {
+            "num_ctx": VISION_CTX,
+            "num_predict": VISION_MAX_PREDICT,
+            "temperature": 0.3,
+        }
+    }).encode()
+
+    start_t = time.time()
+    try:
+        req = urllib.request.Request(
+            f"{OLLAMA_URL}/api/chat", data=payload,
+            headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=VISION_TIMEOUT_S) as resp:
+            data = json.loads(resp.read())
+    except Exception as e:
+        log(f"  Vision: API error: {e}")
+        return None
+
+    elapsed = time.time() - start_t
+    reply = data.get("message", {}).get("content", "").strip()
+    eval_count = data.get("eval_count", 0)
+    prompt_count = data.get("prompt_eval_count", 0)
+
+    log(f"  Vision: {elapsed:.1f}s, {eval_count} tok gen, {prompt_count} tok prompt")
+    return reply if reply else None
+
+
+def estimate_tokens(text):
+    """Rough token count estimate (~4 chars per token for English)."""
+    return len(text) // 4
+
+
+def choose_chat_model(user_text, has_image=False):
+    """Smart model routing: pick the best model for the task.
+
+    Routes to 9B (vision, 65K context) when:
+    - User sent an image (needs vision capability)
+    - Estimated prompt tokens > ROUTING_TOKEN_THRESHOLD
+
+    Otherwise uses MoE (faster, smarter for text-only tasks).
+    Returns (model_name, context_size, reason).
+    """
+    if has_image:
+        return VISION_MODEL, VISION_CTX, "vision"
+
+    est_tokens = estimate_tokens(user_text)
+    if est_tokens > ROUTING_TOKEN_THRESHOLD:
+        return VISION_MODEL, 65536, "long_context"
+
+    return SIGNAL_CHAT_MODEL, SIGNAL_CHAT_CTX, "default"
 
 
 def generate_and_send_image(prompt):
@@ -1711,6 +1909,20 @@ def chat_with_llm(user_text, allow_sd=True, attachment_path=None):
         "ONLY use when the user sends a photo AND asks to modify/edit/change it.\n"
         "If they just send a photo with no edit request, acknowledge it.\n\n"
 
+        "== VISION ANALYSIS ==\n"
+        "When the user sends a PHOTO with a question (not an edit request), the system\n"
+        "automatically analyzes it with the 9B vision model (qwen3.5:9b). You don't need\n"
+        "to do anything — the vision result is sent directly. This handles: 'what is this?',\n"
+        "'read this receipt', 'identify this plant', 'describe what you see'.\n"
+        "The vision model sees the actual image — no sd-cli needed.\n\n"
+
+        "== AUDIO TRANSCRIPTION ==\n"
+        "When the user sends a VOICE NOTE or audio file, it's automatically transcribed\n"
+        "using whisper.cpp (large-v3-turbo, 1.6B params). Supports English and Polish\n"
+        "with automatic language detection. The transcription is sent back directly.\n"
+        "If the user includes text with the audio, the transcription is fed to you for\n"
+        "further processing. User can specify language: 'en', 'pl', 'english', 'polish'.\n\n"
+
         "== DAILY RESEARCH DATA ==\n"
         "bc250 runs 300+ automated monitoring jobs. All data in /opt/netscan/data/.\n"
         "To read JSON: cat <file> | python3 -c \"import sys,json; d=json.load(sys.stdin); ...\"\n"
@@ -1850,6 +2062,12 @@ def chat_with_llm(user_text, allow_sd=True, attachment_path=None):
     else:
         user_content = user_text
 
+    # Smart model routing: pick best model for the task
+    chat_model, chat_ctx, route_reason = choose_chat_model(
+        user_content, has_image=bool(attachment_path))
+    if route_reason != "default":
+        log(f"    Route: {chat_model} ({route_reason})")
+
     messages = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": user_content}
@@ -1860,15 +2078,15 @@ def chat_with_llm(user_text, allow_sd=True, attachment_path=None):
     for _round in range(SIGNAL_CHAT_MAX_EXEC + 1):
         try:
             payload = json.dumps({
-                "model": SIGNAL_CHAT_MODEL,
+                "model": chat_model,
                 "messages": messages,
                 "stream": False,
-                "options": {"num_ctx": SIGNAL_CHAT_CTX, "temperature": 0.7}
+                "options": {"num_ctx": chat_ctx, "temperature": 0.7}
             }).encode()
             req = urllib.request.Request(
                 f"{OLLAMA_URL}/api/chat", data=payload,
                 headers={"Content-Type": "application/json"})
-            with urllib.request.urlopen(req, timeout=180) as resp:
+            with urllib.request.urlopen(req, timeout=300) as resp:
                 data = json.loads(resp.read())
             reply = data.get('message', {}).get('content', '').strip()
         except Exception as e:
@@ -2011,9 +2229,71 @@ def process_signal_chat(tag=None):
     for i, msg in enumerate(messages):
         text = msg['text']
         attachments = msg.get('attachments', [])
+        audio_atts = msg.get('audio', [])
         att_path = attachments[0] if attachments else None
-        att_info = f" [+image: {att_path}]" if att_path else ""
+        att_info = ""
+        if att_path:
+            att_info = f" [+image: {att_path}]"
+        if audio_atts:
+            att_info += f" [+audio: {len(audio_atts)}]"
         log(f"    [{i+1}/{count}] {text[:80]}{'...' if len(text) > 80 else ''}{att_info}")
+
+        # ── Audio transcription: transcribe first, then feed text to LLM ──
+        if audio_atts:
+            # Check if user specified a language
+            lang = "auto"
+            text_lower = text.lower()
+            if "polish" in text_lower or "po polsku" in text_lower or "pl" == text_lower.strip():
+                lang = "pl"
+            elif "english" in text_lower or "po angielsku" in text_lower or "en" == text_lower.strip():
+                lang = "en"
+
+            all_transcriptions = []
+            for audio_path in audio_atts:
+                transcription, detected_lang, audio_dur = transcribe_audio(audio_path, lang)
+                if transcription:
+                    lang_name = {"en": "English", "pl": "Polish"}.get(detected_lang, detected_lang)
+                    all_transcriptions.append(
+                        f"🎤 Transcription ({lang_name}, {audio_dur:.0f}s audio):\n\n{transcription}")
+
+            if all_transcriptions:
+                reply = "\n\n".join(all_transcriptions)
+                # If user asked a question along with the audio, feed transcription to LLM
+                if text and text.lower().strip() not in ("", "en", "pl", "english", "polish",
+                                                          "po polsku", "po angielsku", "transcribe"):
+                    combined = "\n".join(t.split("\n\n", 1)[-1] for t in all_transcriptions)
+                    reply = chat_with_llm(
+                        f"Audio transcription: \"{combined}\"\n\nUser request: {text}",
+                        allow_sd=(tag != 'parallel'))
+            else:
+                reply = "🦞 Couldn't transcribe that audio. Make sure it's a voice message."
+            signal_reply(reply)
+            log(f"    Replied: {reply[:80]}{'...' if len(reply) > 80 else ''}")
+            sd_watchdog_ping()
+            continue
+
+        # ── Image with no edit request → vision analysis ──
+        if att_path and text:
+            text_lower = text.lower()
+            # Check if this is an edit request (Kontext) vs analysis request (Vision)
+            edit_keywords = ("edit", "change", "make it", "modify", "add", "remove",
+                             "replace", "transform", "turn it", "convert", "style",
+                             "edytuj", "zmień", "dodaj", "usuń", "zamień")
+            is_edit = any(kw in text_lower for kw in edit_keywords)
+
+            if not is_edit:
+                # Vision analysis — use 9B model directly
+                vision_result = analyze_image_with_vision(att_path, text)
+                if vision_result:
+                    reply = f"👁️ {vision_result}"
+                    if len(reply) > SIGNAL_MAX_REPLY:
+                        reply = reply[:SIGNAL_MAX_REPLY] + "\n[truncated]"
+                    signal_reply(reply)
+                    log(f"    Vision reply: {reply[:80]}{'...' if len(reply) > 80 else ''}")
+                    sd_watchdog_ping()
+                    continue
+                # If vision failed, fall through to regular LLM
+
         reply = chat_with_llm(text, allow_sd=(tag != 'parallel'),
                               attachment_path=att_path)
         signal_reply(reply)
