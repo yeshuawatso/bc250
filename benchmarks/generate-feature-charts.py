@@ -144,10 +144,10 @@ def chart_whisper_memory():
             color=C_SWAP, alpha=0.6, style='italic')
 
     # Footnote for the 0 on 3rd run
-    ax.text(2.0, -180, '* 3rd run: 0 swap because earlier runs already evicted pages',
+    ax.text(2.0, -280, '* 3rd run: 0 swap because earlier runs already evicted pages',
             fontsize=8, color='#6c757d', ha='center', style='italic')
 
-    ax.set_xlabel('Audio Duration (real TTS speech)')
+    ax.set_xlabel('Audio Duration (real TTS speech)', labelpad=30)
     ax.set_ylabel('Swap Increase (MB)')
     ax.set_title('Whisper Memory Impact — Alongside Ollama (10 GB model loaded)',
                  fontsize=13, fontweight='bold', pad=12)
@@ -335,9 +335,12 @@ def chart_signal_pipeline():
     ax.annotate('', xy=(8.5, 1), xytext=(7.6, 1), arrowprops=dict(arrowstyle='->', color=C_MOE, lw=1.5))
 
     # Labels on arrows
-    ax.text(4.7, 4.5, 'audio/*', fontsize=9, color=C_TURBO, fontweight='bold', rotation=25)
-    ax.text(4.6, 3.15, 'image/*', fontsize=9, color=C_9B, fontweight='bold')
-    ax.text(4.7, 1.7, 'text', fontsize=9, color=C_MOE, fontweight='bold', rotation=-18)
+    ax.text(4.45, 4.35, 'audio/*', fontsize=9, color=C_TURBO, fontweight='bold',
+            rotation=0, rotation_mode='anchor')
+    ax.text(4.6, 3.15, 'image/*', fontsize=9, color=C_9B, fontweight='bold',
+            rotation=0, rotation_mode='anchor')
+    ax.text(4.45, 1.65, 'text', fontsize=9, color=C_MOE, fontweight='bold',
+            rotation=0, rotation_mode='anchor')
 
     # Title
     ax.text(6, 5.8, 'Signal Message Processing Pipeline — BC-250',

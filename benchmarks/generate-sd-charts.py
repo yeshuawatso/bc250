@@ -150,8 +150,8 @@ def chart_esrgan():
     ax.grid(axis='y', alpha=0.3)
 
     # Add "production" arrow
-    ax.annotate("← production\n   (tile 192)", xy=(1, 25), xytext=(1.8, 80),
-                fontsize=10, color='#2ecc71', fontweight='bold',
+    ax.annotate("production\n(tile 192)", xy=(1, 42), xytext=(1, 80),
+                fontsize=10, color='#2ecc71', fontweight='bold', ha='center',
                 arrowprops=dict(arrowstyle='->', color='#2ecc71', lw=1.5))
 
     plt.tight_layout()
