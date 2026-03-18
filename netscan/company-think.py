@@ -489,6 +489,13 @@ COMPANIES = {
         "news_url": "https://newsroom.st.com/",
         "search_terms": ["STMicroelectronics automotive embedded", "STMicro Linux BSP", "STMicro Poland hiring"],
     },
+    "digiteq": {
+        "name": "Digiteq Automotive",
+        "industry": "automotive",
+        "gowork_id": None,
+        "news_url": "https://www.digiteqautomotive.com/en/news",
+        "search_terms": ["Digiteq Automotive embedded Linux", "Digiteq ADAS camera", "Digiteq hiring"],
+    },
 }
 
 # ── Helpers ────────────────────────────────────────────────────────────────

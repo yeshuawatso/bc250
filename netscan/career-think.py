@@ -386,6 +386,12 @@ COMPANIES = {
         "career_urls": [],
         "keywords": ["AI", "linux", "kernel", "driver", "firmware", "wafer-scale"],
     },
+    "digiteq": {
+        "name": "Digiteq Automotive",
+        "industry": "automotive",
+        "career_urls": ["https://www.digiteqautomotive.com/en/career"],
+        "keywords": ["linux", "embedded", "automotive", "ADAS", "camera", "driver", "infotainment"],
+    },
 }
 
 # ── Helpers ────────────────────────────────────────────────────────────────

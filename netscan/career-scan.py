@@ -394,6 +394,14 @@ COMPANIES = {
         "keywords": ["linux", "embedded", "STM32", "automotive", "driver", "kernel", "SoC"],
         "industry": "silicon",
     },
+    "digiteq": {
+        "name": "Digiteq Automotive",
+        "career_urls": [
+            "https://www.digiteqautomotive.com/en/career",
+        ],
+        "keywords": ["linux", "embedded", "automotive", "ADAS", "driver", "camera", "V4L2", "infotainment", "Android"],
+        "industry": "automotive",
+    },
 }
 
 # ─── Job boards & aggregators ───

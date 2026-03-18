@@ -434,6 +434,13 @@ COMPANIES = {
         "search_terms": ["STMicroelectronics automotive embedded", "STMicro BSP Poland"],
         "industry": "silicon",
     },
+    "digiteq": {
+        "name": "Digiteq Automotive",
+        "gowork_id": None,
+        "news_url": "https://www.digiteqautomotive.com/en/news",
+        "search_terms": ["Digiteq Automotive embedded Linux", "Digiteq ADAS camera", "Digiteq hiring"],
+        "industry": "automotive",
+    },
 }
 
 
