@@ -703,7 +703,7 @@ The personality is baked into `queue-runner.py`'s `SYSTEM_PROMPT` — no externa
 | Scenario | Latency |
 |----------|:-------:|
 | Text reply (warm) | 10–30s |
-| Complex reasoning with tool use | 30–90s |
+| Complex reasoning with tool use | 1–5 min |
 | Image generation (FLUX.2-klein-9B 512²) | ~105s |
 | Image generation + auto-upscale 4× | ~130s |
 | Image editing (Kontext 512²) | ~5 min |

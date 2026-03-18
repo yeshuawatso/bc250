@@ -404,7 +404,7 @@ def chart_whisper_budget():
                     zorder=5)
 
     # "Fits" annotation for turbo
-    ax.text(total[1] + 0.2, 1, '✓ fits', fontsize=10, color=C_TURBO,
+    ax.text(total[1] + 0.2 + 1.2, 1, '✓ fits', fontsize=10, color=C_TURBO,
             fontweight='bold', va='center')
 
     # Total labels at end of each bar
@@ -429,7 +429,7 @@ def chart_whisper_budget():
     ax.set_yticks(y)
     ax.set_yticklabels(scenarios)
     ax.set_xlim(0, 19)
-    ax.legend(loc='lower right', framealpha=0.8, edgecolor='#30363d',
+    ax.legend(loc='lower left', framealpha=0.8, edgecolor='#30363d',
               facecolor='#161b22', fontsize=9)
     ax.grid(axis='x', alpha=0.3, zorder=0)
 

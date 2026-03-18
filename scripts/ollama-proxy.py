@@ -33,7 +33,7 @@ class OllamaProxy(http.server.BaseHTTPRequestHandler):
             if val:
                 req.add_header(h, val)
         try:
-            resp = urllib.request.urlopen(req, timeout=600)
+            resp = urllib.request.urlopen(req, timeout=900)
         except urllib.error.HTTPError as e:
             self.send_response(e.code)
             self.end_headers()

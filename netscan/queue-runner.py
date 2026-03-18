@@ -106,6 +106,7 @@ SIGNAL_CHAT_MODEL = "qwen3.5-35b-a3b-iq2m"
 SIGNAL_CHAT_CTX = 16384             # Context window for chat responses (matches OLLAMA_CONTEXT_LENGTH)
 SIGNAL_CHAT_MAX_EXEC = 3            # Max shell commands per message (search+fetch+verify)
 SIGNAL_EXEC_TIMEOUT_S = 30          # Timeout for shell commands
+SIGNAL_LLM_TIMEOUT_S = 900          # 15 min — MoE model with large context can be slow
 SIGNAL_MAX_REPLY = 1800             # Signal message char limit
 DATA_DIR = Path("/opt/netscan/data")
 
@@ -2086,7 +2087,7 @@ def chat_with_llm(user_text, allow_sd=True, attachment_path=None):
             req = urllib.request.Request(
                 f"{OLLAMA_URL}/api/chat", data=payload,
                 headers={"Content-Type": "application/json"})
-            with urllib.request.urlopen(req, timeout=300) as resp:
+            with urllib.request.urlopen(req, timeout=SIGNAL_LLM_TIMEOUT_S) as resp:
                 data = json.loads(resp.read())
             reply = data.get('message', {}).get('content', '').strip()
         except Exception as e:
