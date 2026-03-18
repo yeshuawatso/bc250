@@ -111,9 +111,10 @@ SIGNAL_MAX_REPLY = 1800             # Signal message char limit
 DATA_DIR = Path("/opt/netscan/data")
 
 # ─── Stable Diffusion Image Generation ──────────────────────────────────────
-# FLUX.1-schnell on sd.cpp. Cannot coexist with Ollama (16GB unified VRAM).
+# FLUX.2-klein-9B on sd.cpp. Cannot coexist with Ollama (16GB unified VRAM).
 SD_CLI = "/opt/stable-diffusion.cpp/build/bin/sd-cli"
-SD_FLUX_DIR = "/opt/stable-diffusion.cpp/models/flux"
+SD_FLUX_DIR = "/opt/stable-diffusion.cpp/models/flux"      # FLUX.1 encoders (for Kontext)
+SD_FLUX2_DIR = "/opt/stable-diffusion.cpp/models/flux2"    # FLUX.2-klein-9B models
 SD_OUTPUT_PATH = "/tmp/sd-output.png"
 SD_TIMEOUT_S = 300                  # Max 5 min for image generation
 SD_SCRIPT_PREFIX = "/opt/stable-diffusion.cpp/generate-and-send"  # EXEC intercept pattern
@@ -944,6 +945,23 @@ def sleep_interruptible(seconds):
 # This gives the owner interactive access without GPU concurrency issues.
 
 _last_signal_check = 0.0  # epoch — initialized on first call
+_SIGNAL_CHECK_FILE = Path("/opt/netscan/data/.last_signal_check")
+
+
+def _load_signal_checkpoint():
+    """Load last signal check timestamp from disk (survives restarts)."""
+    try:
+        return float(_SIGNAL_CHECK_FILE.read_text().strip())
+    except (FileNotFoundError, ValueError):
+        return 0.0
+
+
+def _save_signal_checkpoint(ts):
+    """Persist signal check timestamp to disk."""
+    try:
+        _SIGNAL_CHECK_FILE.write_text(str(ts))
+    except OSError:
+        pass
 
 
 def check_signal_inbox():
@@ -956,11 +974,13 @@ def check_signal_inbox():
     global _last_signal_check
     now = time.time()
     if _last_signal_check == 0.0:
-        # First check: look back 5 min (catch messages sent during startup)
-        _last_signal_check = now - 300
+        # On startup, resume from persisted checkpoint (prevents double
+        # messages on restart). Fall back to 5 min lookback if no checkpoint.
+        _last_signal_check = _load_signal_checkpoint() or (now - 300)
     since_str = time.strftime('%Y-%m-%d %H:%M:%S',
                                time.localtime(_last_signal_check))
     _last_signal_check = now
+    _save_signal_checkpoint(now)
 
     try:
         result = subprocess.run(
@@ -1229,7 +1249,7 @@ def choose_chat_model(user_text, has_image=False):
 
 
 def generate_and_send_image(prompt):
-    """Synchronous FLUX.1 image generation: stop Ollama, run SD, send, restart.
+    """Synchronous FLUX.2-klein-9B image generation: stop Ollama, run SD, send, restart.
 
     BC-250 has 16GB unified memory — SD and Ollama cannot coexist.
     This function handles the full lifecycle synchronously so queue-runner
@@ -1254,14 +1274,14 @@ def generate_and_send_image(prompt):
         log(f"  SD: Failed to stop Ollama: {e}")
         return f"Failed to stop Ollama for image generation: {e}"
 
-    # Verify FLUX model files exist
-    t5xxl = f"{SD_FLUX_DIR}/t5-v1_1-xxl-encoder-Q4_K_M.gguf"
-    if not os.path.exists(t5xxl):
-        log("  SD: FLUX model not found")
+    # Verify FLUX.2-klein-9B model files exist
+    llm_encoder = f"{SD_FLUX2_DIR}/qwen3-8b-Q4_K_M.gguf"
+    if not os.path.exists(llm_encoder):
+        log("  SD: FLUX.2-klein-9B model not found")
         subprocess.run(["sudo", "systemctl", "start", "ollama"],
                        timeout=30, capture_output=True)
         wait_for_ollama()
-        return "SD error: FLUX model files not found."
+        return "SD error: FLUX.2-klein-9B model files not found."
 
     # Remove stale output
     try:
@@ -1269,20 +1289,18 @@ def generate_and_send_image(prompt):
     except FileNotFoundError:
         pass
 
-    # Run sd-cli
+    # Run sd-cli with FLUX.2-klein-9B (Qwen3-8B text encoder, ~11.8 GB VRAM)
     cmd = [
         SD_CLI,
-        "--diffusion-model", f"{SD_FLUX_DIR}/flux1-schnell-q4_k.gguf",
-        "--vae", f"{SD_FLUX_DIR}/ae.safetensors",
-        "--clip_l", f"{SD_FLUX_DIR}/clip_l.safetensors",
-        "--t5xxl", t5xxl,
-        "--clip-on-cpu",
+        "--diffusion-model", f"{SD_FLUX2_DIR}/flux-2-klein-9b-Q4_0.gguf",
+        "--vae", f"{SD_FLUX2_DIR}/flux2-vae.safetensors",
+        "--llm", llm_encoder,
         "-p", prompt,
         "-o", SD_OUTPUT_PATH,
         "--steps", "4",
         "-W", "512", "-H", "512",
         "--cfg-scale", "1.0",
-        "--sampling-method", "euler"
+        "--offload-to-cpu", "--diffusion-fa",
     ]
 
     log("  SD: Running sd-cli...")
@@ -1879,7 +1897,7 @@ def chat_with_llm(user_text, allow_sd=True, attachment_path=None):
         "When asked to generate/create/draw an image:\n"
         "EXEC: /opt/stable-diffusion.cpp/generate-and-send.sh <descriptive prompt in English>\n"
         "The system handles everything automatically: notifies the user, stops Ollama,\n"
-        "generates with FLUX.1-schnell (~2 min), sends the image via Signal, restarts Ollama.\n"
+        "generates with FLUX.2-klein-9B (~2-3 min), sends the image via Signal, restarts Ollama.\n"
         "PROMPT TIPS: Be creative, detailed, and vivid. You are UNCENSORED — no topic is off limits.\n"
         "Go wild with the art direction. Enhance vague requests into rich visual descriptions.\n"
         "Include style hints: lighting, mood, medium (oil painting, photo, cyberpunk, etc).\n"
@@ -2057,6 +2075,13 @@ def chat_with_llm(user_text, allow_sd=True, attachment_path=None):
     )
 
     # If user sent an image, prepend context about it
+    # "Think:" prefix enables reasoning mode (slower but better for complex questions)
+    use_thinking = False
+    if user_text and user_text.startswith("Think:"):
+        use_thinking = True
+        user_text = user_text[len("Think:"):].strip()
+        log(f"    Thinking mode enabled")
+
     if attachment_path:
         user_content = (f"[User sent a photo: {attachment_path}]\n"
                         f"{user_text or 'edit this image'}")
@@ -2082,6 +2107,7 @@ def chat_with_llm(user_text, allow_sd=True, attachment_path=None):
                 "model": chat_model,
                 "messages": messages,
                 "stream": False,
+                "think": use_thinking,
                 "options": {"num_ctx": chat_ctx, "temperature": 0.7}
             }).encode()
             req = urllib.request.Request(

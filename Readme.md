@@ -11,7 +11,7 @@
 
 **GPU-accelerated AI home server on an obscure AMD APU — Vulkan inference, autonomous intelligence, Signal chat**
 
-`Zen 2 · RDNA 1.5 · 16 GB unified · Vulkan · 14B @ 27 tok/s · 330 autonomous jobs/cycle · 130 dashboard pages`
+`Zen 2 · GFX1013 ("RDNA 1.5", informal) · 16 GB unified · Vulkan · 35B MoE @ 38 tok/s · 330 autonomous jobs/cycle · 130 dashboard pages`
 
 [![Code: AGPL v3](https://img.shields.io/badge/Code-AGPL%20v3-blue.svg)](LICENSE)
 [![Docs: CC BY-SA 4.0](https://img.shields.io/badge/Docs-CC%20BY--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-sa/4.0/)
@@ -22,11 +22,13 @@
 
 </div>
 
-> A complete guide to running a **35B-parameter MoE LLM**, **FLUX.2 image generation**, and 330 autonomous jobs on the AMD BC-250 — an obscure APU (Zen 2 CPU + Cyan Skillfish RDNA 1.5 GPU) found in Samsung's blockchain/distributed-ledger rack appliances. Not a "crypto mining GPU," not a PS5 prototype — it's a custom SoC that Samsung used for private DLT infrastructure, repurposed here as a headless AI server with a community-patched BIOS.
+> A complete guide to running a **35B-parameter MoE LLM**, **FLUX.2 image generation**, and 330 autonomous jobs on the AMD BC-250 — a crypto-mining board built around AMD's Cyan Skillfish APU (Zen 2 + GFX1013 GPU, 16 GB GDDR6), often associated by the community with the PS5's silicon lineage ([Phoronix](https://www.phoronix.com/news/AMD-RADV-PS5-BC-250), [LLVM AMDGPU](https://llvm.org/docs/AMDGPUUsage.html#processors)), repurposed as a headless AI server with a community-patched BIOS.
 >
-> Qwen3.5-35B MoE at 38 tok/s, FLUX.2-klein-9B at best quality, hardware-specific driver workarounds, memory tuning notes, and real-world benchmarks on this niche hardware.
+> Qwen3.5-35B MoE at 38 tok/s, FLUX.2-klein-9B at highest tested image quality, hardware-specific driver workarounds, memory tuning notes, and real-world benchmarks on this niche hardware.
 
-> **What makes this unusual:** The BC-250's Cyan Skillfish GPU (`GFX1013`) is one of the few documented cases of LLM inference on RDNA 1.5. ROCm doesn't support it. OpenCL doesn't expose it. The only viable compute path is **Vulkan** — and even that required working around two kernel memory bottlenecks (GTT cap + TTM pages_limit) before 14B models would run.
+> **What makes this unusual:** This document describes one public, real-world LLM inference deployment on BC-250 / GFX1013 hardware — GFX10-era silicon informally called "RDNA 1.5" by the community. ROCm's userspace libraries don't ship GFX1013 support. OpenCL/rusticl was not functional in this configuration. On this Fedora 43 / Mesa 25.3.4 stack, Vulkan was the only GPU compute path that proved usable — and even that required working around two kernel memory bottlenecks (GTT cap + TTM pages_limit) before 14B models would run.
+>
+> **Disclaimer:** Unless otherwise stated, performance figures in this document are local measurements from one BC-250 board running Fedora 43, Mesa 25.3.4, and Ollama 0.18.0 with specific model quantizations. They are not vendor benchmarks and may not be reproducible on different software stacks.
 
 ---
 
@@ -59,41 +61,24 @@
 
 ## 1. Hardware Overview
 
-The AMD BC-250 is a custom APU originally designed for Samsung's blockchain/distributed-ledger rack appliances (not a traditional "mining GPU"). It's a full SoC — Zen 2 CPU and Cyan Skillfish RDNA 1.5 GPU on a single package, with 16 GB of on-package unified memory. Samsung deployed these in rack-mount enclosures for private DLT workloads; decommissioned boards now sell for ~$100–150 on the secondhand market, making them an affordable option for running 14B LLMs on dedicated hardware.
+The AMD BC-250 is a crypto-mining board built by **ASRock Rack** around AMD's Cyan Skillfish APU — Zen 2 CPU (6c/12t) and GFX1013 GPU (24 CUs) with 16 GB GDDR6 unified memory. The Cyan Skillfish silicon is widely associated with the same hardware family as Sony's PS5 APU (Oberon), and a common community theory is that these are salvaged/binned PS5 dies that didn't meet Sony's specs. This is plausible but not publicly confirmed by AMD — treat it as informed speculation, not established fact. Community documentation describes these boards as having been deployed in multi-board rack mining systems by ASRock Rack. After the racks were decommissioned, individual boards became available on AliExpress.
 
-<details>
-<summary><b>▸ Origin story — Samsung, 5G operators, and AliExpress</b></summary>
+> **GFX1013 vs PS5:** The PS5's Oberon is RDNA 2 (GFX10.3, `gfx1030+`). For practical purposes, the BC-250's Cyan Skillfish (`gfx1013`) behaves like a GFX10.1-era variant with fewer CUs than a full PS5 APU and an older ISA — though exact die-level comparisons are speculative without official AMD documentation. Unusually for GFX10.1, it retains hardware ray tracing extensions (`VK_KHR_ray_tracing_pipeline`, `VK_KHR_ray_query`). The community label **"RDNA 1.5"** (used throughout this document) reflects this hybrid positioning: GFX10.1 instruction set with ray tracing hardware more typical of RDNA 2. This is informal shorthand — not an official AMD designation.
 
-**What it was built for:** Samsung commissioned these custom AMD SoCs to build rack-mount servers for **private DLT (Distributed Ledger Technology) infrastructure** — not public cryptocurrency mining. The target customers were **South Korean 5G operators** (SK Telecom and others), who were early adopters of 5G deployment. Private blockchain solved several real problems for 5G telcos:
-
-- **IoT microtransactions:** 5G networks connect millions of smart devices. DLT enables cheap, instant machine-to-machine contract settlement without overloading central databases.
-- **Digital identity & security:** Operators used DLT registries for cryptographic customer authentication and digital identity wallets (e.g. Samsung Pay integration).
-- **Inter-operator settlement:** Blockchain streamlined real-time roaming fee reconciliation and data exchange between telecom partners.
-
-**Who made the hardware:** The SoC was designed by **AMD** (Zen 2 CPU + RDNA 1.5 GPU). Samsung designed the overall system and wrote the factory BIOS. The physical boards were manufactured by **ASRock Rack** (ASRock's server division) as an OEM contractor — Samsung rack enclosures typically held 12 BC-250 boards each. ASRock Rack is known for producing highly custom designs for large tech companies.
-
-**How they ended up on AliExpress:** Classic corporate e-waste cycle. As 5G infrastructure evolved, entire Korean server racks were decommissioned. Specialized recycling centers (mostly near Shenzhen, China) buy pallets of retired servers in bulk — often by weight. Workers disassemble the racks, test individual boards, and list working BC-250 modules on AliExpress as all-in-one SBC platforms for $100–150.
-
-</details>
-
-> **Not a PlayStation 5.** Despite superficial similarities (both use Zen 2 + 16 GB memory), the BC-250 has nothing to do with the PS5. The PS5's Oberon SoC is **RDNA 2** (GFX10.3, gfx1030+); the BC-250's Cyan Skillfish is **RDNA 1.5** (GFX10.1, gfx1013) — a hybrid architecture: GFX10.1 instruction set (RDNA 1) but with **hardware ray tracing support** (full `VK_KHR_ray_tracing_pipeline`, `VK_KHR_acceleration_structure`, `VK_KHR_ray_query`). LLVM's AMDGPU processor table lists GFX1013 as product "TBA" under GFX10.1, confirming it was never a retail part. Samsung also licensed RDNA 2 for mobile (Exynos 2200 / Xclipse 920) — that's a completely separate deal.
->
-> **Why "RDNA 1.5"?** GFX1013 doesn't fit cleanly into AMD's public RDNA generations. It has the RDNA 1 (GFX10.1) ISA and shader compiler target, but includes hardware ray tracing — a feature AMD only shipped publicly with RDNA 2 (GFX10.3). This makes Cyan Skillfish a transitional/custom design, likely built for Samsung's specific workload requirements. The label "RDNA 1.5" is used here as a practical shorthand.
-
-> **BIOS is not stock.** The board ships with a minimal Samsung BIOS meant for rack operation. A community-patched BIOS (from [AMD BC-250 docs](https://elektricm.github.io/amd-bc250-docs/)) enables standard UEFI features (boot menu, NVMe boot, fan control).
+> **BIOS is not stock.** The board ships with a minimal factory BIOS meant for rack operation. A community-patched BIOS (from [AMD BC-250 docs](https://elektricm.github.io/amd-bc250-docs/)) enables standard UEFI features (boot menu, NVMe boot, fan control).
 
 | Component | Details |
 |-----------|---------|
-| **CPU** | Zen 2 — 6c/12t @ 2.0 GHz |
-| **GPU** | Cyan Skillfish — RDNA 1.5, `GFX1013`, 24 CUs (1536 SPs), ray tracing capable |
-| **Memory** | **16 GB unified** (16 × 1 GB on-package), shared CPU/GPU |
+| **CPU** | Zen 2 — 6c/12t (BIOS-reported base 2.0 GHz; [community docs](https://elektricm.github.io/amd-bc250-docs/) report higher clocks on some firmware versions) |
+| **GPU** | Cyan Skillfish — "RDNA 1.5" (informal), `GFX1013`, 24 CUs (1536 SPs), ray tracing capable |
+| **Memory** | **16 GB GDDR6 unified** (on-package, 256-bit bus), shared CPU/GPU |
 | **VRAM** | 512 MB BIOS-carved framebuffer (same physical UMA pool — see note below) |
 | **GTT** | **16 GiB** (tuned via `ttm.pages_limit=4194304`, default 7.4 GiB) |
 | **Vulkan total** | **16.5 GiB** after tuning |
 | **Storage** | 475 GB NVMe |
 | **OS** | Fedora 43, kernel 6.18.9, headless |
 | **TDP** | 220W board (inference: 130–155W, between jobs: 55–60W, true idle w/o model: ~35W) |
-| **BIOS** | Community-patched UEFI (not Samsung stock) — [AMD BC-250 docs](https://elektricm.github.io/amd-bc250-docs/) |
+| **BIOS** | Community-patched UEFI (not factory stock) — [AMD BC-250 docs](https://elektricm.github.io/amd-bc250-docs/) |
 | **CPU governor** | `performance` (stock `schedutil` causes LLM latency spikes) |
 
 ### Unified memory is your friend (but needs tuning)
@@ -102,29 +87,29 @@ CPU and GPU share the same 16 GB physical pool (UMA — Unified Memory Architect
 
 > **UMA reality:** On unified memory, "100% GPU offload" means the model weights and KV cache live in GTT-mapped pages that the GPU accesses directly — there's no PCIe copy. However, it's still the same physical RAM the CPU uses. "Fallback to CPU" on UMA isn't catastrophic like on discrete GPUs (no bus transfer penalty), but GPU ALUs are faster than CPU ALUs for matrix ops.
 
-**Two bottlenecks must be fixed:**
+**Two bottlenecks had to be fixed in this setup:**
 
-1. **GTT cap** — `amdgpu` driver defaults to 50% of RAM (~7.4 GiB). The legacy fix was `amdgpu.gttsize=14336` in kernel cmdline, but this is no longer needed.
-2. **TTM pages_limit** — kernel TTM memory manager independently caps allocations at ~7.4 GiB. Fix: `ttm.pages_limit=4194304` (16 GiB in 4K pages). **This is the only tuning needed.**
+1. **GTT cap** — `amdgpu` driver defaults to 50% of RAM (~7.4 GiB). The legacy fix was `amdgpu.gttsize=14336` in kernel cmdline, but this parameter is now deprecated in favor of `ttm.pages_limit` ([kernel TTM docs](https://www.kernel.org/doc/html/latest/gpu/drm-mm.html), [Jeff Geerling's notes](https://www.jeffgeerling.com/blog/2025/increasing-vram-allocation-on-amd-ai-apus-under-linux)).
+2. **TTM pages_limit** — kernel TTM memory manager independently caps allocations at ~7.4 GiB. Fix: `ttm.pages_limit=4194304` (16 GiB in 4K pages). **On this Fedora 43 / kernel 6.18.9 stack, this is the only tuning needed.** Other kernels or distros may behave differently.
 
-> ✅ **GTT migration complete:** `amdgpu.gttsize` was removed from kernel cmdline. With `ttm.pages_limit=4194304` alone, GTT grew from 14→16 GiB and Vulkan available from 14.0→16.5 GiB. The deprecated parameter was actually *limiting* the allocation.
+> ✅ **GTT migration complete:** `amdgpu.gttsize` is deprecated and was removed from this setup's kernel cmdline. With `ttm.pages_limit=4194304` alone, GTT grew from 14→16 GiB and Vulkan available from 14.0→16.5 GiB. The deprecated parameter was actually *limiting* the allocation.
 
-After tuning: Vulkan sees **16.5 GiB** — enough for **14B parameter models at 40K context with Q4_0 KV cache, all inference on GPU**.
+After tuning: Vulkan sees **16.5 GiB** — enough for the **35B MoE primary at 16K context, or 14B dense models at up to 40K context (Q4_0 KV), with all tested inference running on GPU**.
 
 ---
 
 ## 2. Driver & Compute Stack
 
-The BC-250's `GFX1013` sits awkwardly between supported driver tiers.
+The BC-250's `GFX1013` falls between supported driver tiers. BC-250/Cyan Skillfish support in Mesa/RADV has been evolving rapidly ([Phoronix coverage](https://www.phoronix.com/news/AMD-RADV-PS5-BC-250), [Mesa RADV docs](https://docs.mesa3d.org/drivers/radv.html)) — the status below reflects this specific setup and may change with newer Mesa versions.
 
 | Layer | Status | Notes |
 |-------|:------:|-------|
 | **amdgpu kernel driver** | ✅ | Auto-detected, firmware loaded |
 | **Vulkan (RADV/Mesa)** | ✅ | Mesa 25.3.4, Vulkan 1.4.328 |
 | **ROCm / HIP** | ❌ | `rocblas_abort()` — GFX1013 not in GPU list |
-| **OpenCL (rusticl)** | ❌ | Mesa's rusticl doesn't expose GFX1013 |
+| **OpenCL (rusticl)** | ⚠️ | Not usable in this setup (Mesa 25.3.4 / Fedora 43). Community reports suggest evolving support. |
 
-**Why ROCm fails:** GFX1013 is listed in LLVM as supporting `rocm-amdhsa`, but AMD's ROCm userspace (rocBLAS/Tensile) doesn't ship GFX1013 solution libraries. **Vulkan is the only viable GPU compute path.**
+**Why ROCm fails:** GFX1013 is listed in LLVM as supporting `rocm-amdhsa`, but AMD's ROCm userspace (rocBLAS/Tensile) doesn't ship GFX1013 solution libraries. On this Fedora 43 / Mesa 25.3.4 deployment, **Vulkan was the only GPU compute path that proved usable** as of early 2026. OpenCL/rusticl may work in other Mesa versions or configurations.
 
 <details>
 <summary>▸ Verification commands</summary>
@@ -134,7 +119,7 @@ vulkaninfo --summary
 # → GPU0: AMD BC-250 (RADV GFX1013), Vulkan 1.4.328, INTEGRATED_GPU
 
 cat /sys/class/drm/card1/device/mem_info_vram_total   # → 536870912 (512 MB)
-cat /sys/class/drm/card1/device/mem_info_gtt_total    # → 15032385536 (14 GiB)
+cat /sys/class/drm/card1/device/mem_info_gtt_total    # → 17179869184 (16 GiB, after TTM tuning — see §3.3)
 ```
 
 </details>
@@ -148,7 +133,7 @@ cat /sys/class/drm/card1/device/mem_info_gtt_total    # → 15032385536 (14 GiB)
 ```bash
 curl -fsSL https://ollama.com/install.sh | sh
 
-# Enable Vulkan backend (disabled by default)
+# Enable Vulkan backend for this deployment via OLLAMA_VULKAN=1
 sudo mkdir -p /etc/systemd/system/ollama.service.d
 cat <<EOF | sudo tee /etc/systemd/system/ollama.service.d/override.conf
 [Service]
@@ -164,13 +149,13 @@ EOF
 sudo systemctl daemon-reload && sudo systemctl restart ollama
 ```
 
-> `OOMScoreAdjust=-1000` protects Ollama from the OOM killer — the model process must survive at all costs (see §3.4).
+> `OOMScoreAdjust=-1000` protects Ollama from the OOM killer — keeping the model process alive is the priority on a memory-constrained system (see §3.4).
 
-> ROCm will crash during startup — expected and harmless. Ollama catches it and uses Vulkan.
+> On this deployment, ROCm initialization failed during Ollama startup; the runtime continued with Vulkan.
 
 ### 3.2 Tune GTT size
 
-> ✅ **No longer needed.** The `amdgpu.gttsize` parameter has been removed. With `ttm.pages_limit=4194304` alone, GTT allocates 16 GiB (more than the old 14 GiB). Verify:
+> ✅ **No longer needed on this setup.** The deprecated `amdgpu.gttsize` parameter was removed from our kernel cmdline. With `ttm.pages_limit=4194304` alone, GTT allocates 16 GiB (more than the old 14 GiB). Verify:
 
 ```bash
 cat /sys/class/drm/card1/device/mem_info_gtt_total  # → 17179869184 (16 GiB)
@@ -180,7 +165,7 @@ sudo grubby --update-kernel=ALL --remove-args="amdgpu.gttsize=14336"
 
 ### 3.3 Tune TTM pages_limit ← *unlocks 14B models*
 
-This is the key fix. Without this fix, 14B models load fine but produce HTTP 500 during inference.
+In this setup, this was the key fix. Without it, 14B models loaded fine but produced HTTP 500 during inference.
 
 ```bash
 # Runtime (immediate)
@@ -200,9 +185,9 @@ sudo dracut -f
 
 Ollama allocates KV cache based on the model's declared context window. Without a cap, large models request more KV cache than the BC-250 can handle, causing TTM fragmentation, OOM kills, or deadlocks on this UMA system.
 
-**Fix:** Set `OLLAMA_CONTEXT_LENGTH=16384` in the Ollama systemd override (see §3.3). This caps all inference to 16K context by default — matching the MoE primary model's limit.
+**Fix:** Set `OLLAMA_CONTEXT_LENGTH=16384` in the Ollama systemd override (see §3.1). This caps all inference to 16K context by default — matching the MoE primary model's limit.
 
-> Individual requests can override with `{"options": {"num_ctx": 65536}}` when using `qwen3.5:9b` (which handles 65K). The cap only affects the default allocation.
+> Individual requests can override with `{"options": {"num_ctx": 65536}}` when using `qwen3.5:9b` (stable at 65K on this hardware). The cap only affects the default allocation.
 
 **History of context tuning:**
 
@@ -210,15 +195,15 @@ Ollama allocates KV cache based on the model's declared context window. Without 
 |------|:-----------:|---------------|-----|
 | Feb 2026 | 40960 | qwen3:14b | Default — caused deadlocks (TTM fragmentation) |
 | Feb 25 | **24576** | qwen3:14b | Sweet spot: ~27 tok/s, 26K was 10% slower, 28K+ deadlocked |
-| Mar 14 | **16384** | qwen3.5-35b-a3b MoE | MoE maxes at 16K (KV cache exceeds VRAM at 24K+). 9B fallback can go to 65K per-request. |
+| Mar 14 | **16384** | qwen3.5-35b-a3b MoE | On this setup, MoE context was limited to 16K (KV cache exceeded VRAM at 24K+). 9B fallback supports up to 65K per-request. |
 
-> **Why 24K → 16K?** The 35B MoE's total weight (11 GB GGUF) is larger than qwen3:14b (9.3 GB). At 24K+ context the KV cache can't fit alongside the MoE weights. 16K is the maximum stable context for the MoE with all layers on GPU. See §4.3 for detailed KV cache scaling.
+> **Why 24K → 16K?** The 35B MoE's total weight (11 GB GGUF) is larger than qwen3:14b (9.3 GB). At 24K+ context the KV cache can't fit alongside the MoE weights. On this deployment, 16K was the maximum stable context for the MoE with all layers on GPU. See §4.3 for detailed KV cache scaling.
 
 ### 3.5 Swap — NVMe-backed safety net
 
-With the model consuming 11+ GB on a 14 GB system, disk swap is essential for surviving inference peaks.
+With the model consuming 11+ GB on a 16 GB system, in this setup disk swap was required for surviving inference peaks.
 
-> **NVMe wear concern:** Swap is a *safety net*, not an active paging target. In steady state, swap usage is ~400 MB (OS buffers pushed out to make room for model weights). SMART data after months of 24/7 operation: **3% wear, 25.4 TB total written**. The model runs entirely in RAM — swap catches transient spikes during model load/unload transitions. Consumer NVMe drives rated for 300–600 TBW will last years at this rate.
+> **NVMe wear concern:** Swap is a *safety net*, not an active paging target. In steady state, swap usage is ~400 MB (OS buffers pushed out to make room for model weights). SMART data after months of 24/7 operation: **3% wear, 25.4 TB total written**. In steady state, the model runs in RAM — swap catches transient spikes during model load/unload transitions. Consumer NVMe drives rated for 300–600 TBW should last years at this write rate.
 
 ```bash
 # Create 16 GB swap file (btrfs requires dd, not fallocate)
@@ -244,7 +229,7 @@ echo -e '[zram0]\nzram-size = 2048' | sudo tee /etc/systemd/zram-generator.conf.
 
 ```bash
 sudo journalctl -u ollama -n 20 | grep total
-# → total="11.1 GiB" available="11.1 GiB"  (with qwen3-14b-16k)
+# → total="12.3 GiB" available="12.3 GiB"  (GPU detection at startup, before model loading)
 free -h
 # → Swap: 15Gi total, ~1.4Gi used
 ```
@@ -257,7 +242,7 @@ sudo systemctl set-default multi-user.target && sudo reboot
 
 ### 3.8 CPU governor — lock to `performance`
 
-The stock `schedutil` governor down-clocks during idle, causing 50–100ms latency spikes at inference start. Lock all cores to full speed:
+The stock `schedutil` governor down-clocks during idle, causing observable latency spikes at inference start on this setup. Lock all cores to full speed:
 
 ```bash
 # Runtime (immediate)
@@ -275,37 +260,41 @@ echo 'w /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor - - - - performanc
 | Region | Size | Notes |
 |--------|------|-------|
 | VRAM carveout | 512 MB | BIOS-reserved from UMA pool (not separate memory) |
-| GTT | **16 GiB** | Tuned via `ttm.pages_limit=4194304` (default 7.4 GiB). `amdgpu.gttsize` removed — no longer needed. |
-| TTM pages_limit | **16 GiB** | `ttm.pages_limit=4194304` — the only memory tuning parameter needed |
+| GTT | **16 GiB** | Tuned via `ttm.pages_limit=4194304` (default 7.4 GiB). Deprecated `amdgpu.gttsize` removed from this setup. |
+| TTM pages_limit | **16 GiB** | `ttm.pages_limit=4194304` — the only memory tuning parameter needed in this setup |
 
 | Vulkan heap | Size |
 |-------------|------|
 | Device-local | 8.33 GiB |
 | Host-visible | 8.17 GiB |
-| **Total** | **16.5 GiB** → 14B models fit, all inference on GPU (UMA — same physical pool) |
+| **Total** | **16.5 GiB** → 14B models fit, all tested inference on GPU (UMA — same physical pool) |
+
+> **UMA heap note:** On this unified memory system, Vulkan reports multiple heaps totaling ~16.5 GiB, but these are overlapping logical views backed by the same 16 GB physical memory pool. They should not be interpreted as additive hardware capacity.
 
 | Consumer | Usage | Notes |
 |----------|-------|-------|
-| Model weights (qwen3:14b) | 8.2 GiB GPU + 0.4 GiB CPU | Q4_K_M quantization |
-| KV cache (FP16 @ 24K) | 3.8 GiB | With Q4_0: only 1.8 GiB for 40K context |
-| Compute graph | 0.17 GiB | GPU-side |
+| Model weights (qwen3.5-35b MoE) | 10.3 GiB GPU + 0.3 GiB CPU | UD-IQ2_M, 41/41 layers on Vulkan at 4K ctx (spills at higher ctx — see §4.6) |
+| KV cache (FP16 @ 4K) | 1.6 GiB | Grows ~0.4 GiB per 1K tokens (see §4.6) |
+| Compute graph | ~0.2 GiB | GPU-side |
 | signal-cli + queue-runner | ~1.0 GiB | System RAM |
 | OS + services | ~0.9 GiB | Headless Fedora 43 |
 | NVMe swap | 16 GiB (374 MB used) | Safety net |
 | zram | 0 B (allocated, not active) | Device exists but disksize=0 |
-| **Total loaded** | **12.5 GiB** (FP16) / **10.6 GiB** (Q4_0) | **3.9–5.9 GiB free** |
+| **Total loaded** | **~12.3 GiB** (@4K) / **~12.5 GiB** (@16K) | **~4.0–4.2 GiB free** |
 
 ---
 
 ## 4. Models & Benchmarks
 
+> **Benchmark methodology:** All benchmarks below were run on a single BC-250 board (Fedora 43, kernel 6.18.9, Mesa 25.3.4 RADV, Ollama 0.18.0). Generation speed (tok/s) and prefill rate are measured via Ollama's `/api/chat` response metadata (warm model, `OLLAMA_KEEP_ALIVE=30m`). Each value is from a single representative run — not averaged across multiple iterations. VRAM figures are from Ollama startup logs. Context ceiling tests used incremental `num_ctx` values until timeout or deadlock. All measurements are specific to this hardware and software stack.
+
 ### 4.1 Compatibility table
 
 > Ollama 0.18.0 · Vulkan · RADV Mesa 25.3.4 · 16.5 GiB Vulkan · FP16 KV
 
-| Model | Params | Quant | tok/s | Prefill | Max Ctx | VRAM @4K | Status |
+| Model | Params | Quant | tok/s | Prefill | Stable Ctx¹ | VRAM @4K | Status |
 |-------|:------:|:-----:|:-----:|:-------:|:-------:|:--------:|--------|
-| **qwen3.5-35b-a3b-iq2m** | **35B/3B** | **UD-IQ2_M** | **38** | **233** | **16K** | **12.3 GiB** | **🏆 Primary — MoE** |
+| **qwen3.5-35b-a3b-iq2m** | **35B/3B** | **UD-IQ2_M** | **38** | **~230** | **16K** | **12.3 GiB** | **🏆 Primary — MoE** |
 | **qwen3.5:9b** | **9.7B** | **Q4_K_M** | **32** | **230** | **65K** | **8.6 GiB** | **🏆 Best context+vision** |
 | qwen2.5:3b | 3.1B | Q4_K_M | **104** | **515** | **64K** | 3.4 GiB | ✅ Fast, lightweight |
 | qwen2.5:7b | 7.6B | Q4_K_M | **56** | **248** | **64K** | 6.5 GiB | ✅ Great quality/speed |
@@ -319,17 +308,19 @@ echo 'w /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor - - - - performanc
 | mistral-nemo:12b | 12.2B | Q4_0 | **34** | **137** | **24K** | 10.8 GiB | ⚠️ 32K deadlocks |
 | qwen3:14b | 14.8B | Q4_K_M | **27** | **131** | **24K** | 13.5 GiB | ✅ Previous primary |
 | huihui_ai/qwen3-abliterated:14b | 14.8B | Q4_K_M | **28** | **137** | **24K** | 11.4 GiB | ✅ Abliterated |
-| phi4:14b | 14.7B | Q4_K_M | **29** | **128** | **40K** | 11.8 GiB | 🏆 Best 14B context |
+| phi4:14b | 14.7B | Q4_K_M | **29** | **128** | **40K** | 11.8 GiB | 🏆 Best tested 14B context |
 | Qwen3-30B-A3B (Q2_K) | 30.5B | Q2_K | **61** | — | **16K** | 11.5 GiB | ⚠️ MoE fast, heavy quant |
-| qwen3.5-27b-iq2m | 26.9B | IQ2_M | **0** | — | — | 13.5 GiB | ❌ Non-functional¹ |
+| qwen3.5-27b-iq2m | 26.9B | IQ2_M | **0** | — | — | 13.5 GiB | ❌ Non-functional² |
 
-> **All models run 100% on GPU** after GTT tuning (16 GiB). Before the fix, gemma2:9b was only 91% GPU-offloaded (26 tok/s → 38 tok/s after fix).
+> ¹ **Stable Ctx** = maximum context tested stable on this BC-250 setup (16 GB UMA, Vulkan, FP16 KV). These are hardware/runtime-constrained results, not official model context limits — upstream models may support substantially larger contexts on different hardware.
 
-> ¹ **Why 27B dense fails:** The dense architecture requires all 27B parameters in every forward pass. Without matrix cores (GFX1013 has none), each token requires ~27B multiplications through general-purpose shader cores. Result: 0 tokens generated in 5 minutes. The 35B MoE with only 3B active params per token avoids this entirely — compute is ~9× less per token despite having more total knowledge stored.
+> **Most models run fully on GPU** after GTT tuning (16 GiB) — the MoE primary spills ~0.3 GiB of embeddings to CPU, which has negligible impact on UMA. Before the fix, gemma2:9b was only 91% GPU-offloaded (26 tok/s → 38 tok/s after fix).
 
-> **Prefill column:** Measured at ~400 tokens prompt size (warm model, FP16 KV). Prefill rate depends on prompt length — see §4.5 for detailed sweep. Smaller models (3B) saturate the GPU compute and achieve higher prefill. Larger models (14B) are memory-bandwidth-limited at ~128–137 tok/s. MoE and 9B land between at ~230 tok/s — the MoE benefits from only loading 3B active expert weights per token during prefill. Qwen3-30B-A3B and qwen3.5-27b not measured (deprecated/non-functional).
+> ² **Why 27B dense fails:** The dense architecture requires all 27B parameters in every forward pass. Without matrix cores (GFX1013 has none), each token requires ~27B multiplications through general-purpose shader cores. The most likely explanation: compute throughput bottleneck — 0 tokens generated in 5 minutes. The 35B MoE with only 3B active params per token avoids this — compute is ~9× less per token despite having more total knowledge stored.
 
-> **March 14 — Qwen3.5 era:** Ollama upgraded 0.16.1→0.18.0 (required for Qwen3.5). The **qwen3.5-35b-a3b MoE** (35B total, 3B active per token) at IQ2_M quantization is now the primary model on BC-250: 38 tok/s, 233 tok/s prefill, 16K context, multimodal (vision+tools+thinking). The **qwen3.5:9b** provides 65K context with vision when longer documents are needed. Both are Qwen3.5 architecture — a newer generation than Qwen3.
+> **Prefill column:** Measured at ~400 tokens prompt size (warm model, FP16 KV). Prefill rate depends on prompt length — see §4.5 for detailed sweep. Smaller models (3B) showed higher prefill rates, likely saturating GPU compute. Larger models (14B) are memory-bandwidth-limited at ~128–137 tok/s. MoE and 9B land between at ~230 tok/s — the MoE's sparse expert activation (only ~3B params per token, though different tokens may hit different experts across the batch). Qwen3-30B-A3B and qwen3.5-27b not measured (deprecated/non-functional).
+
+> **March 14 — Qwen3.5 era:** Ollama upgraded 0.16.1→0.18.0 (required for Qwen3.5). The **qwen3.5-35b-a3b MoE** (35B total, 3B active per token) at IQ2_M quantization is now the primary model on BC-250: 38 tok/s, 233 tok/s prefill, 16K context, tool use and thinking. The **qwen3.5:9b** provides 65K context with vision when longer documents are needed (the MoE's vision was not functional through the Ollama/GGUF path used in this setup — see §5.8). Both are Qwen3.5 architecture — a newer generation than Qwen3.
 
 > **⚠️ IQ2_M quality tradeoff:** The extreme quantization (~2.5 bits per parameter) is a significant quality compromise — perplexity increases and complex mathematical reasoning degrades compared to higher-precision quantizations. For everyday tasks (summarization, JSON extraction, tool use, chat) the quality is adequate. For tasks requiring precise reasoning, the `qwen3.5:9b` fallback (Q4_K_M, ~4.5 bits) provides substantially better accuracy. This is an informed tradeoff: more knowledge at lower precision vs less knowledge at higher precision.
 
@@ -338,7 +329,7 @@ echo 'w /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor - - - - performanc
 **Generation speed (tok/s) — higher is better:**
 
 ```
-Model                    tok/s    Max Ctx   ██ = 10 tok/s
+Model                    tok/s    Stable¹  ██ = 10 tok/s
 ─────────────────────────────────────────────────────────
 qwen2.5:3b               104      64K  ██████████▌
 Qwen3-30B-A3B Q2_K        61      16K  ██████▏
@@ -383,11 +374,11 @@ phi4:14b          ✅   ✅   ✅   —    —
 qwen3.5-27b iq2m  ❌   —    —    —    —
 ```
 
-> 4K and 8K columns omitted — every model passes at those sizes.
+> 4K and 8K columns omitted — every tested model passed at those sizes.
 
 > ✅ = works 100% GPU | ❌ = timeout/deadlock | — = not tested (too large)
 
-**Key insight:** Speed is constant across context sizes with FP16 KV (speed only degrades when the context is actually *filled* — see §4.4). The context ceiling is purely a memory constraint: weights + KV cache + compute graph must fit in 16.5 GiB.
+**Key insight:** In these tests, speed was constant across context sizes with FP16 KV (speed only degrades when the context is actually *filled* — see §4.4). The context ceiling is purely a memory constraint: weights + KV cache + compute graph must fit in 16.5 GiB.
 
 **Graphical benchmarks:**
 
@@ -399,7 +390,7 @@ qwen3.5-27b iq2m  ❌   —    —    —    —
 
 ### 4.3 Context window experiments
 
-The context window directly controls KV cache size, and on 16 GB unified memory, every megabyte counts. After v7 (OpenClaw removal freed ~700 MB, GTT bumped to 14 GB), all context sizes were re-tested systematically:
+The context window directly controls KV cache size, and on 16 GB unified memory, every megabyte counts. After v7 (OpenClaw removal freed ~700 MB, GTT tuned — see §3.3), all context sizes were re-tested systematically:
 
 **Context window vs memory (qwen3:14b Q4_K_M, flash attention, 16 GB GTT)**
 
@@ -419,9 +410,9 @@ The context window directly controls KV cache size, and on 16 GB unified memory,
 
 > **24K is the sweet spot** — full speed (~27 tok/s), leaves ~1.5 GB for OS/services with stable swap at 0.9 GB. 26K works but inference drops 10% due to swap pressure. 28K+ deadlocks under Vulkan.
 >
-> ¹ **Why 40K fails isn't raw OOM.** The math: 9.3 GB weights + 2 GB KV cache + 1 GB OS ≈ 12.3 GB < 16 GB available. The actual failure is **TTM fragmentation** — the kernel's TTM memory manager can't allocate a contiguous block large enough for the KV cache because physical pages are fragmented across GPU and CPU consumers. This is a UMA-specific problem: on discrete GPUs with dedicated VRAM, fragmentation doesn't cross the PCIe boundary.
+> ¹ **Why 40K fails isn't raw OOM.** The math: 9.3 GB weights + 2 GB KV cache + 1 GB OS ≈ 12.3 GB < 16 GB available. The failure is consistent with **TTM fragmentation** — the kernel's TTM memory manager likely can't allocate a contiguous block large enough for the KV cache because physical pages are fragmented across GPU and CPU consumers. This is a UMA-specific problem: on discrete GPUs with dedicated VRAM, fragmentation doesn't cross the PCIe boundary.
 
-> **History:** The original 24K experiment (Feb 25) deadlocked because OpenClaw gateway consumed ~700 MB. After v7 removed OpenClaw and bumped GTT to 14 GB (Mar 5), 24K became stable. Flash attention (`OLLAMA_FLASH_ATTENTION=1`) is essential — without it, 24K would not fit.
+> **History:** The original 24K experiment (Feb 25) deadlocked because OpenClaw gateway consumed ~700 MB. After v7 removed OpenClaw and bumped GTT to 14 GB (Mar 5), 24K became stable. Flash attention (`OLLAMA_FLASH_ATTENTION=1`) was required in this configuration — without it, 24K did not fit.
 
 ### 4.4 KV cache quantization — breaking the context ceiling
 
@@ -462,7 +453,7 @@ The context window directly controls KV cache size, and on 16 GB unified memory,
 
 ### 4.5 Prefill (prompt evaluation) benchmarks
 
-On UMA, both prefill and generation share memory bandwidth (~51 GB/s DDR4-3200). Prefill is the time the model spends "reading" the prompt before generating the first token.
+On UMA, both prefill and generation share memory bandwidth. Prefill is the time the model spends "reading" the prompt before generating the first token.
 
 > **For embedded engineers:** Think of LLM inference as two phases — like a bootloader and a main loop. **Prefill** is the "bootloader": the model processes the entire input prompt in one burst (parallel, compute-bound — like DMA-ing a firmware image into SRAM). **Token generation** is the "main loop": the model produces output tokens one at a time, sequentially (memory-bandwidth-bound — like polling a UART at a fixed baud rate). MoE (Mixture of Experts) is like having 35 specialized ISRs but only routing to 3 of them per interrupt — you get the routing intelligence of knowing all 35, but only pay the execution cost of 3. That's why a 35B-parameter MoE runs faster than a 14B dense model on hardware without matrix cores.
 
@@ -486,7 +477,7 @@ On UMA, both prefill and generation share memory bandwidth (~51 GB/s DDR4-3200).
 | Medium | 384 | 229 tok/s | 33.0 | 1.7s |
 | Long | 1,179 | 225 tok/s | 32.5 | 5.2s |
 
-> **Observations:** Both production models converge to ~230 tok/s prefill at medium-to-long prompts — the DDR4 bandwidth ceiling. At tiny prompts (<50 tokens), GPU compute overhead dominates and prefill drops to 53–61 tok/s. Generation rate is stable: MoE holds 38–39 tok/s, 9B holds 32–33 tok/s regardless of prompt size. TTFT scales linearly: at 384 tokens it's ~1.7s, at 1.2K tokens it's ~5.2s. For real-world Signal chat (3K system prompt + conversation), expect TTFT of ~15–20s on cold start, <2s when the model is warm (prompt cached via `OLLAMA_KEEP_ALIVE=30m`).
+> **Observations:** Both production models converged to ~230 tok/s prefill at medium-to-long prompts in this testing — likely a throughput ceiling from Vulkan compute dispatch overhead or memory controller limits. At tiny prompts (<50 tokens), GPU compute overhead dominates and prefill drops to 53–61 tok/s. Generation rate was stable across prompt sizes in this testing: MoE held 38–39 tok/s, 9B held 32–33 tok/s. TTFT scales linearly: at 384 tokens it's ~1.7s, at 1.2K tokens it's ~5.2s. For real-world Signal chat (3K system prompt + conversation), expect TTFT of ~15–20s on cold start, <2s when the model is warm (prompt cached via `OLLAMA_KEEP_ALIVE=30m`).
 
 <details>
 <summary><b>Historical: qwen3:14b Q4_K_M (previous primary, 24K context)</b></summary>
@@ -520,34 +511,36 @@ On UMA, both prefill and generation share memory bandwidth (~51 GB/s DDR4-3200).
 
 | Component | MoE @4K ctx | MoE @16K ctx | Notes |
 |-----------|:----------:|:------------:|-------|
-| Model weights (GPU) | 10.3 GiB | ~8.2 GiB | 41/41 layers on Vulkan0; spills to CPU at higher ctx |
+| Model weights (GPU) | 10.3 GiB | ~8.2 GiB | 41/41 layers on Vulkan at 4K; spills to CPU at higher ctx |
 | Model weights (CPU) | 0.3 GiB | ~0.4 GiB | Spilled layers + embeddings |
-| KV cache (GPU) | **1.6 GiB** | **~3.8 GiB** | Grows ~0.4 GiB per 1K tokens |
+| KV cache (GPU) | **1.6 GiB** | **~3.8 GiB** | Measured from Ollama logs at each ctx size |
 | Compute graph | ~0.2 GiB | ~0.2 GiB | GPU-side |
 | **Ollama total** | **12.3 GiB** | **~12.5 GiB** | Ollama dynamically spills weights to make room for KV |
 | OS + services | ~0.9 GiB | ~0.9 GiB | Headless Fedora 43 |
 | **Free (of 16.5 Vulkan)** | **~4.2 GiB** | **~4.0 GiB** | |
 | NVMe swap | 16 GiB | | Safety net |
 
-> **MoE memory dynamics:** As context grows, Ollama intelligently spills weight layers from GPU to CPU to maintain a ~12.5 GiB total. The MoE's total weight (11 GB GGUF) is larger than qwen3:14b (9.3 GB), but only 3B params activate per token — so CPU-spilled layers that aren't selected experts cause zero compute penalty. At 24K+ context, the KV cache exceeds what can fit alongside the weights, causing OOM or timeout.
+> **MoE memory dynamics:** As context grows, Ollama spills weight layers from GPU to CPU to maintain a ~12.5 GiB total. The MoE's total weight (11 GB GGUF) is larger than qwen3:14b (9.3 GB), but only 3B params activate per token — so CPU-spilled layers that aren't selected experts should cause negligible compute penalty in theory. At 24K+ context, the KV cache exceeds what can fit alongside the weights, causing OOM or timeout.
 
 ### 4.7 Model recommendations
 
-**Qwen3.5** is the latest generation — multimodal (vision + tools + thinking), Apache 2.0.
+**Qwen3.5** is the latest generation — multimodal family with tool use and thinking, Apache 2.0. The 9B supports vision natively; the MoE's vision was not functional through the local Ollama/GGUF runtime used here (see §5.8 for details).
 
-| Use Case | Recommended Model | tok/s | Max Ctx | Why |
+| Use Case | Recommended Model | tok/s | Stable Ctx¹ | Why |
 |----------|-------------------|:-----:|:-------:|-----|
-| **🏆 General AI / primary** | qwen3.5-35b-a3b-iq2m | 38 | 16K | 35B knowledge, 3B active, fastest reasoning |
+| **🏆 General AI / primary** | qwen3.5-35b-a3b-iq2m | 38 | 16K | 35B knowledge, 3B active, fastest tested generation |
 | **🏆 Long context / vision** | qwen3.5:9b | 32 | **65K** | Multimodal, stable context scaling, vision |
-| **Long context (14B)** | phi4:14b | 29 | **40K** | Best 14B model for long context on this hardware |
+| **Long context (14B)** | phi4:14b | 29 | **40K** | Best tested 14B for long context on this hardware |
 | **Fast batch jobs** | qwen2.5:7b | 56 | 64K | 2× faster than 14B, 64K context |
 | **Code generation** | qwen2.5-coder:7b | 56 | 64K | Same speed as base, code-specialized |
 | **Speed-critical** | qwen2.5:3b | 104 | 64K | 4× faster, use for simple tasks |
 | **Previous primary** | qwen3:14b (abliterated) | 28 | 24K | Replaced by Qwen3.5 models |
 
-> **Production dual-model config:** `qwen3.5-35b-a3b-iq2m` as primary with `OLLAMA_CONTEXT_LENGTH=16384`. For tasks needing >16K context or vision (image analysis), switch to `qwen3.5:9b` which handles 65K context and can process images.
+> ¹ Stable Ctx — see footnote in §4.1.
+
+> **Production dual-model config:** `qwen3.5-35b-a3b-iq2m` as primary with `OLLAMA_CONTEXT_LENGTH=16384`. For tasks needing >16K context or vision (image analysis), switch to `qwen3.5:9b` which remained stable at 65K context on this hardware and can process images.
 >
-> The MoE wins over the 9B dense model in generation speed (38 vs 32 tok/s) because only 3B parameters activate per token on hardware without matrix cores — fewer multiplications wins. Both models achieve similar prefill rates (~230 tok/s at ~400 tokens), but the 9B wins in context capacity (65K vs 16K) because its smaller total weight leaves more room for KV cache.
+> The MoE outperformed the 9B dense model in generation speed (38 vs 32 tok/s) because only 3B parameters activate per token on hardware without matrix cores — fewer multiplications per token despite having more total knowledge stored. Both models achieved similar prefill rates (~230 tok/s at ~400 tokens) in testing, but the 9B has greater context capacity (65K vs 16K) because its smaller total weight leaves more room for KV cache.
 
 ```bash
 # Primary model (35B MoE) — custom GGUF via Modelfile
@@ -557,11 +550,11 @@ ollama create qwen3.5-35b-a3b-iq2m -f Modelfile-qwen35-35b-a3b
 # High-context model (vision+65K, official Ollama)
 ollama pull qwen3.5:9b
 
-# Context is capped via OLLAMA_CONTEXT_LENGTH=16384 in systemd (see §3.3, §3.4)
+# Context is capped via OLLAMA_CONTEXT_LENGTH=16384 in systemd (see §3.1, §3.4)
 # Individual requests can override with {"options": {"num_ctx": 65536}} when using 9b
 ```
 
-> **Why not a bigger MoE?** Even though only 3B params activate per token, **all 35B params must reside in memory** — the router decides per-token which experts to fire, so every weight must be loaded. At IQ2_M (~2.5 bits per parameter), 35B = 11 GB GGUF. The next MoE up — Qwen3-235B-A22B — would be ~44 GB at IQ2_M (2.7× too large). Mixtral 8×22B (141B) would be ~35 GB. Going below IQ2_M (e.g. IQ1_S at ~1.5 bits) causes quality collapse. The qwen3.5-35b-a3b at IQ2_M is the **largest MoE that fits 16 GB with usable quantization** on this hardware.
+> **Why not a bigger MoE?** Even though only 3B params activate per token, **all 35B params must reside in memory** — the router decides per-token which experts to fire, so every weight must be loaded. At IQ2_M (~2.5 bits per parameter), 35B = 11 GB GGUF. The next MoE up — Qwen3-235B-A22B — would be ~44 GB at IQ2_M (2.7× too large). Mixtral 8×22B (141B) would be ~35 GB. In testing on this setup, going below IQ2_M (e.g. IQ1_S at ~1.5 bits) caused severe quality degradation. As of March 2026, among the MoE models evaluated for this 16 GB deployment, qwen3.5-35b-a3b at IQ2_M was the **largest configuration that fit with acceptable practical quality**.
 
 ---
 
@@ -569,7 +562,7 @@ ollama pull qwen3.5:9b
 
 ## 5. Signal Chat Bot
 
-The BC-250 runs a personal AI assistant accessible via Signal messenger — no gateway, no middleware. signal-cli runs as a standalone systemd service exposing a JSON-RPC API, and queue-runner handles all LLM interaction directly.
+The BC-250 runs a personal AI assistant accessible via Signal messenger — no LLM gateway, no agent framework. signal-cli runs as a standalone systemd service exposing a JSON-RPC API, and queue-runner handles all LLM interaction directly.
 
 ```
   Signal --> signal-cli (JSON-RPC :8080) --> queue-runner --> Ollama --> GPU (Vulkan)
@@ -583,20 +576,20 @@ OpenClaw was the original gateway (v2026.2.26, Node.js). It was replaced because
 
 | Problem | Impact |
 |---------|--------|
-| **~700 MB RSS** | On a 16 GB system, that's 4.4% of RAM wasted on a routing layer |
+| **~700 MB RSS** | On a 16 GB system, that's 4.4% of RAM consumed by a routing layer |
 | **15+ second overhead per job** | Agent turn setup, tool resolution, system prompt injection — for every cron job |
 | **Unreliable model routing** | Fallback chains and timeout cascades caused 5-min "fetch failed" errors |
 | **No subprocess support** | Couldn't run Python/bash scripts directly — had to shell out through the agent |
 | **9.6K system prompt** | Couldn't be trimmed below ~4K tokens without breaking tool dispatch |
 | **Orphan processes** | signal-cli children survived gateway OOM kills, holding port 8080 |
 
-The replacement: queue-runner talks to signal-cli and Ollama directly via HTTP APIs. Zero middleware.
+The replacement: queue-runner talks to signal-cli and Ollama directly via HTTP APIs. No agent framework in between.
 
 > See [Appendix A](#appendix-a--openclaw-archive) for the original OpenClaw configuration.
 
 ### 5.2 signal-cli service
 
-signal-cli runs as a standalone systemd daemon with JSON-RPC:
+signal-cli runs as a standalone systemd daemon with JSON-RPC ([signal-cli manpage](https://github.com/AsamK/signal-cli/blob/master/man/signal-cli-jsonrpc.5.adoc)). The port, flags, and systemd unit configuration below are local implementation choices — the JSON-RPC API is an upstream feature, but the specific service layout is custom:
 
 ```ini
 # /etc/systemd/system/signal-cli.service
@@ -663,7 +656,7 @@ The LLM can request shell commands via `EXEC(command)` in its response. queue-ru
   User: "what's the disk usage?"
   LLM:  [thinking...] EXEC(df -h /)
   Runner: executes → feeds output back
-  LLM:  "Root is 67% full, 48G free on your 128GB NVMe."
+  LLM:  "Root is 67% full, 148G free on your 475GB NVMe."
 ```
 
 Supported patterns: web search (`ddgr`), file reads (`cat`, `head`), system diagnostics (`journalctl`, `systemctl`, `df`, `free`), data queries (`jq` on JSON files). Up to 3 commands per turn.
@@ -677,7 +670,7 @@ When the LLM detects an image request, it emits `EXEC(/opt/stable-diffusion.cpp/
 3. Send image as Signal attachment
 4. Restart Ollama
 
-Bot is offline during generation (~2–3 minutes total including model reload).
+Bot is offline during generation (~3 minutes total including ESRGAN upscale and model reload).
 
 **Image editing (Kontext):** Send a photo to Signal with an edit instruction ("make it cyberpunk", "add a hat"). The LLM emits `EXEC(/opt/stable-diffusion.cpp/edit-image "instruction")`, queue-runner runs FLUX.1-Kontext-dev with the photo as reference, and sends back the edited image (~5–10 min @512²). Input images are automatically resized to 512×512. See §6.2 for a demo (Sonic → Shadow the Hedgehog).
 
@@ -694,7 +687,7 @@ The system prompt defines a cynical, darkly funny personality ("House MD meets a
 - Dark humor about the hardware constraints
 - Full access to `/opt/netscan/data/` for grounded answers
 - Knows AK's professional context (embedded Linux, camera drivers, V4L2/libcamera)
-- Uncensored creative generation (abliterated model, no safety filters)
+- Uncensored creative generation (abliterated model)
 
 The personality is baked into `queue-runner.py`'s `SYSTEM_PROMPT` — no external workspace files needed.
 
@@ -706,7 +699,7 @@ The personality is baked into `queue-runner.py`'s `SYSTEM_PROMPT` — no externa
 | Complex reasoning with tool use | 1–5 min |
 | Image generation (FLUX.2-klein-9B 512²) | ~105s |
 | Image generation + auto-upscale 4× | ~130s |
-| Image editing (Kontext 512²) | ~5 min |
+| Image editing (Kontext 512²) | ~5–10 min |
 | Video generation (WAN 2.1 480×320) | ~38 min |
 | ESRGAN 4× upscale (on-demand) | ~25s |
 | Cold start (model reload) | 30–60s |
@@ -749,11 +742,11 @@ This photo was sent to the bot with no text. The `qwen3.5:9b` model produced the
 >
 > **Overall Vibe:** The combination of modern pop culture characters (Shadow and Marshall) with retro tech (floppy disk) creates a fun, geeky, and slightly whimsical display. It's a great blend of nostalgia and fandom!
 
-This is raw model output from a 9.7B parameter model running entirely on the BC-250's Vulkan GPU — no cloud APIs, no preprocessing. The model correctly identifies both licensed characters, the floppy disk format, and scene composition.
+This is raw model output from a 9.7B parameter model running on the BC-250's Vulkan GPU — no cloud APIs, no preprocessing.
 
 **Key detail:** qwen3.5:9b requires `"think": false` in the API call. With thinking enabled, the model produces only hidden thinking tokens and returns an empty visible response. Discovered via 7 iterative tests (tests 1–6 all returned empty content).
 
-> The MoE model (qwen3.5-35b-a3b-iq2m) has **no vision capability** — it returns HTTP 500 when given images. This is why model routing is essential.
+> The MoE model (qwen3.5-35b-a3b-iq2m) **did not handle images through the local Ollama/GGUF deployment path** — image requests returned HTTP 500 in this configuration. Although upstream Qwen3.5-35B-A3B is described as a multimodal model ([HuggingFace model card](https://huggingface.co/Qwen/Qwen3.5-35B-A3B), [Ollama library](https://ollama.com/library/qwen3.5)), the local Ollama/GGUF deployment path did not expose working vision capability. Based on this, model routing delegates all image tasks to qwen3.5:9b.
 
 ### 5.9 Audio transcription
 
@@ -807,22 +800,22 @@ When the total exceeds 16 GB, the kernel pushes pages to NVMe swap. This shows u
 
 ![Whisper Memory Impact](images/charts/whisper-memory.png)
 
-large-v3 pushes ~1 GB into swap on first load. large-v3-turbo causes zero swap. Once pages are evicted, subsequent large-v3 runs may show 0 swap delta (the 39s test) because those pages were already swapped out by earlier runs — but the damage (swap pressure, latency spikes) already happened.
+large-v3 pushes ~1 GB into swap on first load. large-v3-turbo caused no measurable swap increase in testing. Once pages are evicted, subsequent large-v3 runs may show 0 swap delta (the 39s test) because those pages were already swapped out by earlier runs — but the damage (swap pressure, latency spikes) already happened.
 
 **Quality is comparable.** Both models tested on a 39s embedded-systems passage (flite TTS). Both made the same synthesis artifacts ("kilobots" for "kilobytes", "Wipcomer" for "libcamera"). Neither is clearly better on robotic TTS.
 
-**Verdict:** large-v3-turbo — 2× faster, 45% smaller, zero swap pressure. The quality tradeoff is negligible on BC-250's memory budget.
+**Verdict:** large-v3-turbo — 2× faster, 45% smaller, no observable swap pressure in testing on this setup. The quality difference was not distinguishable in this testing.
 
 ### 5.10 Smart model routing
 
-queue-runner automatically selects the best model for each message based on content:
+queue-runner automatically selects the appropriate model for each message based on content:
 
 ```python
 def choose_chat_model(user_text, has_image=False):
     if has_image:
         return "qwen3.5:9b", 4096       # only model with vision
     if estimate_tokens(user_text) > 8000:
-        return "qwen3.5:9b", 16384      # 9B handles 65K context
+        return "qwen3.5:9b", 16384      # 9B supports 65K context
     return "qwen3.5-35b-a3b-iq2m", 16384  # MoE — faster, smarter
 ```
 
@@ -834,7 +827,7 @@ def choose_chat_model(user_text, has_image=False):
 | **Vision** | qwen3.5:9b | 31.8 tok/s | Photo attached (no edit keywords) |
 | **Long context** | qwen3.5:9b | 31.8 tok/s | Prompt > 8K tokens |
 
-The MoE activates only 3B of its 35B parameters per token, giving it faster generation than the dense 9B despite being a "larger" model. Both models are Qwen3.5-family and produce comparable text quality for short exchanges. The 9B is reserved for tasks that require vision or long context — capabilities the MoE lacks.
+The MoE activates only 3B of its 35B parameters per token, which resulted in faster generation than the dense 9B on this hardware despite being a "larger" model. Both models are Qwen3.5-family and produced comparable text quality in short exchanges during testing. The 9B is reserved for tasks that require vision or long context — capabilities the MoE doesn't expose in this local runtime.
 
 ---
 
@@ -857,7 +850,7 @@ make -j$(nproc)
 
 ### 6.1 Models
 
-**FLUX.2-klein-9B** — recommended, best quality, Apache 2.0:
+**FLUX.2-klein-9B** — recommended, highest quality observed in testing, Apache 2.0:
 
 ```bash
 mkdir -p /opt/stable-diffusion.cpp/models/flux2 && cd /opt/stable-diffusion.cpp/models/flux2
@@ -869,7 +862,7 @@ curl -L -o qwen3-8b-Q4_K_M.gguf "https://huggingface.co/unsloth/Qwen3-8B-GGUF/re
 curl -L -o flux2-vae.safetensors "https://huggingface.co/Comfy-Org/vae-text-encorder-for-flux-klein-4b/resolve/main/split_files/vae/flux2-vae.safetensors"
 ```
 
-> Memory: 5.3 GB VRAM (diffusion) + 6.2 GB VRAM (Qwen3-8B encoder) + 95 MB (VAE) = ~11.8 GB total. Stresses the 16.5 GB Vulkan pool properly. Best quality of all tested models.
+> Memory: 5.3 GB VRAM (diffusion) + 6.2 GB VRAM (Qwen3-8B encoder) + 95 MB (VAE) = ~11.8 GB total. Uses 11.8 of the 16.5 GB Vulkan pool.
 
 **FLUX.2-klein-4B** — fast alternative, Apache 2.0:
 
@@ -900,9 +893,12 @@ curl -L -O "https://huggingface.co/city96/t5-v1_1-xxl-encoder-gguf/resolve/main/
 
 ```bash
 cd /opt/stable-diffusion.cpp/models/flux
-curl -L -o chroma-unlocked-v47-flash-Q4_0.gguf "https://huggingface.co/leejet/Chroma-GGUF/resolve/main/chroma-unlocked-v47-flash-Q4_0.gguf"
+# Check https://huggingface.co/leejet/Chroma-GGUF for available files — exact filenames may change between versions.
+curl -L -o chroma-flash-Q4_0.gguf "https://huggingface.co/leejet/Chroma-GGUF/resolve/main/<check-repo-for-exact-filename>.gguf"
 # Reuses existing T5-XXL and FLUX.1 ae.safetensors from above
 ```
+
+> ⚠️ The exact Chroma GGUF filename has not been re-verified against the repo at time of writing. Check the [Chroma-GGUF repo file listing](https://huggingface.co/leejet/Chroma-GGUF/tree/main) for current filenames before downloading.
 
 > Memory: 5.1 GB VRAM (diffusion) + 3.2 GB RAM (T5-XXL) = ~8.4 GB total.
 
@@ -920,14 +916,14 @@ curl -L -o sd-turbo.safetensors \
 
 > **Important:** FLUX GGUF files must use `--diffusion-model` flag, not `-m`. The `-m` flag fails with "get sd version from file failed" because GGUF metadata is empty after tensor name conversion. This applies to all sd.cpp versions.
 
-**🏆 FLUX.2-klein-9B Q4_0 — new default (best quality):**
+**🏆 FLUX.2-klein-9B Q4_0 — new default (highest quality observed):**
 
 | Resolution | Steps | Time | s/step | Notes |
 |:----------:|:-----:|:----:|:------:|-------|
 | 512×512 | 4 | **104s** | 15.4 | Default, ~11.8 GB VRAM total |
-| 768×768 | 4 | **129s** | 21.3 | Best balance of quality vs time |
+| 768×768 | 4 | **129s** | 21.3 | Best observed quality vs time tradeoff |
 
-> FLUX.2-klein-9B uses a Qwen3-8B LLM as text encoder — richer prompt understanding and finer detail than the 4B variant. Stresses the 16.5 GB Vulkan pool properly (11.8 GB used). The `--offload-to-cpu` flag is essential (manages UMA allocation pools).
+> FLUX.2-klein-9B uses a Qwen3-8B LLM as text encoder — in this testing, it showed better prompt following and finer detail than the 4B variant. Uses 11.8 GB of the 16.5 GB Vulkan pool. The `--offload-to-cpu` flag was required in this setup (manages UMA allocation pools).
 
 **FLUX.2-klein-4B Q4_0 — fast alternative:**
 
@@ -935,7 +931,7 @@ curl -L -o sd-turbo.safetensors \
 |:----------:|:-----:|:----:|:------:|-------|
 | 512×512 | 4 | **20s** | 3.95 | Fast preview, ~6 GB VRAM total |
 | 512×512 | 8 | **26s** | 2.66 | Better quality, GPU warm |
-| 768×768 | 4 | **30s** | 5.43 | Great quality, no tiling |
+| 768×768 | 4 | **30s** | 5.43 | Good quality, no tiling |
 | 1024×1024 | 4 | **63s** | 10.18 | VAE tiling required |
 | 1024×1024 | 4 | ❌ FAIL | — | Without `--vae-tiling` (VAE OOM) |
 
@@ -958,7 +954,7 @@ curl -L -o sd-turbo.safetensors \
 | 512×512 | 8 | **130s** | Sampling 96s |
 | 768×768 | 8 | **240s** | Sampling 195s |
 
-> Chroma uses cfg-based guidance (like FLUX.1-dev) but is fully open. Quality is better than schnell per step, but 4× slower than FLUX.2-klein.
+> Chroma uses cfg-based guidance (like FLUX.1-dev) but is fully open. In this testing, quality appeared better than schnell per step, but 4× slower than FLUX.2-klein.
 
 **FLUX.1-dev Q4_K_S — high-quality, slow (city96/FLUX.1-dev-gguf, 6.8 GB):**
 
@@ -985,7 +981,7 @@ curl -L -o sd-turbo.safetensors \
 | FLUX.1-dev | 279s²⁰ | ❌ | 10 GB | 6.8 GB | CLIP+T5 (3.4 GB) |
 | SD-Turbo | 11s¹ | 21s | 2 GB | 2 GB | (built-in) |
 
-> FLUX.2-klein-9B is the quality winner — more detail, better text understanding, and it actually stresses the 16.5 GB GPU properly (11.8 GB used vs 6 GB for 4B). The 4B version is 7× faster but leaves 10 GB unused.
+> FLUX.2-klein-9B produced the best visual quality in this testing — more detail, better apparent text understanding, and it uses 11.8 GB of the 16.5 GB GPU (vs 6 GB for 4B). The 4B version is 7× faster but leaves 10 GB unused.
 
 **🔬 Quality shootout — same prompt, same seed (42), 512×512 @4 steps:**
 
@@ -993,8 +989,8 @@ All models tested back-to-back on the same prompt: *"a cyberpunk cityscape at su
 
 | Model | Time | s/step | VRAM | File Size | Quality |
 |-------|:----:|:------:|:----:|:---------:|:-------:|
-| **FLUX.2-klein-9B** | **104s** | 15.4 | 11.8 GB | 709 KB | **★★★★** — finest detail, best reflections |
-| FLUX.2-klein-4B | 15s | 2.7 | 6.0 GB | 704 KB | ★★★ — good but less detail |
+| **FLUX.2-klein-9B** | **104s** | 15.4 | 11.8 GB | 709 KB | **★★★★** — finest detail, best reflections observed |
+| FLUX.2-klein-4B | 15s¹ | 2.7 | 6.0 GB | 704 KB | ★★★ — good but less detail |
 | FLUX.1-schnell | 31s | 6.5 | 10.1 GB | 609 KB | ★★ — decent, less coherent |
 | Chroma flash (8 steps) | 120s | 14.1 | 8.4 GB | 204 KB | ★★ — artistic but softer |
 
@@ -1010,7 +1006,9 @@ All models tested back-to-back on the same prompt: *"a cyberpunk cityscape at su
 | ![schnell](images/shootout/shootout-schnell-512.png) | ![chroma](images/shootout/shootout-chroma-512.png) |
 | **31s**, 10.1 GB VRAM | **120s**, 8.4 GB VRAM |
 
-> The 9B model produces visibly more detail in fine structures (neon reflections, wet streets, building facades). The 4B is the speed champion but sacrifices detail. Chroma has a distinctive artistic style but outputs smaller, softer images. FLUX.1-schnell sits in the middle.
+> The 9B model produces visibly more detail in fine structures (neon reflections, wet streets, building facades) in this comparison. The 4B is the fastest tested option but sacrifices detail. Chroma has a distinctive artistic style but outputs smaller, softer images. FLUX.1-schnell sits in the middle.
+>
+> ¹ 4B shows 15s in this shootout vs 20s in the standalone benchmark — the GPU was already warm from the 9B run (tested back-to-back).
 
 **Summary: recommended settings for production**
 
@@ -1020,7 +1018,7 @@ All models tested back-to-back on the same prompt: *"a cyberpunk cityscape at su
 | **High quality** | **FLUX.2-klein-9B** | **768×768** | **4** | **~130s** |
 | Quick preview | FLUX.2-klein-4B | 512×512 | 4 | ~20s |
 | Poster/wallpaper | FLUX.2-klein-4B | 1024×1024 | 4 | ~63s |
-| Best quality (slow) | Chroma flash | 512×512 | 8 | ~130s |
+| Highest quality (slow) | Chroma flash | 512×512 | 8 | ~130s |
 
 ```bash
 # FLUX.2-klein-9B — recommended production command:
@@ -1125,7 +1123,7 @@ sd-cli --diffusion-model models/sd3/sd3.5_medium-q4_0.gguf \
   -W 512 -H 512 --diffusion-fa --offload-to-cpu -o output.png
 ```
 
-> **⚠ BF16 VAE gotcha:** The upstream SD3 VAE (`diffusion_pytorch_model.safetensors`) uses BF16 tensors. GFX1013 Vulkan has no BF16 support — the output is a solid blue/yellow rectangle. Fix: convert to F16 with `python3 convert_vae_bf16_to_f16.py input.safetensors output.safetensors` (script in `/tmp/`).
+> **⚠ BF16 VAE gotcha:** The upstream SD3 VAE (`diffusion_pytorch_model.safetensors`) uses BF16 tensors. In this setup (RADV Mesa 25.3.4), GFX1013 Vulkan did not handle BF16 tensors — the output was a solid blue/yellow rectangle. Fix: convert to F16 with `python3 convert_vae_bf16_to_f16.py input.safetensors output.safetensors` (script in `/tmp/`).
 
 #### WAN 2.1 T2V 1.3B benchmark details
 
@@ -1161,7 +1159,7 @@ sd-cli -M vid_gen \
 
 > **Output format:** sd.cpp produces raw AVI (MJPEG) regardless of the `-o` extension. The 17-frame clip plays at 16 fps (~1 second). Quality is recognizable but noisy — expected at Q4_0 with scalar-only Vulkan compute.
 >
-> **Why so slow?** Each video frame is a full diffusion pass through the 1.3B model. With 17 frames × 50 steps × no matrix cores, every multiply is scalar. A GPU with tensor/matrix units (RDNA3+, Turing+) would be 5–10× faster.
+> **Why so slow?** Each video frame is a full diffusion pass through the 1.3B model. With 17 frames × 50 steps × no matrix cores, every multiply is scalar. A GPU with tensor/matrix units (RDNA3+, Turing+) would likely be substantially faster.
 
 **WAN 2.1 demo — "A cat walking across a sunny garden":**
 
@@ -1169,18 +1167,18 @@ sd-cli -M vid_gen \
   <img src="images/wan-test.gif" alt="WAN 2.1 T2V — cat in garden" width="480">
 </p>
 
-> 17 frames @480×320, 50 steps, Q4_0 quantization, EUR scheduler, cfg-scale 6.0. Generated in **~38 minutes** on GFX1013 scalar Vulkan — no matrix/tensor cores. The BC-250 rendered every frame through pure ALU compute. Noisy but recognizable — a real video from a 1.3B parameter model on a secondhand BC-250.
+> 17 frames @480×320, 50 steps, Q4_0 quantization, EUR scheduler, cfg-scale 6.0. Generated in **~38 minutes** on GFX1013 scalar Vulkan — no matrix/tensor cores. Noisy but recognizable — generated by a 1.3B parameter model on a secondhand BC-250.
 
 #### ESRGAN 4× upscale benchmarks
 
-All generated images are automatically upscaled with RealESRGAN_x4plus (64 MB model, 4× scaling). Runs immediately after generation while Ollama is still stopped — zero extra GPU-swap cost.
+All generated images are automatically upscaled with RealESRGAN_x4plus (64 MB model, 4× scaling). Runs immediately after generation while Ollama is still stopped — no additional GPU memory contention.
 
 **ESRGAN tile size benchmark (512² input → 2048² output):**
 
 | Tile Size | Time | Output | Notes |
 |:---------:|:----:|:------:|-------|
 | 128 (default) | **15s** | 2048×2048, 5.1 MB | Fastest, visible seams possible |
-| **192 (production)** | **25s** | 2048×2048, 5.1 MB | **Best quality/speed tradeoff** |
+| **192 (production)** | **25s** | 2048×2048, 5.1 MB | **Best observed quality/speed tradeoff** |
 | 256 | **41s** | 2048×2048, 5.1 MB | Smoothest seams, 2.7× slower |
 | 128 ×2 passes (16×!) | **4m 50s** | **8192×8192, 67 MB** | 512²→8192² in under 5 min |
 
@@ -1243,7 +1241,7 @@ Cycle N+1:
 | Async SD pipeline (worker scripts, 45s delay) | Synchronous SD (stop Ollama → generate → restart) |
 | GPU idle detection for user chat preemption | No preemption needed — chat is interleaved |
 
-**All jobs run as direct subprocesses** — `subprocess.Popen` for Python/bash scripts, no LLM agent routing. This is 3–10× faster than the old `openclaw cron run` path and eliminates the gateway dependency entirely.
+**All jobs run as direct subprocesses** — `subprocess.Popen` for Python/bash scripts, no LLM agent routing. In testing, this was roughly 3–10× faster than the old `openclaw cron run` path, eliminating the gateway dependency entirely.
 
 ### 7.1.1 Queue ordering
 
@@ -1453,13 +1451,13 @@ Per-minute sampling via `pp_dpm_sclk`:
 | Mechanism | Details |
 |-----------|---------|
 | **Systemd watchdog** | `WatchdogSec=14400` (4h) — queue-runner pings every 30s during job execution |
-| **Crash recovery** | State file records nightly batch progress; on restart, resumes from last completed job |
+| **Crash recovery** | State file records batch progress; on restart, resumes from last completed job |
 | **Midnight crossing** | Resume index valid for both today and yesterday's date (batch starts 23:00 day N, may crash after midnight day N+1) |
 | **Atomic state writes** | Write to `.tmp` file, `fsync()`, then `rename()` — survives SIGABRT/power loss |
 | **Ollama health checks** | Pre-flight check before each job; exponential backoff wait if unhealthy |
 | **Network down** | Detects network loss, waits with backoff up to 10min |
 | **GPU deadlock protection** | If GPU busy for > 60min continuously, breaks and moves on |
-| **OOM protection** | Ollama `OOMScoreAdjust=-1000`, 16 GB NVMe swap, zram limited to 2 GB |
+| **OOM protection** | Ollama `OOMScoreAdjust=-1000`, 16 GB NVMe swap, zram limited or disabled |
 | **Signal delivery** | `--best-effort-deliver` flag — delivery failures don't mark job as failed |
 
 ---
@@ -1479,7 +1477,7 @@ Automated career opportunity scanner with a two-phase anti-hallucination archite
                                    +-> aggregate -> JSON + Signal alerts
 ```
 
-**Phase 1** extracts jobs from raw HTML without seeing the candidate profile — prevents the LLM from inventing matching jobs. **Phase 2** scores each job individually against the profile.
+**Phase 1** extracts jobs from raw HTML without seeing the candidate profile — reducing the risk of the LLM hallucinating matching jobs. **Phase 2** scores each job individually against the profile.
 
 ### 8.2 Alert thresholds
 
@@ -1493,21 +1491,21 @@ Automated career opportunity scanner with a two-phase anti-hallucination archite
 
 ### 8.3 Salary tracker · `salary-tracker.py`
 
-Nightly at 01:30. Sources: career-scan extraction, NoFluffJobs API, JustJoinIT, Bulldogjob. Tracks embedded Linux / camera driver compensation in Poland. 180-day rolling history.
+Runs once per cycle (scrape category). Sources: career-scan extraction, NoFluffJobs API, JustJoinIT, Bulldogjob. Tracks embedded Linux / camera driver compensation in Poland. 180-day rolling history.
 
 ### 8.4 Company intelligence · `company-intel.py`
 
-Nightly at 01:50. Deep-dives into 43 tracked companies across 8 sources: GoWork.pl reviews, DuckDuckGo news, Layoffs.fyi, company pages, 4programmers.net, Reddit, SemiWiki, Hacker News. LLM-scored sentiment (-5 to +5) with cross-company synthesis.
+Runs once per cycle (company category). Deep-dives into 43 tracked companies across 8 sources: GoWork.pl reviews, DuckDuckGo news, Layoffs.fyi, company pages, 4programmers.net, Reddit, SemiWiki, Hacker News. LLM-scored sentiment (-5 to +5) with cross-company synthesis.
 
 > **GoWork.pl:** New Next.js SPA breaks scrapers. Scanner uses the old `/opinie_czytaj,{entity_id}` URLs (still server-rendered).
 
 ### 8.5 Patent watch · `patent-watch.py`
 
-Nightly at 02:10. Monitors 6 search queries (MIPI CSI, IR/RGB dual camera, ISP pipeline, automotive ADAS, sensor fusion, V4L2/libcamera) across Google Patents, EPO OPS, and DuckDuckGo. Scored by relevance keywords × watched assignee bonus.
+Runs once per cycle (scrape category). Monitors 6 search queries (MIPI CSI, IR/RGB dual camera, ISP pipeline, automotive ADAS, sensor fusion, V4L2/libcamera) across Google Patents, EPO OPS, and DuckDuckGo. Scored by relevance keywords × watched assignee bonus.
 
 ### 8.6 Event scout · `event-scout.py`
 
-Nightly at 02:30. Discovers tech events with geographic scoring (local 10, nearby 8, Poland 5, Europe 3, Online 9). Sources: Crossweb.pl, Konfeo, Meetup, Eventbrite, DDG, 14 known conference sites.
+Runs once per cycle (scrape category). Discovers tech events with geographic scoring (local 10, nearby 8, Poland 5, Europe 3, Online 9). Sources: Crossweb.pl, Konfeo, Meetup, Eventbrite, DDG, 14 known conference sites.
 
 ---
 
@@ -1613,14 +1611,14 @@ ssh bc250 'sudo cp /tmp/queue-runner.py /opt/netscan/ && sudo systemctl restart 
 ## 10. Troubleshooting
 
 <details>
-<summary><b>▸ ROCm crashes in Ollama logs</b></summary>
+<summary><b>▸ ROCm initialization appears in Ollama logs</b></summary>
 
-Expected — Ollama tries ROCm, it crashes on GFX1013, falls back to Vulkan. No action needed.
+On this deployment, Ollama attempted a ROCm path during startup, failed on GFX1013, and continued with Vulkan. No action is needed unless startup behavior changes on a newer software stack.
 
 </details>
 
 <details>
-<summary><b>▸ Only 7.9 GiB GPU memory instead of 14 GiB</b></summary>
+<summary><b>▸ Only 7.9 GiB GPU memory instead of 16 GiB</b></summary>
 
 GTT tuning not applied. Check: `cat /sys/module/ttm/parameters/pages_limit` (should be 4194304). See §3.3.
 
@@ -1645,7 +1643,7 @@ Check `OLLAMA_VULKAN=1`: `sudo systemctl show ollama | grep Environment`
 
 Ollama allocates KV cache based on `num_ctx`. Many models default to 32K–40K context, which on a 14B Q4_K model means 14–16 GB *just for the model* — leaving nothing for the OS.
 
-**Symptoms:** Gateway gets OOM-killed, Ollama journal shows 500 errors, `dmesg` shows `oom-kill`.
+**Symptoms:** Ollama or queue-runner gets OOM-killed, Ollama journal shows 500 errors, `dmesg` shows `oom-kill`.
 
 **Root cause:** The abliterated Qwen3 14B declares `num_ctx 40960` → 16 GB total model memory.
 
@@ -1658,7 +1656,7 @@ EOF
 ollama create qwen3-14b-16k -f /tmp/Modelfile.16k
 ```
 
-This drops memory from ~16 GB → ~11.1 GB. Do **not** rely on `OLLAMA_CONTEXT_LENGTH` — it doesn't reliably override API requests from the gateway.
+This drops memory from ~16 GB → ~11.1 GB. Alternatively, set `OLLAMA_CONTEXT_LENGTH=16384` in the systemd override (see §3.4) — this is the production mechanism used in v7.
 
 </details>
 
@@ -1676,7 +1674,7 @@ curl -s http://127.0.0.1:8080/api/v1/rpc \
 <details>
 <summary><b>▸ zram competing with model for physical RAM</b></summary>
 
-Fedora defaults to ~8 GB zram. zram compresses pages but stores them in *physical* RAM — directly competing with the model. On 16 GB systems running 14B models, disable or limit zram and use NVMe file swap instead:
+Fedora defaults to ~8 GB zram. zram compresses pages but stores them in *physical* RAM — directly competing with the model. On 16 GB systems running large models, disable or limit zram and use NVMe file swap instead:
 ```bash
 sudo mkdir -p /etc/systemd/zram-generator.conf.d
 echo -e '[zram0]\nzram-size = 2048' | sudo tee /etc/systemd/zram-generator.conf.d/small.conf
@@ -1716,17 +1714,17 @@ curl -X POST http://127.0.0.1:8080/api/v1/rpc \
 
 | Issue | Impact |
 |-------|--------|
-| Shared VRAM | Image gen requires stopping Ollama. Bot offline ~2–3 min (FLUX.2-klein-9B) or ~1 min (FLUX.2-klein-4B). |
-| MoE context limit | 35B-A3B MoE tops out at 16K context (weights = 10.3 GiB, KV fills rest). Use 9B for >16K. |
+| Shared VRAM | In this setup, image gen requires stopping Ollama (single 16 GB UMA pool). Bot offline ~3 min (FLUX.2-klein-9B) or ~2 min (FLUX.2-klein-4B). |
+| MoE context limit | On this hardware, 35B-A3B MoE topped out at 16K context (weights = 10.3 GiB, KV fills rest). Use 9B for >16K. |
 | Signal latency | Messages queue during job execution (typical job 2–15 min). Chat checked between every job. |
 | sd-cli hangs on GFX1013 | Vulkan cleanup bug → poll + kill workaround. |
 | Cold start latency | 30–60s after Ollama restart (model loading). |
 | Chinese thinking leak | Qwen3 occasionally outputs Chinese reasoning. Cosmetic. |
-| Prefill rate degrades with context | 128 tok/s at 1.3K → 70 tok/s at 10K tokens (UMA bandwidth + attention scaling). |
-| Gen speed degrades with context fill | 27 tok/s empty → 13 tok/s at 30K tokens. Partial model offload at KV limit causes cliff drop. |
-| Ollama caps KV auto-size at ~40K (Q4_0) | `num_ctx` > 40960 accepted but silently truncated. Actual limit = VRAM ÷ per-token KV size. |
-| Speculative decoding blocked | Ollama 0.18 has no `--draft-model`. Dual-model loading evicts the draft model. |
-| TTS not feasible | CPU-based TTS (Piper, Coqui) competes with GPU for the same 16 GB UMA pool. No Vulkan TTS exists. |
+| Prefill rate degrades with context (dense models) | qwen3:14b showed 128 tok/s at 1.3K → 70 tok/s at 10K tokens. MoE primary held ~230 tok/s across prompt sizes in testing (capped at 16K). |
+| Gen speed degrades with context fill (dense models) | qwen3:14b showed 27 tok/s empty → 13 tok/s at 30K tokens. MoE primary held ~38 tok/s within the 16K context limit on this setup. Dense models at high fill offloaded layers to CPU. |
+| Ollama caps KV auto-size at ~40K (with Q4_0 KV) | When using Q4_0 KV cache quantization (not deployed in production), `num_ctx` > 40960 is accepted but silently truncated. Actual limit = VRAM ÷ per-token KV size. |
+| Speculative decoding not yet available | Ollama 0.18 has no `--draft-model`. Dual-model loading evicts the draft model. May change in future Ollama versions. |
+| TTS not currently feasible | CPU-based TTS (Piper, Coqui) competes with GPU for the same 16 GB UMA pool. No practical Vulkan-accelerated TTS path was identified for this deployment as of early 2026. |
 
 ---
 
@@ -1742,7 +1740,7 @@ Pinned versions as of March 2026. All components built/installed on Fedora 43.
 | **stable-diffusion.cpp** | master-525 (`d6dd6d7`) | Built with `-DSD_VULKAN=ON` |
 | **whisper.cpp** | v1.8.3-198 (`30c5194c`) | Built with Vulkan, large-v3-turbo model |
 | **signal-cli** | 0.13.24 | Native binary, JSON-RPC at :8080 |
-| **Qwen3.5-35B-A3B** | IQ2_M (GGUF, 10.6 GB) | Primary MoE model, via [unsloth](https://huggingface.co/unsloth/Qwen3.5-35B-A3B-GGUF) |
+| **Qwen3.5-35B-A3B** | IQ2_M (GGUF, ~11 GB) | Primary MoE model, via [unsloth](https://huggingface.co/unsloth/Qwen3.5-35B-A3B-GGUF) |
 | **Qwen3.5:9b** | Q4_K_M (GGUF, 6.1 GB) | Vision + long context model |
 | **FLUX.2-klein-9B** | Q4_0 (GGUF, 5.3 GB) | Image generation, via [leejet](https://huggingface.co/leejet/FLUX.2-klein-9B-GGUF) |
 | **ggml-large-v3-turbo** | 1.6 GB | Whisper model for audio transcription |
@@ -1770,7 +1768,7 @@ Pinned versions as of March 2026. All components built/installed on Fedora 43.
 | Qwen3.5 model family (Alibaba) | https://huggingface.co/Qwen |
 | Qwen3.5-35B-A3B GGUF (unsloth) | https://huggingface.co/unsloth/Qwen3.5-35B-A3B-GGUF |
 | Qwen3.5-9B (Ollama) | https://ollama.com/library/qwen3.5:9b |
-| GGUF quantization format | https://github.com/ggerganov/llama.cpp/blob/master/docs/gguf.md |
+| GGUF quantization format (llama.cpp) | https://github.com/ggml-org/llama.cpp |
 
 ### Image & Video Generation
 
@@ -1781,7 +1779,7 @@ Pinned versions as of March 2026. All components built/installed on Fedora 43.
 | FLUX.2-klein-4B GGUF | https://huggingface.co/leejet/FLUX.2-klein-4B-GGUF |
 | FLUX.1-Kontext-dev (image editing) | https://huggingface.co/black-forest-labs/FLUX.1-Kontext-dev |
 | Chroma (flash distilled) | https://huggingface.co/leejet/Chroma-GGUF |
-| WAN 2.1 T2V (video generation) | https://huggingface.co/Wan-AI |
+| WAN 2.1 T2V 1.3B (video generation) | https://huggingface.co/Wan-AI/Wan2.1-T2V-1.3B |
 | Real-ESRGAN (image upscaling) | https://github.com/xinntao/Real-ESRGAN |
 
 ### Audio & Speech
@@ -1789,7 +1787,7 @@ Pinned versions as of March 2026. All components built/installed on Fedora 43.
 | Resource | URL |
 |----------|-----|
 | whisper.cpp (Vulkan STT) | https://github.com/ggerganov/whisper.cpp |
-| Whisper large-v3-turbo model | https://huggingface.co/ggerganov/whisper-large-v3-turbo |
+| Whisper GGML models (large-v3-turbo) | https://huggingface.co/ggerganov/whisper.cpp |
 
 ### Messaging & Integration
 
