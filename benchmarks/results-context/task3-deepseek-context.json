@@ -1,0 +1,253 @@
+[
+  {
+    "status": "OK",
+    "gen_tok_s": 26.52,
+    "prefill_tok_s": 122.52,
+    "eval_count": 50,
+    "prompt_eval_count": 2169,
+    "ttft_s": 32.95,
+    "load_s": 15.2,
+    "prompt_eval_s": 17.7,
+    "eval_s": 1.89,
+    "wall_s": 35.0,
+    "response": "The evolution of semiconductor manufacturing is marked by exponential scaling over seven decades, overcoming challenges in lithography and memory technology, while addressing economic and performance bottlenecks through advancements in hardware, software optimization, and AI techniques like quantization for improved efficiency.",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 1489,
+      "ram_free_mb": 13709,
+      "swap_used_mb": 754
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 11031,
+      "ram_free_mb": 4167,
+      "swap_used_mb": 753
+    },
+    "swap_delta_mb": -1,
+    "model": "deepseek-r1:14b",
+    "num_ctx": 4096,
+    "target_fill_tokens": 3276,
+    "run": 1,
+    "phase": "context",
+    "timestamp": "2026-03-21T11:30:59.839829",
+    "context_truncated": false,
+    "vram": {
+      "vram_gib": 8.48,
+      "total_gib": 8.48,
+      "gpu_pct": 100
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 26.5,
+    "prefill_tok_s": 31144.82,
+    "eval_count": 50,
+    "prompt_eval_count": 2169,
+    "ttft_s": 0.26,
+    "load_s": 0.2,
+    "prompt_eval_s": 0.07,
+    "eval_s": 1.89,
+    "wall_s": 2.3,
+    "response": "The text discusses the remarkable evolution of semiconductor manufacturing over seven decades, highlighting challenges in lithography, economic implications of modern fabs, advancements in memory technologies, and the persistent memory wall bottleneck. It also touches on software innovations like compilers and hardware-software co",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 11059,
+      "ram_free_mb": 4139,
+      "swap_used_mb": 753
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 11063,
+      "ram_free_mb": 4135,
+      "swap_used_mb": 753
+    },
+    "swap_delta_mb": 0,
+    "model": "deepseek-r1:14b",
+    "num_ctx": 4096,
+    "target_fill_tokens": 3276,
+    "run": 2,
+    "phase": "context",
+    "timestamp": "2026-03-21T11:31:04.173045",
+    "context_truncated": false
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 19.69,
+    "prefill_tok_s": 85.09,
+    "eval_count": 50,
+    "prompt_eval_count": 9513,
+    "ttft_s": 126.77,
+    "load_s": 15.0,
+    "prompt_eval_s": 111.79,
+    "eval_s": 2.54,
+    "wall_s": 129.5,
+    "response": "The text discusses the remarkable engineering achievements in semiconductor manufacturing over seven decades, highlighting challenges and advancements in lithography, memory technologies, and economic aspects. It also explores the co-evolution between hardware and software design, particularly their impact on artificial intelligence and computing",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 1528,
+      "ram_free_mb": 13670,
+      "swap_used_mb": 753
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 11667,
+      "ram_free_mb": 3531,
+      "swap_used_mb": 749
+    },
+    "swap_delta_mb": -4,
+    "model": "deepseek-r1:14b",
+    "num_ctx": 16384,
+    "target_fill_tokens": 13107,
+    "run": 1,
+    "phase": "context",
+    "timestamp": "2026-03-21T11:33:19.720697",
+    "context_truncated": false,
+    "vram": {
+      "vram_gib": 10.01,
+      "total_gib": 10.01,
+      "gpu_pct": 100
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 19.69,
+    "prefill_tok_s": 85.08,
+    "eval_count": 50,
+    "prompt_eval_count": 9513,
+    "ttft_s": 230.64,
+    "load_s": 118.8,
+    "prompt_eval_s": 111.81,
+    "eval_s": 2.54,
+    "wall_s": 233.4,
+    "response": "The text discusses the remarkable engineering achievements in semiconductor manufacturing, highlighting advancements in lithography techniques, memory technologies, and economic challenges over seven decades. It also explores the co-evolution of hardware and software design, particularly their impact on artificial intelligence applications like transformer",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 11115,
+      "ram_free_mb": 4083,
+      "swap_used_mb": 749
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 11661,
+      "ram_free_mb": 3537,
+      "swap_used_mb": 749
+    },
+    "swap_delta_mb": 0,
+    "model": "deepseek-r1:14b",
+    "num_ctx": 16384,
+    "target_fill_tokens": 13107,
+    "run": 2,
+    "phase": "context",
+    "timestamp": "2026-03-21T11:37:15.127275",
+    "context_truncated": false
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 14.81,
+    "prefill_tok_s": 60.54,
+    "eval_count": 50,
+    "prompt_eval_count": 18999,
+    "ttft_s": 328.8,
+    "load_s": 15.0,
+    "prompt_eval_s": 313.84,
+    "eval_s": 3.38,
+    "wall_s": 332.5,
+    "response": "The text discusses several key themes related to the evolution and challenges in semiconductor manufacturing and computing technology:\n\n1. **Exponential Scaling and Technological Advancements**: The industry has maintained exponential scaling for over seven decades, overcoming lithography challenges like optical diffraction",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 1593,
+      "ram_free_mb": 13605,
+      "swap_used_mb": 749
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 12592,
+      "ram_free_mb": 2606,
+      "swap_used_mb": 749
+    },
+    "swap_delta_mb": 0,
+    "model": "deepseek-r1:14b",
+    "num_ctx": 32768,
+    "target_fill_tokens": 26214,
+    "run": 1,
+    "phase": "context",
+    "timestamp": "2026-03-21T11:42:53.602977",
+    "context_truncated": false,
+    "vram": {
+      "vram_gib": 12.04,
+      "total_gib": 12.04,
+      "gpu_pct": 100
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 14.81,
+    "prefill_tok_s": 193221.0,
+    "eval_count": 50,
+    "prompt_eval_count": 18999,
+    "ttft_s": 0.29,
+    "load_s": 0.2,
+    "prompt_eval_s": 0.1,
+    "eval_s": 3.38,
+    "wall_s": 4.0,
+    "response": "The text discusses the remarkable engineering achievements in semiconductor manufacturing, highlighting the exponential scaling over seven decades, challenges in lithography techniques, economic impacts, and advancements in memory technologies. It also explores the interplay between hardware and software design, including optimizations for computing",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 12593,
+      "ram_free_mb": 2605,
+      "swap_used_mb": 749
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 12621,
+      "ram_free_mb": 2577,
+      "swap_used_mb": 748
+    },
+    "swap_delta_mb": -1,
+    "model": "deepseek-r1:14b",
+    "num_ctx": 32768,
+    "target_fill_tokens": 26214,
+    "run": 2,
+    "phase": "context",
+    "timestamp": "2026-03-21T11:42:59.561450",
+    "context_truncated": false
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 2.32,
+    "prefill_tok_s": 39.58,
+    "eval_count": 50,
+    "prompt_eval_count": 37971,
+    "ttft_s": 975.17,
+    "load_s": 15.9,
+    "prompt_eval_s": 959.29,
+    "eval_s": 21.53,
+    "wall_s": 997.9,
+    "response": "The text discusses the remarkable evolution of semiconductor manufacturing over seven decades, highlighting technological advancements in lithography, memory technologies, and economic challenges. It also explores the interaction between hardware and software design, particularly in addressing performance bottlenecks like the \"memory wall",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 1516,
+      "ram_free_mb": 13682,
+      "swap_used_mb": 748
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 14127,
+      "ram_free_mb": 1071,
+      "swap_used_mb": 1397
+    },
+    "swap_delta_mb": 649,
+    "model": "deepseek-r1:14b",
+    "num_ctx": 65536,
+    "target_fill_tokens": 52428,
+    "run": 1,
+    "phase": "context",
+    "timestamp": "2026-03-21T11:59:43.437837",
+    "context_truncated": false,
+    "vram": {
+      "vram_gib": 15.63,
+      "total_gib": 17.35,
+      "gpu_pct": 90
+    }
+  }
+]

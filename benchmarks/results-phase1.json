@@ -1,0 +1,1180 @@
+[
+  {
+    "status": "OK",
+    "gen_tok_s": 103.83,
+    "prefill_tok_s": 484.84,
+    "eval_count": 100,
+    "prompt_eval_count": 123,
+    "ttft_s": 2.81,
+    "load_s": 2.6,
+    "prompt_eval_s": 0.25,
+    "eval_s": 0.96,
+    "wall_s": 3.9,
+    "response": "RISC (Reduced Instruction Set Computing) and CISC (Complex Instruction Set Computing) are two primary processor architectures used in computing systems. The key differences between them lie in their instruction set design, pipelining implications, memory access patterns, and power efficiency trade-offs.\n\n**Instruction Set Design:**\n\n* RISC processors have a simple, limited instruction set with fewer instructions that can perform specific tasks. Examples include ARM Cortex-A and PowerPC.\n* CISC p",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 925,
+      "ram_free_mb": 14273,
+      "swap_used_mb": 510
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 3734,
+      "ram_free_mb": 11464,
+      "swap_used_mb": 510
+    },
+    "swap_delta_mb": 0,
+    "model": "llama3.2:3b",
+    "phase": "perf",
+    "timestamp": "2026-03-20T17:32:38.151185",
+    "vram": {
+      "vram_gib": 2.23,
+      "total_gib": 2.23,
+      "gpu_pct": 100,
+      "family": "llama",
+      "parameter_size": "3.2B",
+      "quantization": "Q4_K_M"
+    },
+    "layers_offloaded": "29/29"
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 102.01,
+    "prefill_tok_s": 477.87,
+    "eval_count": 100,
+    "prompt_eval_count": 128,
+    "ttft_s": 4.96,
+    "load_s": 4.7,
+    "prompt_eval_s": 0.27,
+    "eval_s": 0.98,
+    "wall_s": 6.1,
+    "response": "### Key\n####user\nExplain the key differences between RISC (Reduced Instruction Set Computer) and CISC (Complex Instruction Instruction Set Computer) processor architectures, covering instruction set design, pipelining implications, memory access patterns, and power efficiency trade-offs. Include specific examples of processors from each category (e.g., ARM Cortex-A for RISC, x86 for CISC) and discuss how modern designs have blurred the traditional boundaries between these two approaches.\n###Conc",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 1067,
+      "ram_free_mb": 14131,
+      "swap_used_mb": 510
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 3611,
+      "ram_free_mb": 11587,
+      "swap_used_mb": 510
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen2.5:3b",
+    "phase": "perf",
+    "timestamp": "2026-03-20T17:32:48.300815",
+    "vram": {
+      "vram_gib": 2.12,
+      "total_gib": 2.12,
+      "gpu_pct": 100,
+      "family": "qwen2",
+      "parameter_size": "3.1B",
+      "quantization": "Q4_K_M"
+    },
+    "layers_offloaded": "37/37"
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 86.96,
+    "prefill_tok_s": 346.29,
+    "eval_count": 100,
+    "prompt_eval_count": 99,
+    "ttft_s": 6.25,
+    "load_s": 6.0,
+    "prompt_eval_s": 0.29,
+    "eval_s": 1.15,
+    "wall_s": 7.6,
+    "response": "RISC (Reduced Instruction Set Computing) and CISC (Complex Instruction Set Computing) are both processor architectures that define different ways to design an instruction set for CPUs.\n\n\n**Instruction Set Design:**\n\n- RISC uses a smaller number of simple instructions, which can lead to faster execution as each command requires only one clock cycle.\n\n- ARM Cortex-A processors exemplify this with their streamlined operations aimed at speed and efficiency in power-sensitive devices like smartphones",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 1148,
+      "ram_free_mb": 14050,
+      "swap_used_mb": 510
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 4553,
+      "ram_free_mb": 10646,
+      "swap_used_mb": 510
+    },
+    "swap_delta_mb": 0,
+    "model": "phi4-mini:latest",
+    "phase": "perf",
+    "timestamp": "2026-03-20T17:32:59.956996",
+    "vram": {
+      "vram_gib": 2.5,
+      "total_gib": 2.5,
+      "gpu_pct": 100,
+      "family": "phi3",
+      "parameter_size": "3.8B",
+      "quantization": "Q4_K_M"
+    },
+    "layers_offloaded": "33/33"
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 76.54,
+    "prefill_tok_s": 357.15,
+    "eval_count": 100,
+    "prompt_eval_count": 110,
+    "ttft_s": 6.5,
+    "load_s": 6.2,
+    "prompt_eval_s": 0.31,
+    "eval_s": 1.31,
+    "wall_s": 8.0,
+    "response": "Okay, let's break down the differences between RISC and CISC processor architectures, a topic that's fundamental to computer architecture.\n\n**1. Instruction Set Design: The Core Difference**\n\n* **CISC (Complex Instruction Set Computer):** CISC designs, exemplified by Intel\u2019s x86 family (like the Core i7 or Ryzen processors), feature a *large* and complex instruction set.  A single instruction can perform multiple low-level operations\u2014like loading data",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 1115,
+      "ram_free_mb": 14083,
+      "swap_used_mb": 510
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 4911,
+      "ram_free_mb": 10287,
+      "swap_used_mb": 510
+    },
+    "swap_delta_mb": 0,
+    "model": "gemma3:4b",
+    "phase": "perf",
+    "timestamp": "2026-03-20T17:33:11.994902",
+    "vram": {
+      "vram_gib": 3.81,
+      "total_gib": 3.81,
+      "gpu_pct": 100,
+      "family": "gemma3",
+      "parameter_size": "4.3B",
+      "quantization": "Q4_K_M"
+    },
+    "layers_offloaded": "35/35"
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 73.56,
+    "prefill_tok_s": 313.97,
+    "eval_count": 100,
+    "prompt_eval_count": 109,
+    "ttft_s": 4.05,
+    "load_s": 3.7,
+    "prompt_eval_s": 0.35,
+    "eval_s": 1.36,
+    "wall_s": 5.5,
+    "response": "",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 1160,
+      "ram_free_mb": 14038,
+      "swap_used_mb": 510
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 3722,
+      "ram_free_mb": 11476,
+      "swap_used_mb": 510
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen3:4b",
+    "phase": "perf",
+    "timestamp": "2026-03-20T17:33:21.576615",
+    "vram": {
+      "vram_gib": 2.86,
+      "total_gib": 2.86,
+      "gpu_pct": 100,
+      "family": "qwen3",
+      "parameter_size": "4.0B",
+      "quantization": "Q4_K_M"
+    },
+    "layers_offloaded": "37/37"
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 0,
+    "prefill_tok_s": 0,
+    "eval_count": 0,
+    "prompt_eval_count": 0,
+    "ttft_s": 0.0,
+    "load_s": 0.0,
+    "prompt_eval_s": 0.0,
+    "eval_s": 0.0,
+    "wall_s": 10.3,
+    "response": "0end\n The t processor design designs that are involve two two different often two differ performances t two processors two two structures two two two two performance two two two two two two two two two two two two two two two two two two two two two two two two two two two two two two two",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 1167,
+      "ram_free_mb": 14031,
+      "swap_used_mb": 510
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 6030,
+      "ram_free_mb": 9168,
+      "swap_used_mb": 510
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen2.5:7b",
+    "phase": "perf",
+    "timestamp": "2026-03-20T17:33:35.888535",
+    "vram": {
+      "vram_gib": 4.42,
+      "total_gib": 4.42,
+      "gpu_pct": 100,
+      "family": "qwen2",
+      "parameter_size": "7.6B",
+      "quantization": "Q4_K_M"
+    },
+    "layers_offloaded": "29/29"
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 54.8,
+    "prefill_tok_s": 247.33,
+    "eval_count": 100,
+    "prompt_eval_count": 128,
+    "ttft_s": 8.94,
+    "load_s": 8.4,
+    "prompt_eval_s": 0.52,
+    "eval_s": 1.82,
+    "wall_s": 11.1,
+    "response": "RISC ( Reduced Instruction Set Computer and CISC for Complex Instruction Set are two fundamental different processor architectures, in computer science hardware.. Despite their differences,, both RISC and CSC architectures design choices have implications for performance, memory access patterns, power efficiency, and modern processors have blurred the traditional boundaries between these approaches.\n.\n\n\n\nRISC ( Simplified Instruction Instruction: use generally feature a simpler instruction sets ",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 1165,
+      "ram_free_mb": 14033,
+      "swap_used_mb": 510
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 6323,
+      "ram_free_mb": 8875,
+      "swap_used_mb": 510
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen2.5-coder:7b",
+    "phase": "perf",
+    "timestamp": "2026-03-20T17:33:51.027183",
+    "vram": {
+      "vram_gib": 4.42,
+      "total_gib": 4.42,
+      "gpu_pct": 100,
+      "family": "qwen2",
+      "parameter_size": "7.6B",
+      "quantization": "Q4_K_M"
+    },
+    "layers_offloaded": "29/29"
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 51.33,
+    "prefill_tok_s": 196.92,
+    "eval_count": 100,
+    "prompt_eval_count": 108,
+    "ttft_s": 9.87,
+    "load_s": 9.3,
+    "prompt_eval_s": 0.55,
+    "eval_s": 1.95,
+    "wall_s": 12.1,
+    "response": "The debate between Reduced Instruction Set Computing (RISC) and Complex Instruction Set Computing (CISC) architectures has been ongoing for decades, with proponents on both sides advocating for their respective advantages. Here's a comprehensive comparison of the two approaches, covering instruction set design, pipelining implications, memory access patterns, power efficiency trade-offs, and modern design trends.\n\n**Instruction Set Design**\n\nRISC architectures are characterized by:\n\n1. **Simplif",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 1209,
+      "ram_free_mb": 13989,
+      "swap_used_mb": 510
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 6366,
+      "ram_free_mb": 8832,
+      "swap_used_mb": 510
+    },
+    "swap_delta_mb": 0,
+    "model": "llama3.1:8b",
+    "phase": "perf",
+    "timestamp": "2026-03-20T17:34:07.151657",
+    "vram": {
+      "vram_gib": 4.71,
+      "total_gib": 4.71,
+      "gpu_pct": 100,
+      "family": "llama",
+      "parameter_size": "8.0B",
+      "quantization": "Q4_K_M"
+    },
+    "layers_offloaded": ""
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 49.93,
+    "prefill_tok_s": 299.02,
+    "eval_count": 100,
+    "prompt_eval_count": 418,
+    "ttft_s": 10.23,
+    "load_s": 8.8,
+    "prompt_eval_s": 1.4,
+    "eval_s": 2.0,
+    "wall_s": 12.5,
+    "response": "The central processing unit (CPU) architecture has undergone significant transformations over the years, leading to the development of Reduced Instruction Set Computing (RISC) and Complex Instruction Set Computing (CISC). The primary differences between these two approaches lie in their instruction set design, pipelining implications, memory access patterns, and power efficiency trade-offs.\n\n\n**Instruction Set Design:**\n\nIn a RISC architecture, instructions are typically simple and execute one o",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 1135,
+      "ram_free_mb": 14063,
+      "swap_used_mb": 510
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 6349,
+      "ram_free_mb": 8849,
+      "swap_used_mb": 510
+    },
+    "swap_delta_mb": 0,
+    "model": "mannix/llama3.1-8b-lexi:latest",
+    "phase": "perf",
+    "timestamp": "2026-03-20T17:34:23.715517",
+    "vram": {
+      "vram_gib": 4.47,
+      "total_gib": 4.47,
+      "gpu_pct": 100,
+      "family": "llama",
+      "parameter_size": "8.0B",
+      "quantization": "Q4_0"
+    },
+    "layers_offloaded": "33/33"
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 50.8,
+    "prefill_tok_s": 216.65,
+    "eval_count": 100,
+    "prompt_eval_count": 120,
+    "ttft_s": 9.81,
+    "load_s": 9.3,
+    "prompt_eval_s": 0.55,
+    "eval_s": 1.97,
+    "wall_s": 12.1,
+    "response": "RISC (Reduced Instruction Set Computer) and CISC (Complex Instruction Set Computer) architectures represent two fundamental approaches to processor design, each with its own strengths, weaknesses, and typical use cases. Let's delve into the key differences:\n\n1. Instruction Set Design:\n\nRISC:\n- Simplified set of instructions (typically 32-64 basic ops)\n- Each instruction is typically one clock cycle long\n- Very predictable execution\n- Easy to pipeline efficiently\n\nC",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 1238,
+      "ram_free_mb": 13960,
+      "swap_used_mb": 510
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 6607,
+      "ram_free_mb": 8591,
+      "swap_used_mb": 510
+    },
+    "swap_delta_mb": 0,
+    "model": "huihui_ai/seed-coder-abliterate:latest",
+    "phase": "perf",
+    "timestamp": "2026-03-20T17:34:39.858157",
+    "vram": {
+      "vram_gib": 4.81,
+      "total_gib": 4.81,
+      "gpu_pct": 100,
+      "family": "llama",
+      "parameter_size": "8.3B",
+      "quantization": "Q4_K_M"
+    },
+    "layers_offloaded": "33/33"
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 45.83,
+    "prefill_tok_s": 173.04,
+    "eval_count": 100,
+    "prompt_eval_count": 151,
+    "ttft_s": 8.94,
+    "load_s": 8.1,
+    "prompt_eval_s": 0.87,
+    "eval_s": 2.18,
+    "wall_s": 11.3,
+    "response": "RISC (Reduced Instruction Set Computing) and CISC (Complex Instruction Set Computing) are two fundamental architectural approaches to processor design, each with distinct characteristics that influence performance, complexity, and power efficiency.\n\n\n**Instruction Set Design:**\n\n- RISC: Focuses on a smaller set of simple instructions, typically fixed-length, which simplifies decoding and execution. Examples include ARM (used in the ARM Cortex-A series) and MIPS architectures.\n\n-",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 1195,
+      "ram_free_mb": 14003,
+      "swap_used_mb": 510
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 6410,
+      "ram_free_mb": 8788,
+      "swap_used_mb": 510
+    },
+    "swap_delta_mb": 0,
+    "model": "granite3.3:8b",
+    "phase": "perf",
+    "timestamp": "2026-03-20T17:34:55.142773",
+    "vram": {
+      "vram_gib": 4.86,
+      "total_gib": 4.86,
+      "gpu_pct": 100,
+      "family": "granite",
+      "parameter_size": "8.2B",
+      "quantization": "Q4_K_M"
+    },
+    "layers_offloaded": "41/41"
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 45.64,
+    "prefill_tok_s": 192.67,
+    "eval_count": 100,
+    "prompt_eval_count": 109,
+    "ttft_s": 7.69,
+    "load_s": 7.1,
+    "prompt_eval_s": 0.57,
+    "eval_s": 2.19,
+    "wall_s": 10.0,
+    "response": "",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 1302,
+      "ram_free_mb": 13896,
+      "swap_used_mb": 510
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 6039,
+      "ram_free_mb": 9159,
+      "swap_used_mb": 510
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen3-abl-nothink:latest",
+    "phase": "perf",
+    "timestamp": "2026-03-20T17:35:09.219108",
+    "vram": {
+      "vram_gib": 4.94,
+      "total_gib": 4.94,
+      "gpu_pct": 100,
+      "family": "qwen3",
+      "parameter_size": "8.2B",
+      "quantization": "Q4_K_M"
+    },
+    "layers_offloaded": "37/37"
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 45.53,
+    "prefill_tok_s": 208.79,
+    "eval_count": 100,
+    "prompt_eval_count": 109,
+    "ttft_s": 3.38,
+    "load_s": 2.9,
+    "prompt_eval_s": 0.52,
+    "eval_s": 2.2,
+    "wall_s": 5.7,
+    "response": "",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 1349,
+      "ram_free_mb": 13849,
+      "swap_used_mb": 510
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 6006,
+      "ram_free_mb": 9192,
+      "swap_used_mb": 510
+    },
+    "swap_delta_mb": 0,
+    "model": "huihui_ai/qwen3-abliterated:8b",
+    "phase": "perf",
+    "timestamp": "2026-03-20T17:35:18.999294",
+    "vram": {
+      "vram_gib": 4.94,
+      "total_gib": 4.94,
+      "gpu_pct": 100,
+      "family": "qwen3",
+      "parameter_size": "8.2B",
+      "quantization": "Q4_K_M"
+    },
+    "layers_offloaded": "37/37"
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 44.88,
+    "prefill_tok_s": 201.41,
+    "eval_count": 100,
+    "prompt_eval_count": 104,
+    "ttft_s": 11.25,
+    "load_s": 10.7,
+    "prompt_eval_s": 0.52,
+    "eval_s": 2.23,
+    "wall_s": 13.8,
+    "response": "### Key Differences\n\n#### Instruction Set Design:\n\n**RISC (Reduced Instruction Set Computer):**\n- Focuses on simplicity; fewer instructions per cycle.\n- Generally more register operations, reducing the need for memory access and increasing speed.\n- Instructions are designed to execute in a single clock cycle.\n- Smaller instruction decoded by the processor.\n- Example: ARM Cortex-A series.\n\n**CISC (Complex Instruction Set Computer):**\n- Designed to have very complex instructions that can do severa",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 1365,
+      "ram_free_mb": 13833,
+      "swap_used_mb": 510
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 7094,
+      "ram_free_mb": 8104,
+      "swap_used_mb": 510
+    },
+    "swap_delta_mb": 0,
+    "model": "glm4:9b",
+    "phase": "perf",
+    "timestamp": "2026-03-20T17:35:36.858946",
+    "vram": {
+      "vram_gib": 5.09,
+      "total_gib": 5.09,
+      "gpu_pct": 100,
+      "family": "chatglm",
+      "parameter_size": "9.4B",
+      "quantization": "Q4_0"
+    },
+    "layers_offloaded": "41/41"
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 43.11,
+    "prefill_tok_s": 192.68,
+    "eval_count": 100,
+    "prompt_eval_count": 109,
+    "ttft_s": 7.72,
+    "load_s": 7.2,
+    "prompt_eval_s": 0.57,
+    "eval_s": 2.32,
+    "wall_s": 10.2,
+    "response": "",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 1287,
+      "ram_free_mb": 13911,
+      "swap_used_mb": 510
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 6461,
+      "ram_free_mb": 8737,
+      "swap_used_mb": 510
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen3:8b",
+    "phase": "perf",
+    "timestamp": "2026-03-20T17:35:51.093588",
+    "vram": {
+      "vram_gib": 5.12,
+      "total_gib": 5.12,
+      "gpu_pct": 100,
+      "family": "qwen3",
+      "parameter_size": "8.2B",
+      "quantization": "Q4_K_M"
+    },
+    "layers_offloaded": "37/37"
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 43.11,
+    "prefill_tok_s": 209.73,
+    "eval_count": 100,
+    "prompt_eval_count": 109,
+    "ttft_s": 3.4,
+    "load_s": 2.9,
+    "prompt_eval_s": 0.52,
+    "eval_s": 2.32,
+    "wall_s": 5.9,
+    "response": "",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 1413,
+      "ram_free_mb": 13785,
+      "swap_used_mb": 510
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 6515,
+      "ram_free_mb": 8683,
+      "swap_used_mb": 510
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen3:8b-nothink",
+    "phase": "perf",
+    "timestamp": "2026-03-20T17:36:01.012290",
+    "vram": {
+      "vram_gib": 5.12,
+      "total_gib": 5.12,
+      "gpu_pct": 100,
+      "family": "qwen3",
+      "parameter_size": "8.2B",
+      "quantization": "Q4_K_M"
+    },
+    "layers_offloaded": "37/37"
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 43.16,
+    "prefill_tok_s": 184.8,
+    "eval_count": 100,
+    "prompt_eval_count": 101,
+    "ttft_s": 7.95,
+    "load_s": 7.4,
+    "prompt_eval_s": 0.55,
+    "eval_s": 2.32,
+    "wall_s": 10.4,
+    "response": "",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 1388,
+      "ram_free_mb": 13810,
+      "swap_used_mb": 510
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 6444,
+      "ram_free_mb": 8754,
+      "swap_used_mb": 510
+    },
+    "swap_delta_mb": 0,
+    "model": "deepseek-r1:8b",
+    "phase": "perf",
+    "timestamp": "2026-03-20T17:36:15.487240",
+    "vram": {
+      "vram_gib": 5.12,
+      "total_gib": 5.12,
+      "gpu_pct": 100,
+      "family": "qwen3",
+      "parameter_size": "8.2B",
+      "quantization": "Q4_K_M"
+    },
+    "layers_offloaded": "37/37"
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 38.19,
+    "prefill_tok_s": 194.83,
+    "eval_count": 100,
+    "prompt_eval_count": 110,
+    "ttft_s": 12.5,
+    "load_s": 11.9,
+    "prompt_eval_s": 0.56,
+    "eval_s": 2.62,
+    "wall_s": 15.6,
+    "response": "## RISC vs. CISC: A Tale of Two Architectures\n\nRISC (Reduced Instruction Set Computing) and CISC (Complex Instruction Set Computing) represent two distinct approaches to processor design, each with its own strengths and weaknesses. \n\n**Instruction Set Design:**\n\n* **RISC:** Employs a smaller set of simple, fixed-length instructions that typically operate on registers. This allows for faster decoding and simpler instruction pipeline implementation. Examples: ARM Cortex-A's `ADD",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 1346,
+      "ram_free_mb": 13852,
+      "swap_used_mb": 510
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9770,
+      "ram_free_mb": 5428,
+      "swap_used_mb": 510
+    },
+    "swap_delta_mb": 0,
+    "model": "gemma2:9b",
+    "phase": "perf",
+    "timestamp": "2026-03-20T17:36:35.102929",
+    "vram": {
+      "vram_gib": 6.87,
+      "total_gib": 6.87,
+      "gpu_pct": 100,
+      "family": "gemma2",
+      "parameter_size": "9.2B",
+      "quantization": "Q4_0"
+    },
+    "layers_offloaded": ""
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 31.69,
+    "prefill_tok_s": 171.33,
+    "eval_count": 100,
+    "prompt_eval_count": 109,
+    "ttft_s": 11.16,
+    "load_s": 10.5,
+    "prompt_eval_s": 0.64,
+    "eval_s": 3.16,
+    "wall_s": 14.6,
+    "response": "",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 1279,
+      "ram_free_mb": 13919,
+      "swap_used_mb": 510
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9528,
+      "ram_free_mb": 5670,
+      "swap_used_mb": 510
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen3.5:9b",
+    "phase": "perf",
+    "timestamp": "2026-03-20T17:36:53.759010",
+    "vram": {
+      "vram_gib": 7.92,
+      "total_gib": 7.92,
+      "gpu_pct": 100,
+      "family": "qwen35",
+      "parameter_size": "9.7B",
+      "quantization": "Q4_K_M"
+    },
+    "layers_offloaded": "33/33"
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 34.07,
+    "prefill_tok_s": 159.8,
+    "eval_count": 100,
+    "prompt_eval_count": 103,
+    "ttft_s": 13.0,
+    "load_s": 12.4,
+    "prompt_eval_s": 0.64,
+    "eval_s": 2.93,
+    "wall_s": 16.2,
+    "response": "**RISC vs CISC Processor Architectures**\n\n1. **Instruction Set Design:**\n\n   - **RISC (Reduced Instruction Set Computing):**\n     - Uses a small, fixed-length instruction set.\n     - Has a larger number of simpler, general-purpose registers.\n     - Examples include ARM (used in most modern smartphones and tablets), RISC-V, and MIPS.\n     - *Example:* The ARM Cortex-A series uses a 32-bit instruction set with around 40",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 1431,
+      "ram_free_mb": 13767,
+      "swap_used_mb": 510
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 8968,
+      "ram_free_mb": 6230,
+      "swap_used_mb": 510
+    },
+    "swap_delta_mb": 0,
+    "model": "mistral-nemo:12b",
+    "phase": "perf",
+    "timestamp": "2026-03-20T17:37:14.017852",
+    "vram": {
+      "vram_gib": 6.68,
+      "total_gib": 6.68,
+      "gpu_pct": 100,
+      "family": "llama",
+      "parameter_size": "12.2B",
+      "quantization": "Q4_0"
+    },
+    "layers_offloaded": ""
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 29.1,
+    "prefill_tok_s": 135.06,
+    "eval_count": 100,
+    "prompt_eval_count": 110,
+    "ttft_s": 12.93,
+    "load_s": 12.1,
+    "prompt_eval_s": 0.81,
+    "eval_s": 3.44,
+    "wall_s": 16.6,
+    "response": "## RISC vs. CISC: A Deep Dive into Processor Architectures\n\nThe terms RISC (Reduced Instruction Set Computing) and CISC (Complex Instruction Set Computing) describe fundamentally different approaches to processor design. While once starkly contrasting, the lines have blurred considerably over time due to innovation and the desire for optimized performance. Let's break down the key differences.\n\n**1. Instruction Set Design:**\n\n* **CISC (Complex Instruction Set Computing):**\n    * **Complex",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 1435,
+      "ram_free_mb": 13763,
+      "swap_used_mb": 510
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 10238,
+      "ram_free_mb": 4960,
+      "swap_used_mb": 510
+    },
+    "swap_delta_mb": 0,
+    "model": "gemma3:12b",
+    "phase": "perf",
+    "timestamp": "2026-03-20T17:37:34.638131",
+    "vram": {
+      "vram_gib": 8.69,
+      "total_gib": 8.69,
+      "gpu_pct": 100,
+      "family": "gemma3",
+      "parameter_size": "12.2B",
+      "quantization": "Q4_K_M"
+    },
+    "layers_offloaded": "49/49"
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 28.72,
+    "prefill_tok_s": 101.43,
+    "eval_count": 100,
+    "prompt_eval_count": 102,
+    "ttft_s": 15.97,
+    "load_s": 15.0,
+    "prompt_eval_s": 1.01,
+    "eval_s": 3.48,
+    "wall_s": 19.7,
+    "response": "",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 1403,
+      "ram_free_mb": 13796,
+      "swap_used_mb": 510
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 10802,
+      "ram_free_mb": 4396,
+      "swap_used_mb": 510
+    },
+    "swap_delta_mb": 0,
+    "model": "deepseek-r1:14b",
+    "phase": "perf",
+    "timestamp": "2026-03-20T17:37:58.414729",
+    "vram": {
+      "vram_gib": 8.48,
+      "total_gib": 8.48,
+      "gpu_pct": 100,
+      "family": "qwen2",
+      "parameter_size": "14.8B",
+      "quantization": "Q4_K_M"
+    },
+    "layers_offloaded": "49/49"
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 28.58,
+    "prefill_tok_s": 108.21,
+    "eval_count": 100,
+    "prompt_eval_count": 108,
+    "ttft_s": 15.77,
+    "load_s": 14.8,
+    "prompt_eval_s": 1.0,
+    "eval_s": 3.5,
+    "wall_s": 19.5,
+    "response": "RISC (Reduced Instruction Set Computer) and CISC (Complex Instruction Set Computer) are two primary processor architecture philosophies that differ in several key areas: instruction set design, pipelining implications, memory access patterns, and power efficiency trade-offs.\n\n### Instruction Set Design\n\n- **RISC**:\n  - Emphasizes a small, highly optimized set of instructions.\n  - Instructions are designed to execute in one clock cycle, which leads to simpler decoding and execution units.\n  - Exa",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 1309,
+      "ram_free_mb": 13889,
+      "swap_used_mb": 510
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 10536,
+      "ram_free_mb": 4662,
+      "swap_used_mb": 510
+    },
+    "swap_delta_mb": 0,
+    "model": "phi4:14b",
+    "phase": "perf",
+    "timestamp": "2026-03-20T17:38:21.931713",
+    "vram": {
+      "vram_gib": 8.48,
+      "total_gib": 8.48,
+      "gpu_pct": 100,
+      "family": "phi3",
+      "parameter_size": "14.7B",
+      "quantization": "Q4_K_M"
+    },
+    "layers_offloaded": "41/41"
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 27.39,
+    "prefill_tok_s": 109.79,
+    "eval_count": 100,
+    "prompt_eval_count": 109,
+    "ttft_s": 13.19,
+    "load_s": 12.2,
+    "prompt_eval_s": 0.99,
+    "eval_s": 3.65,
+    "wall_s": 17.0,
+    "response": "\u8d77\u6765\nOkay, I need to explain the key differences between RISC and CISC architectures. Let me start by recalling what I know. RISC stands for Reduced Instruction Set Computing, and CISC is Complex Instruction Set Computing. The main differences are in their instruction sets, pipelining, memory access, and power efficiency.\n\nFirst, instruction set design. RISC has a smaller number of instructions, which are simpler and take fewer cycles to execute. CISC has a larger number of instructions,",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 1404,
+      "ram_free_mb": 13794,
+      "swap_used_mb": 510
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9939,
+      "ram_free_mb": 5259,
+      "swap_used_mb": 510
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen3-14b-16k:latest",
+    "phase": "perf",
+    "timestamp": "2026-03-20T17:38:42.972288",
+    "vram": {
+      "vram_gib": 8.69,
+      "total_gib": 8.69,
+      "gpu_pct": 100,
+      "family": "qwen3",
+      "parameter_size": "14.8B",
+      "quantization": "Q4_K_M"
+    },
+    "layers_offloaded": "41/41"
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 27.44,
+    "prefill_tok_s": 110.59,
+    "eval_count": 100,
+    "prompt_eval_count": 109,
+    "ttft_s": 13.17,
+    "load_s": 12.2,
+    "prompt_eval_s": 0.99,
+    "eval_s": 3.64,
+    "wall_s": 17.0,
+    "response": "\u680b\nOkay, I need to explain the key differences between RISC and CISC architectures. Let me start by recalling what I know about RISC and CISC. RISC stands for Reduced Instruction Set Computer, and CISC is Complex Instruction Set Computer. \n\nFirst, instruction set design. RISC has a smaller number of instructions, right? Each instruction is simple and takes about the same number of cycles to execute. CISC has a larger set of instructions, some of which are more complex",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 1380,
+      "ram_free_mb": 13818,
+      "swap_used_mb": 510
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9972,
+      "ram_free_mb": 5226,
+      "swap_used_mb": 512
+    },
+    "swap_delta_mb": 2,
+    "model": "huihui_ai/qwen3-abliterated:14b",
+    "phase": "perf",
+    "timestamp": "2026-03-20T17:39:03.986727",
+    "vram": {
+      "vram_gib": 8.69,
+      "total_gib": 8.69,
+      "gpu_pct": 100,
+      "family": "qwen3",
+      "parameter_size": "14.8B",
+      "quantization": "Q4_K_M"
+    },
+    "layers_offloaded": "41/41"
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 27.41,
+    "prefill_tok_s": 110.11,
+    "eval_count": 100,
+    "prompt_eval_count": 109,
+    "ttft_s": 13.18,
+    "load_s": 12.2,
+    "prompt_eval_s": 0.99,
+    "eval_s": 3.65,
+    "wall_s": 17.0,
+    "response": "\u9897\nOkay, so I need to explain the key differences between RISC and CISC processor architectures. Let me start by recalling what I know about RISC and CISC. RISC stands for Reduced Instruction Set Computer, and CISC is Complex Instruction Set Computer. \n\nFirst, instruction set design. RISC has a smaller set of instructions, right? They're simpler, so each instruction can be executed in one clock cycle. CISC has a larger set of instructions, some of which might",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 1444,
+      "ram_free_mb": 13754,
+      "swap_used_mb": 512
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 10039,
+      "ram_free_mb": 5160,
+      "swap_used_mb": 511
+    },
+    "swap_delta_mb": -1,
+    "model": "qwen3-14b-abl-nothink:latest",
+    "phase": "perf",
+    "timestamp": "2026-03-20T17:39:25.017704",
+    "vram": {
+      "vram_gib": 8.69,
+      "total_gib": 8.69,
+      "gpu_pct": 100,
+      "family": "qwen3",
+      "parameter_size": "14.8B",
+      "quantization": "Q4_K_M"
+    },
+    "layers_offloaded": "41/41"
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 26.77,
+    "prefill_tok_s": 108.56,
+    "eval_count": 100,
+    "prompt_eval_count": 109,
+    "ttft_s": 13.26,
+    "load_s": 12.3,
+    "prompt_eval_s": 1.0,
+    "eval_s": 3.74,
+    "wall_s": 17.2,
+    "response": "",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 1505,
+      "ram_free_mb": 13693,
+      "swap_used_mb": 511
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 10258,
+      "ram_free_mb": 4940,
+      "swap_used_mb": 511
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen3:14b",
+    "phase": "perf",
+    "timestamp": "2026-03-20T17:39:46.210968",
+    "vram": {
+      "vram_gib": 8.95,
+      "total_gib": 8.95,
+      "gpu_pct": 100,
+      "family": "qwen3",
+      "parameter_size": "14.8B",
+      "quantization": "Q4_K_M"
+    },
+    "layers_offloaded": "41/41"
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 59.01,
+    "prefill_tok_s": 131.47,
+    "eval_count": 100,
+    "prompt_eval_count": 107,
+    "ttft_s": 16.99,
+    "load_s": 16.2,
+    "prompt_eval_s": 0.81,
+    "eval_s": 1.69,
+    "wall_s": 18.8,
+    "response": "<think>\nOkay, I need to explain the key differences between RISC and CISC architectures. Let me start by recalling what I know. RISC stands for Reduced Instruction Set Computing, and CISC stands for Complex Instruction Set Computing. \n\nFirst, instruction set design. RISC has a smaller number of simple instructions, while CISC has a larger number of more complex instructions. For example, ARM Cortex-A is RISC, and x86 is CISC. But I should check if that",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 1422,
+      "ram_free_mb": 13776,
+      "swap_used_mb": 511
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 12283,
+      "ram_free_mb": 2915,
+      "swap_used_mb": 511
+    },
+    "swap_delta_mb": 0,
+    "model": "hf.co/unsloth/Qwen3-30B-A3B-GGUF:Q2_K",
+    "phase": "perf",
+    "timestamp": "2026-03-20T17:40:09.060918",
+    "vram": {
+      "vram_gib": 10.68,
+      "total_gib": 10.68,
+      "gpu_pct": 100,
+      "family": "qwen3moe",
+      "parameter_size": "30.5B",
+      "quantization": "unknown"
+    },
+    "layers_offloaded": "49/49"
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 37.53,
+    "prefill_tok_s": 127.53,
+    "eval_count": 100,
+    "prompt_eval_count": 109,
+    "ttft_s": 17.35,
+    "load_s": 16.5,
+    "prompt_eval_s": 0.85,
+    "eval_s": 2.66,
+    "wall_s": 20.4,
+    "response": "",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 1373,
+      "ram_free_mb": 13826,
+      "swap_used_mb": 511
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13368,
+      "ram_free_mb": 1830,
+      "swap_used_mb": 850
+    },
+    "swap_delta_mb": 339,
+    "model": "qwen3.5-35b-a3b-iq2m:latest",
+    "phase": "perf",
+    "timestamp": "2026-03-20T17:40:33.512823",
+    "vram": {
+      "vram_gib": 12.25,
+      "total_gib": 12.25,
+      "gpu_pct": 100,
+      "family": "qwen35moe",
+      "parameter_size": "34.7B",
+      "quantization": "unknown"
+    },
+    "layers_offloaded": "41/41"
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 11.03,
+    "prefill_tok_s": 54.15,
+    "eval_count": 100,
+    "prompt_eval_count": 99,
+    "ttft_s": 17.62,
+    "load_s": 15.8,
+    "prompt_eval_s": 1.83,
+    "eval_s": 9.06,
+    "wall_s": 27.1,
+    "response": "\n\n<think>\nHere's a thinking process that leads to the article on RISC vs. CISC:\n\n1.  **Deconstruct the Request:**\n    *   **Topic:** Key differences between RISC (Reduced Instruction Set Computer) and CISC (Complex Instruction Set Computer).\n    *   **Specific Areas to Cover:** Instruction set design, pipelining implications, memory access patterns, power efficiency trade-offs.\n    *   **Examples:** ARM Cortex-A (RISC",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 1020,
+      "ram_free_mb": 14178,
+      "swap_used_mb": 821
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 14268,
+      "ram_free_mb": 930,
+      "swap_used_mb": 1112
+    },
+    "swap_delta_mb": 291,
+    "model": "qwen3.5-27b-iq2m:latest",
+    "phase": "perf",
+    "timestamp": "2026-03-20T17:41:04.850945",
+    "vram": {
+      "vram_gib": 13.37,
+      "total_gib": 13.37,
+      "gpu_pct": 100,
+      "family": "qwen35",
+      "parameter_size": "26.9B",
+      "quantization": "unknown"
+    },
+    "layers_offloaded": "65/65"
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 31.25,
+    "prefill_tok_s": 237.21,
+    "eval_count": 100,
+    "prompt_eval_count": 109,
+    "ttft_s": 12.63,
+    "load_s": 12.2,
+    "prompt_eval_s": 0.46,
+    "eval_s": 3.2,
+    "wall_s": 16.0,
+    "response": "",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 788,
+      "ram_free_mb": 14410,
+      "swap_used_mb": 1062
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9433,
+      "ram_free_mb": 5765,
+      "swap_used_mb": 1047
+    },
+    "swap_delta_mb": -15,
+    "model": "qwen3:8b-q8_0",
+    "phase": "perf",
+    "timestamp": "2026-03-20T17:41:25.093271",
+    "vram": {
+      "vram_gib": 8.5,
+      "total_gib": 8.5,
+      "gpu_pct": 100,
+      "family": "qwen3",
+      "parameter_size": "8.2B",
+      "quantization": "Q8_0"
+    },
+    "layers_offloaded": "37/37"
+  }
+]

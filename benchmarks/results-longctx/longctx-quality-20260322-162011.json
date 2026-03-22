@@ -1,0 +1,946 @@
+{
+  "results": [
+    {
+      "status": "OK",
+      "correct": false,
+      "response": "Based on the text provided, here is the step-by-step calculation to determine the amount spent on cryogenic cooling systems:\n\n**Step 1: Identify the total allocated budget.**\nFrom the first note: \"The Meridian Research Institute allocated **$4.2 million** to Project Aurora...\"\n*   Total Budget = $4,200,000\n\n**Step 2: Determine the portion of the budget allocated to hardware procurement.**\nFrom the second note: \"Project Aurora's quantum computing division spent exactly **60%** of its allocated budget on hardware procurement...\"\n*   Hardware Budget = 60% of $4,200,000\n*   Calculation: $4,200,000 \\times 0.60 = $2,520,000\n\n**Step 3: Determine the portion of the hardware budget allocated to cryogenic cooling systems.**\nFrom the third note: \"The hardware procurement budget... was split **equally** between cryogenic cooling systems and superconducting qubit fabrication.\"\n*   Since the split is equal, each category receives 50% of the hardware budget.\n*   Calculation: $2,520,000 \\times 0.50 = $1,260,000\n\n**Final Answer:**\n$1,260,000",
+      "prompt_chars": 50511,
+      "prompt_question": "Based on the notes embedded in the text above, how much money did Project Aurora spend on cryogenic cooling systems? Show your calculation step by step, then give the final answer as a dollar amount.",
+      "prompt_facts": [
+        "[IMPORTANT NOTE: The Meridian Research Institute allocated $4.2 million to Project Aurora for quantum computing research in fiscal year 2025.]",
+        "[IMPORTANT NOTE: Project Aurora's quantum computing division spent exactly 60% of its allocated budget on hardware procurement, with the remainder going to personnel and operations.]",
+        "[IMPORTANT NOTE: The hardware procurement budget for Project Aurora was split equally between cryogenic cooling systems and superconducting qubit fabrication.]"
+      ],
+      "prompt_fact_positions": [
+        0.2,
+        0.55,
+        0.8
+      ],
+      "answer_must_contain": "1.26",
+      "alt_answers": [],
+      "check_extras": [],
+      "extras_found": {},
+      "prompt_eval_count": 10744,
+      "eval_count": 296,
+      "gen_tok_s": 30.58,
+      "ttft_s": 53.55,
+      "wall_s": 63.7,
+      "model": "qwen3.5-35b-a3b-iq2m:latest",
+      "short_name": "MoE 35B",
+      "test_name": "multihop_budget",
+      "task_type": "multi-hop reasoning (3 facts, arithmetic chain)",
+      "ctx_size": 16384,
+      "ctx_label": "16K",
+      "timestamp": "2026-03-22T16:21:35.052479"
+    },
+    {
+      "status": "OK",
+      "correct": false,
+      "response": "To determine the number of residents under 18 years old in Port Stellaris, we must extract the relevant data points from the \"IMPORTANT NOTE\" sections embedded in the text and perform the calculations step by step.\n\n**Step 1: Identify the total population of the island nation.**\nFrom the first embedded note: \"The island nation of Velanthos had a total population of 840,000 in the 2024 census.\"\n*   Total Population ($P_{total}$) = 840,000\n\n**Step 2: Calculate the population of the capital city, Port Stellaris.**\nFrom the second embedded note: \"According to the Velanthos National Bureau of Statistics, exactly 35% of the population lives in the capital city of Port Stellaris.\"\n*   Percentage in Port Stellaris ($C_{port}$) = 35% (0.35)\n*   Port Stellaris Population ($P_{city}$) = $P_{total} \\times C_{port}$\n*   $P_{city} = 840,000 \\times 0.35$\n*   $P_{city} = 294,000$\n\n**Step 3: Calculate the number of residents under 18 years old in Port Stellaris.**\nFrom the third embedded note: \"Port Stellaris municipal records show that",
+      "prompt_chars": 50377,
+      "prompt_question": "Based on the notes embedded in the text above, how many residents of Port Stellaris are under 18 years old? Show your calculation step by step, then give the final answer as a number.",
+      "prompt_facts": [
+        "[IMPORTANT NOTE: The island nation of Velanthos had a total population of 840,000 in the 2024 census.]",
+        "[IMPORTANT NOTE: According to the Velanthos National Bureau of Statistics, exactly 35% of the population lives in the capital city of Port Stellaris.]",
+        "[IMPORTANT NOTE: Port Stellaris municipal records show that 20% of the city's residents are under the age of 18.]"
+      ],
+      "prompt_fact_positions": [
+        0.15,
+        0.6,
+        0.85
+      ],
+      "answer_must_contain": "58,800",
+      "alt_answers": [
+        "58800",
+        "58 800"
+      ],
+      "check_extras": [],
+      "extras_found": {},
+      "prompt_eval_count": 10742,
+      "eval_count": 300,
+      "gen_tok_s": 30.53,
+      "ttft_s": 51.4,
+      "wall_s": 61.7,
+      "model": "qwen3.5-35b-a3b-iq2m:latest",
+      "short_name": "MoE 35B",
+      "test_name": "multihop_population",
+      "task_type": "multi-hop reasoning (3 facts, arithmetic chain)",
+      "ctx_size": 16384,
+      "ctx_label": "16K",
+      "timestamp": "2026-03-22T16:22:36.708263"
+    },
+    {
+      "status": "OK",
+      "correct": true,
+      "response": "Based on the text provided, the two embedded study findings **contradict** each other.\n\nHere are the specific details of the contradiction:\n\n1.  **Contradictory Finding 1:** A 2024 analysis by **Dr. Helena Voss at Cambridge University** concluded that global ocean temperatures have been **decreasing** by **0.03\u00b0C per decade** since 2010.\n2.  **Contradictory Finding 2:** A 2025 meta-analysis by the **Potsdam Institute** confirmed a **warming** trend of **0.08\u00b0C per decade** in global sea surface temperatures since 2000.\n\n**Explanation:** The findings are mutually exclusive regarding the direction and magnitude of the temperature trend. Dr. Voss's study reports a cooling trend (decrease), while the Potsdam Institute's study reports a significant heating trend (increase). Additionally, the Potsdam Institute's findings explicitly note that the warming has accelerated since 2015, directly opposing the steady decrease reported by Dr. Voss for the period starting in 2010.",
+      "prompt_chars": 50539,
+      "prompt_question": "Based on the study findings embedded in the text above, there are two research findings about ocean temperature trends. Do they agree or contradict each other? Explain the specific contradiction, naming both researchers/institutions and the specific temperature trends they report.",
+      "prompt_facts": [
+        "[STUDY FINDING: A 2024 analysis by Dr. Helena Voss at Cambridge University concluded that global ocean temperatures have been DECREASING by 0.03\u00b0C per decade since 2010, contradicting mainstream climate models.]",
+        "[STUDY FINDING: The Potsdam Institute's 2025 meta-analysis of 847 ocean monitoring stations confirmed a consistent warming trend of 0.08\u00b0C per decade in global sea surface temperatures since 2000, accelerating since 2015.]"
+      ],
+      "prompt_fact_positions": [
+        0.25,
+        0.7
+      ],
+      "answer_must_contain": "contradict",
+      "alt_answers": [],
+      "check_extras": [
+        "Voss",
+        "Potsdam",
+        "decreas",
+        "warm"
+      ],
+      "extras_found": {
+        "Voss": true,
+        "Potsdam": true,
+        "decreas": true,
+        "warm": true
+      },
+      "prompt_eval_count": 10770,
+      "eval_count": 237,
+      "gen_tok_s": 30.65,
+      "ttft_s": 51.64,
+      "wall_s": 59.7,
+      "model": "qwen3.5-35b-a3b-iq2m:latest",
+      "short_name": "MoE 35B",
+      "test_name": "synthesis_contradictions",
+      "task_type": "long-range synthesis (identify contradiction across context)",
+      "ctx_size": 16384,
+      "ctx_label": "16K",
+      "timestamp": "2026-03-22T16:23:36.414767"
+    },
+    {
+      "status": "OK",
+      "correct": true,
+      "response": "**Chronological Order of Event Logs:**\n\n1.  **January 15, 2025:** Nextera Biotech filed patent #NB-2025-0047 for a novel mRNA delivery mechanism using lipid nanoparticles with a 94% encapsulation efficiency.\n2.  **March 22, 2025:** GeneStar Therapeutics announced their competing patent #GS-2025-0112 was approved, covering lipid nanoparticle delivery with 97% encapsulation efficiency (three percentage points higher than the Nextera approach).\n3.  **June 8, 2025:** An independent lab published results showing that encapsulation efficiency above 95% correlates with a 40% reduction in required dosage for therapeutic applications.\n\n**Analysis of Beneficiary:**\n\nThe company whose technology would benefit from the dosage reduction finding is **GeneStar Therapeutics**.\n\n**Reasoning:**\nThe June 8th event establishes a critical threshold: to achieve the 40% dosage reduction, the encapsulation efficiency must be **above 95%**.\n\n*   Nextera Biotech's technology operates at **94%** efficiency. This falls *below* the required 95% threshold, meaning their specific formulation would not demonstrate the claimed dosage reduction benefits according to the new data.\n*   GeneStar Therapeutics' technology operates at **97%** efficiency.",
+      "prompt_chars": 50676,
+      "prompt_question": "Based on the event logs embedded in the text above, list all three events in chronological order. Then answer: which company's technology would benefit from the dosage reduction finding, and why? Be specific about the efficiency threshold.",
+      "prompt_facts": [
+        "[EVENT LOG: January 15, 2025 \u2014 Nextera Biotech filed patent #NB-2025-0047 for a novel mRNA delivery mechanism using lipid nanoparticles with a 94% encapsulation efficiency.]",
+        "[EVENT LOG: March 22, 2025 \u2014 GeneStar Therapeutics announced their competing patent #GS-2025-0112 was approved, covering lipid nanoparticle delivery with 97% encapsulation efficiency, three percentage points higher than the Nextera approach.]",
+        "[EVENT LOG: June 8, 2025 \u2014 An independent lab published results showing that encapsulation efficiency above 95% correlates with a 40% reduction in required dosage for therapeutic applications.]"
+      ],
+      "prompt_fact_positions": [
+        0.1,
+        0.45,
+        0.75
+      ],
+      "answer_must_contain": "GeneStar",
+      "alt_answers": [],
+      "check_extras": [
+        "97",
+        "95",
+        "Nextera",
+        "94"
+      ],
+      "extras_found": {
+        "97": true,
+        "95": true,
+        "Nextera": true,
+        "94": true
+      },
+      "prompt_eval_count": 10812,
+      "eval_count": 300,
+      "gen_tok_s": 30.52,
+      "ttft_s": 52.14,
+      "wall_s": 62.4,
+      "model": "qwen3.5-35b-a3b-iq2m:latest",
+      "short_name": "MoE 35B",
+      "test_name": "synthesis_timeline",
+      "task_type": "long-range synthesis (temporal ordering + implication)",
+      "ctx_size": 16384,
+      "ctx_label": "16K",
+      "timestamp": "2026-03-22T16:24:38.804180"
+    },
+    {
+      "status": "OK",
+      "correct": false,
+      "response": "Based on the \"IMPORTANT NOTE\" sections embedded in the text, here is the step-by-step calculation to determine the amount spent on cryogenic cooling systems:\n\n1.  **Identify the total allocated budget:**\n    According to the first note, the Meridian Research Institute allocated **$4,200,000** to Project Aurora.\n\n2.  **Determine the portion spent on hardware procurement:**\n    The second note states that the quantum computing division spent **60%** of its allocated budget on hardware procurement.\n    Calculation: $4,200,000 \\times 0.60 = \\$2,520,000$ (Total Hardware Budget).\n\n3.  **Determine the portion spent specifically on cryogenic cooling systems:**\n    The third note states that the hardware procurement budget was split **equally** between cryogenic cooling systems and superconducting qubit fabrication. This means cryogenic cooling systems receive exactly half of the hardware budget.\n    Calculation: $2,520,000 \\div 2 = \\$1,260,000$.\n\n**Final Answer:**\n$1,260,000",
+      "prompt_chars": 100318,
+      "prompt_question": "Based on the notes embedded in the text above, how much money did Project Aurora spend on cryogenic cooling systems? Show your calculation step by step, then give the final answer as a dollar amount.",
+      "prompt_facts": [
+        "[IMPORTANT NOTE: The Meridian Research Institute allocated $4.2 million to Project Aurora for quantum computing research in fiscal year 2025.]",
+        "[IMPORTANT NOTE: Project Aurora's quantum computing division spent exactly 60% of its allocated budget on hardware procurement, with the remainder going to personnel and operations.]",
+        "[IMPORTANT NOTE: The hardware procurement budget for Project Aurora was split equally between cryogenic cooling systems and superconducting qubit fabrication.]"
+      ],
+      "prompt_fact_positions": [
+        0.2,
+        0.55,
+        0.8
+      ],
+      "answer_must_contain": "1.26",
+      "alt_answers": [],
+      "check_extras": [],
+      "extras_found": {},
+      "prompt_eval_count": 21327,
+      "eval_count": 257,
+      "gen_tok_s": 26.83,
+      "ttft_s": 126.79,
+      "wall_s": 136.9,
+      "model": "qwen3.5-35b-a3b-iq2m:latest",
+      "short_name": "MoE 35B",
+      "test_name": "multihop_budget",
+      "task_type": "multi-hop reasoning (3 facts, arithmetic chain)",
+      "ctx_size": 32768,
+      "ctx_label": "32K",
+      "timestamp": "2026-03-22T16:27:16.231474"
+    },
+    {
+      "status": "OK",
+      "correct": false,
+      "response": "To determine the number of residents of Port Stellaris under 18 years old, we must extract the relevant data points from the \"IMPORTANT NOTE\" sections embedded in the text and perform the calculation step by step.\n\n**Step 1: Identify the total population of Velanthos.**\nAccording to the first note: \"The island nation of Velanthos had a total population of 840,000 in the 2024 census.\"\n*   Total Population = 840,000\n\n**Step 2: Calculate the population of Port Stellaris.**\nAccording to the second note (found after the semiconductor section): \"According to the Velanthos National Bureau of Statistics, exactly 35% of the population lives in the capital city of Port Stellaris.\"\n*   Calculation: $840,000 \\times 0.35$\n*   $840,000 \\times 0.35 = 294,000$\n*   Population of Port Stellaris = 294,000\n\n**Step 3: Calculate the number of residents under 18 in Port Stellaris.**\nAccording to the third note (found after the cellular biology section): \"Port Stellaris municipal records show that 20% of the city's residents are under the age of 18.\"\n*   Calculation: $29",
+      "prompt_chars": 100184,
+      "prompt_question": "Based on the notes embedded in the text above, how many residents of Port Stellaris are under 18 years old? Show your calculation step by step, then give the final answer as a number.",
+      "prompt_facts": [
+        "[IMPORTANT NOTE: The island nation of Velanthos had a total population of 840,000 in the 2024 census.]",
+        "[IMPORTANT NOTE: According to the Velanthos National Bureau of Statistics, exactly 35% of the population lives in the capital city of Port Stellaris.]",
+        "[IMPORTANT NOTE: Port Stellaris municipal records show that 20% of the city's residents are under the age of 18.]"
+      ],
+      "prompt_fact_positions": [
+        0.15,
+        0.6,
+        0.85
+      ],
+      "answer_must_contain": "58,800",
+      "alt_answers": [
+        "58800",
+        "58 800"
+      ],
+      "check_extras": [],
+      "extras_found": {},
+      "prompt_eval_count": 21334,
+      "eval_count": 300,
+      "gen_tok_s": 26.95,
+      "ttft_s": 115.91,
+      "wall_s": 127.5,
+      "model": "qwen3.5-35b-a3b-iq2m:latest",
+      "short_name": "MoE 35B",
+      "test_name": "multihop_population",
+      "task_type": "multi-hop reasoning (3 facts, arithmetic chain)",
+      "ctx_size": 32768,
+      "ctx_label": "32K",
+      "timestamp": "2026-03-22T16:29:23.735601"
+    },
+    {
+      "status": "OK",
+      "correct": true,
+      "response": "Yes, the two study findings **contradict** each other.\n\nHere is the specific breakdown of the contradiction:\n\n*   **The Contradiction:** The first study claims global ocean temperatures have been **decreasing**, while the second study claims they have been **increasing** (warming).\n    *   **Dr. Helena Voss (Cambridge University, 2024):** This embedded finding states that global ocean temperatures have been **decreasing by 0.03\u00b0C per decade** since 2010.\n    *   **The Potsdam Institute (2025 meta-analysis):** This embedded finding states that there is a consistent **warming trend of 0.08\u00b0C per decade** in global sea surface temperatures since 2000, which has accelerated since 2015.\n\nThese two findings represent opposite trends (cooling vs. warming) with opposite rates of change, creating a direct scientific contradiction within the text provided.",
+      "prompt_chars": 100346,
+      "prompt_question": "Based on the study findings embedded in the text above, there are two research findings about ocean temperature trends. Do they agree or contradict each other? Explain the specific contradiction, naming both researchers/institutions and the specific temperature trends they report.",
+      "prompt_facts": [
+        "[STUDY FINDING: A 2024 analysis by Dr. Helena Voss at Cambridge University concluded that global ocean temperatures have been DECREASING by 0.03\u00b0C per decade since 2010, contradicting mainstream climate models.]",
+        "[STUDY FINDING: The Potsdam Institute's 2025 meta-analysis of 847 ocean monitoring stations confirmed a consistent warming trend of 0.08\u00b0C per decade in global sea surface temperatures since 2000, accelerating since 2015.]"
+      ],
+      "prompt_fact_positions": [
+        0.25,
+        0.7
+      ],
+      "answer_must_contain": "contradict",
+      "alt_answers": [],
+      "check_extras": [
+        "Voss",
+        "Potsdam",
+        "decreas",
+        "warm"
+      ],
+      "extras_found": {
+        "Voss": true,
+        "Potsdam": true,
+        "decreas": true,
+        "warm": true
+      },
+      "prompt_eval_count": 21355,
+      "eval_count": 206,
+      "gen_tok_s": 26.89,
+      "ttft_s": 116.07,
+      "wall_s": 124.1,
+      "model": "qwen3.5-35b-a3b-iq2m:latest",
+      "short_name": "MoE 35B",
+      "test_name": "synthesis_contradictions",
+      "task_type": "long-range synthesis (identify contradiction across context)",
+      "ctx_size": 32768,
+      "ctx_label": "32K",
+      "timestamp": "2026-03-22T16:31:27.856419"
+    },
+    {
+      "status": "OK",
+      "correct": true,
+      "response": "### Chronological Order of Events\n\n1.  **January 15, 2025:** Nextera Biotech filed patent #NB-2025-0047 for a novel mRNA delivery mechanism using lipid nanoparticles with a **94%** encapsulation efficiency.\n2.  **March 22, 2025:** GeneStar Therapeutics announced their competing patent #GS-2025-0112 was approved, covering lipid nanoparticle delivery with **97%** encapsulation efficiency.\n3.  **June 8, 2025:** An independent lab published results showing that encapsulation efficiency **above 95%** correlates with a **40% reduction** in required dosage for therapeutic applications.\n\n### Company Benefit Analysis\n\n**GeneStar Therapeutics** would be the company to benefit from the dosage reduction finding.\n\n**Reasoning:**\nThe independent lab's finding specifies that the therapeutic benefit (40% dosage reduction) applies to technologies with an encapsulation efficiency **above 95%**.\n*   **Nextera Biotech** achieved 94% efficiency, which falls *below* the required threshold and would not qualify for the dosage reduction.\n*   **GeneStar Therapeutics** achieved 97% efficiency, which exceeds the 95% threshold. Consequently, their patented technology meets the criteria to realize the 40% reduction in required dosage, offering",
+      "prompt_chars": 100483,
+      "prompt_question": "Based on the event logs embedded in the text above, list all three events in chronological order. Then answer: which company's technology would benefit from the dosage reduction finding, and why? Be specific about the efficiency threshold.",
+      "prompt_facts": [
+        "[EVENT LOG: January 15, 2025 \u2014 Nextera Biotech filed patent #NB-2025-0047 for a novel mRNA delivery mechanism using lipid nanoparticles with a 94% encapsulation efficiency.]",
+        "[EVENT LOG: March 22, 2025 \u2014 GeneStar Therapeutics announced their competing patent #GS-2025-0112 was approved, covering lipid nanoparticle delivery with 97% encapsulation efficiency, three percentage points higher than the Nextera approach.]",
+        "[EVENT LOG: June 8, 2025 \u2014 An independent lab published results showing that encapsulation efficiency above 95% correlates with a 40% reduction in required dosage for therapeutic applications.]"
+      ],
+      "prompt_fact_positions": [
+        0.1,
+        0.45,
+        0.75
+      ],
+      "answer_must_contain": "GeneStar",
+      "alt_answers": [],
+      "check_extras": [
+        "97",
+        "95",
+        "Nextera",
+        "94"
+      ],
+      "extras_found": {
+        "97": true,
+        "95": true,
+        "Nextera": true,
+        "94": true
+      },
+      "prompt_eval_count": 21401,
+      "eval_count": 300,
+      "gen_tok_s": 26.85,
+      "ttft_s": 125.13,
+      "wall_s": 136.8,
+      "model": "qwen3.5-35b-a3b-iq2m:latest",
+      "short_name": "MoE 35B",
+      "test_name": "synthesis_timeline",
+      "task_type": "long-range synthesis (temporal ordering + implication)",
+      "ctx_size": 32768,
+      "ctx_label": "32K",
+      "timestamp": "2026-03-22T16:33:44.660706"
+    },
+    {
+      "status": "OK",
+      "correct": false,
+      "response": "To determine the amount spent on cryogenic cooling systems, we must synthesize the information provided in the specific notes embedded within the text:\n\n1.  **Total Budget:** The first note states, \"The Meridian Research Institute allocated **$4.2 million** to Project Aurora...\"\n2.  **Spending Split:** The third note states, \"The hardware procurement budget for Project Aurora was **split equally** between cryogenic cooling systems and superconducting qubit fabrication.\"\n3.  **Calculation:**\n    *   Since the budget was split equally between two categories, we divide the total hardware budget by 2.\n    *   $4,200,000 / 2 = $2,100,000\n\nAnswer: **$2,100,000**",
+      "prompt_chars": 50511,
+      "prompt_question": "Based on the notes embedded in the text above, how much money did Project Aurora spend on cryogenic cooling systems? Show your calculation step by step, then give the final answer as a dollar amount.",
+      "prompt_facts": [
+        "[IMPORTANT NOTE: The Meridian Research Institute allocated $4.2 million to Project Aurora for quantum computing research in fiscal year 2025.]",
+        "[IMPORTANT NOTE: Project Aurora's quantum computing division spent exactly 60% of its allocated budget on hardware procurement, with the remainder going to personnel and operations.]",
+        "[IMPORTANT NOTE: The hardware procurement budget for Project Aurora was split equally between cryogenic cooling systems and superconducting qubit fabrication.]"
+      ],
+      "prompt_fact_positions": [
+        0.2,
+        0.55,
+        0.8
+      ],
+      "answer_must_contain": "1.26",
+      "alt_answers": [],
+      "check_extras": [],
+      "extras_found": {},
+      "prompt_eval_count": 10744,
+      "eval_count": 174,
+      "gen_tok_s": 28.41,
+      "ttft_s": 53.69,
+      "wall_s": 60.1,
+      "model": "qwen3.5:9b",
+      "short_name": "qwen3.5:9b",
+      "test_name": "multihop_budget",
+      "task_type": "multi-hop reasoning (3 facts, arithmetic chain)",
+      "ctx_size": 16384,
+      "ctx_label": "16K",
+      "timestamp": "2026-03-22T16:35:00.097543"
+    },
+    {
+      "status": "OK",
+      "correct": true,
+      "response": "Based on the notes embedded in the text, here is the step-by-step calculation:\n\n1.  **Find the total population of Velanthos:**\n    The text states: \"The island nation of Velanthos had a total population of 840,000 in the 2024 census.\"\n    Total Population = 840,000.\n\n2.  **Calculate the population of Port Stellaris:**\n    The text states: \"exactly 35% of the population lives in the capital city of Port Stellaris.\"\n    Population of Port Stellaris = $840,000 \\times 0.35$\n    $840,000 \\times 0.35 = 294,000$.\n\n3.  **Calculate the number of residents under 18 in Port Stellaris:**\n    The text states: \"20% of the city's residents are under the age of 18.\"\n    Residents under 18 = $294,000 \\times 0.20$\n    $294,000 \\times 0.20 = 58,800$.\n\nAnswer: 58800",
+      "prompt_chars": 50377,
+      "prompt_question": "Based on the notes embedded in the text above, how many residents of Port Stellaris are under 18 years old? Show your calculation step by step, then give the final answer as a number.",
+      "prompt_facts": [
+        "[IMPORTANT NOTE: The island nation of Velanthos had a total population of 840,000 in the 2024 census.]",
+        "[IMPORTANT NOTE: According to the Velanthos National Bureau of Statistics, exactly 35% of the population lives in the capital city of Port Stellaris.]",
+        "[IMPORTANT NOTE: Port Stellaris municipal records show that 20% of the city's residents are under the age of 18.]"
+      ],
+      "prompt_fact_positions": [
+        0.15,
+        0.6,
+        0.85
+      ],
+      "answer_must_contain": "58,800",
+      "alt_answers": [
+        "58800",
+        "58 800"
+      ],
+      "check_extras": [],
+      "extras_found": {},
+      "prompt_eval_count": 10742,
+      "eval_count": 274,
+      "gen_tok_s": 25.3,
+      "ttft_s": 55.07,
+      "wall_s": 66.3,
+      "model": "qwen3.5:9b",
+      "short_name": "qwen3.5:9b",
+      "test_name": "multihop_population",
+      "task_type": "multi-hop reasoning (3 facts, arithmetic chain)",
+      "ctx_size": 16384,
+      "ctx_label": "16K",
+      "timestamp": "2026-03-22T16:36:06.360105"
+    },
+    {
+      "status": "OK",
+      "correct": true,
+      "response": "The two research findings embedded in the text **contradict** each other.\n\nThe specific contradiction lies in the direction of the global ocean temperature trend reported in each study:\n\n1.  **Dr. Helena Voss (Cambridge University, 2024):** This study claims that global ocean temperatures have been **decreasing** by **0.03\u00b0C per decade** since 2010.\n2.  **Potsdam Institute (2025 meta-analysis):** This study confirms a consistent **warming** trend of **0.08\u00b0C per decade** in global sea surface temperatures since 2000 (noting acceleration since 2015).\n\n**Explanation of Contradiction:**\nThe core contradiction is that Voss's 2024 analysis concludes the ocean is cooling, while the Potsdam Institute's 2025 analysis concludes the ocean is warming. These are opposite directional trends for the same physical variable (global ocean/sea surface temperature) over overlapping or adjacent time periods. Additionally, they disagree on the *rate* of change, with Voss reporting a decline of 0.03\u00b0C/decade and the Potsdam Institute reporting an increase of 0.08\u00b0C/decade.",
+      "prompt_chars": 50539,
+      "prompt_question": "Based on the study findings embedded in the text above, there are two research findings about ocean temperature trends. Do they agree or contradict each other? Explain the specific contradiction, naming both researchers/institutions and the specific temperature trends they report.",
+      "prompt_facts": [
+        "[STUDY FINDING: A 2024 analysis by Dr. Helena Voss at Cambridge University concluded that global ocean temperatures have been DECREASING by 0.03\u00b0C per decade since 2010, contradicting mainstream climate models.]",
+        "[STUDY FINDING: The Potsdam Institute's 2025 meta-analysis of 847 ocean monitoring stations confirmed a consistent warming trend of 0.08\u00b0C per decade in global sea surface temperatures since 2000, accelerating since 2015.]"
+      ],
+      "prompt_fact_positions": [
+        0.25,
+        0.7
+      ],
+      "answer_must_contain": "contradict",
+      "alt_answers": [],
+      "check_extras": [
+        "Voss",
+        "Potsdam",
+        "decreas",
+        "warm"
+      ],
+      "extras_found": {
+        "Voss": true,
+        "Potsdam": true,
+        "decreas": true,
+        "warm": true
+      },
+      "prompt_eval_count": 10770,
+      "eval_count": 265,
+      "gen_tok_s": 28.36,
+      "ttft_s": 150.15,
+      "wall_s": 160.0,
+      "model": "qwen3.5:9b",
+      "short_name": "qwen3.5:9b",
+      "test_name": "synthesis_contradictions",
+      "task_type": "long-range synthesis (identify contradiction across context)",
+      "ctx_size": 16384,
+      "ctx_label": "16K",
+      "timestamp": "2026-03-22T16:38:46.383470"
+    },
+    {
+      "status": "OK",
+      "correct": true,
+      "response": "Based on the event logs embedded in the text, here are the three events in chronological order:\n\n1.  **[EVENT LOG: January 15, 2025]** \u2013 Nextera Biotech filed a patent (#NB-2025-0047) for a novel mRNA delivery mechanism using lipid nanoparticles with a **94% encapsulation efficiency**.\n2.  **[EVENT LOG: March 22, 2025]** \u2013 GeneStar Therapeutics announced their competing patent (#GS-2025-0112) was approved, covering lipid nanoparticle delivery with a **97% encapsulation efficiency**.\n3.  **[EVENT LOG: June 8, 2025]** \u2013 An independent lab published results showing that encapsulation efficiency **above 95%** correlates with a 40% reduction in required dosage.\n\n**Answer:**\n\n**GeneStar Therapeutics'** technology would benefit from the dosage reduction finding.\n\n**Reasoning:**\nThe finding specifically applies to delivery mechanisms with an encapsulation efficiency **above 95%**. GeneStar's technology achieved **97%** encapsulation efficiency, which meets this threshold. In contrast, Nextera Biotech's technology had an efficiency of **94%**, which falls below the 95% threshold required to trigger the 40% dosage reduction benefit.",
+      "prompt_chars": 50676,
+      "prompt_question": "Based on the event logs embedded in the text above, list all three events in chronological order. Then answer: which company's technology would benefit from the dosage reduction finding, and why? Be specific about the efficiency threshold.",
+      "prompt_facts": [
+        "[EVENT LOG: January 15, 2025 \u2014 Nextera Biotech filed patent #NB-2025-0047 for a novel mRNA delivery mechanism using lipid nanoparticles with a 94% encapsulation efficiency.]",
+        "[EVENT LOG: March 22, 2025 \u2014 GeneStar Therapeutics announced their competing patent #GS-2025-0112 was approved, covering lipid nanoparticle delivery with 97% encapsulation efficiency, three percentage points higher than the Nextera approach.]",
+        "[EVENT LOG: June 8, 2025 \u2014 An independent lab published results showing that encapsulation efficiency above 95% correlates with a 40% reduction in required dosage for therapeutic applications.]"
+      ],
+      "prompt_fact_positions": [
+        0.1,
+        0.45,
+        0.75
+      ],
+      "answer_must_contain": "GeneStar",
+      "alt_answers": [],
+      "check_extras": [
+        "97",
+        "95",
+        "Nextera",
+        "94"
+      ],
+      "extras_found": {
+        "97": true,
+        "95": true,
+        "Nextera": true,
+        "94": true
+      },
+      "prompt_eval_count": 10812,
+      "eval_count": 287,
+      "gen_tok_s": 28.29,
+      "ttft_s": 59.28,
+      "wall_s": 69.8,
+      "model": "qwen3.5:9b",
+      "short_name": "qwen3.5:9b",
+      "test_name": "synthesis_timeline",
+      "task_type": "long-range synthesis (temporal ordering + implication)",
+      "ctx_size": 16384,
+      "ctx_label": "16K",
+      "timestamp": "2026-03-22T16:39:56.192965"
+    },
+    {
+      "status": "OK",
+      "correct": false,
+      "response": "Based on the notes embedded in the text, here is the step-by-step calculation to determine the amount spent on cryogenic cooling systems:\n\n**Step 1: Identify the total allocated budget.**\nThe text states: \"The Meridian Research Institute allocated **$4.2 million** to Project Aurora...\"\n*   Total Budget = $4,200,000\n\n**Step 2: Determine the percentage spent on hardware procurement.**\nThe text states: \"Project Aurora's quantum computing division spent exactly **60%** of its allocated budget on hardware procurement...\"\n*   Hardware Procurement Percentage = 60% (or 0.60)\n\n**Step 3: Determine the allocation within hardware procurement.**\nThe text states: \"The hardware procurement budget for Project Aurora was split **equally** between cryogenic cooling systems and superconducting qubit fabrication.\"\n*   Since the split is equal, cryogenic cooling systems received 50% of the hardware procurement budget.\n\n**Step 4: Calculate the amount spent on cryogenic cooling systems.**\n*   First, calculate the total hardware procurement budget:\n    $4,200,000 \\times 0.60 = $2,520,000$\n*   Next, calculate the portion for cryogenic cooling (50% of the hardware budget):\n    $2,520,000 \\",
+      "prompt_chars": 100318,
+      "prompt_question": "Based on the notes embedded in the text above, how much money did Project Aurora spend on cryogenic cooling systems? Show your calculation step by step, then give the final answer as a dollar amount.",
+      "prompt_facts": [
+        "[IMPORTANT NOTE: The Meridian Research Institute allocated $4.2 million to Project Aurora for quantum computing research in fiscal year 2025.]",
+        "[IMPORTANT NOTE: Project Aurora's quantum computing division spent exactly 60% of its allocated budget on hardware procurement, with the remainder going to personnel and operations.]",
+        "[IMPORTANT NOTE: The hardware procurement budget for Project Aurora was split equally between cryogenic cooling systems and superconducting qubit fabrication.]"
+      ],
+      "prompt_fact_positions": [
+        0.2,
+        0.55,
+        0.8
+      ],
+      "answer_must_contain": "1.26",
+      "alt_answers": [],
+      "check_extras": [],
+      "extras_found": {},
+      "prompt_eval_count": 21327,
+      "eval_count": 300,
+      "gen_tok_s": 25.85,
+      "ttft_s": 127.37,
+      "wall_s": 139.5,
+      "model": "qwen3.5:9b",
+      "short_name": "qwen3.5:9b",
+      "test_name": "multihop_budget",
+      "task_type": "multi-hop reasoning (3 facts, arithmetic chain)",
+      "ctx_size": 32768,
+      "ctx_label": "32K",
+      "timestamp": "2026-03-22T16:42:29.209033"
+    },
+    {
+      "status": "OK",
+      "correct": false,
+      "response": "Based on the notes embedded in the text, here is the step-by-step calculation to determine the number of residents under 18 in Port Stellaris:\n\n1.  **Identify the total population of Velanthos:**\n    The text states: \"The island nation of Velanthos had a total population of 840,000 in the 2024 census.\"\n    Total Population = 840,000.\n\n2.  **Identify the percentage of the population living in the capital city (Port Stellaris):**\n    The text states: \"According to the Velanthos National Bureau of Statistics, exactly 35% of the population lives in the capital city of Port Stellaris.\"\n    Port Stellaris Population = $840,000 \\times 0.35$.\n\n3.  **Calculate the total population of Port Stellaris:**\n    $840,000 \\times 0.35 = 294,000$.\n\n4.  **Identify the percentage of Port Stellaris residents under 18:**\n    The text states: \"Port Stellaris municipal records show that 20% of the city's residents are under the age of 18.\"\n\n5.  **Calculate the number of residents under 18:**\n    Multiply the total population of Port Stellaris by the percentage under 1",
+      "prompt_chars": 100184,
+      "prompt_question": "Based on the notes embedded in the text above, how many residents of Port Stellaris are under 18 years old? Show your calculation step by step, then give the final answer as a number.",
+      "prompt_facts": [
+        "[IMPORTANT NOTE: The island nation of Velanthos had a total population of 840,000 in the 2024 census.]",
+        "[IMPORTANT NOTE: According to the Velanthos National Bureau of Statistics, exactly 35% of the population lives in the capital city of Port Stellaris.]",
+        "[IMPORTANT NOTE: Port Stellaris municipal records show that 20% of the city's residents are under the age of 18.]"
+      ],
+      "prompt_fact_positions": [
+        0.15,
+        0.6,
+        0.85
+      ],
+      "answer_must_contain": "58,800",
+      "alt_answers": [
+        "58800",
+        "58 800"
+      ],
+      "check_extras": [],
+      "extras_found": {},
+      "prompt_eval_count": 21334,
+      "eval_count": 300,
+      "gen_tok_s": 25.77,
+      "ttft_s": 120.92,
+      "wall_s": 133.0,
+      "model": "qwen3.5:9b",
+      "short_name": "qwen3.5:9b",
+      "test_name": "multihop_population",
+      "task_type": "multi-hop reasoning (3 facts, arithmetic chain)",
+      "ctx_size": 32768,
+      "ctx_label": "32K",
+      "timestamp": "2026-03-22T16:44:42.229257"
+    },
+    {
+      "status": "OK",
+      "correct": true,
+      "response": "The two research findings **contradict** each other.\n\n**Specific Contradiction:**\nThe findings report opposite trends regarding global ocean temperatures. One study claims the oceans are cooling, while the other claims they are warming.\n\n**Details of the Conflict:**\n\n1.  **Dr. Helena Voss (Cambridge University, 2024):**\n    *   **Reported Trend:** Concluded that global ocean temperatures have been **decreasing** (cooling) by **0.03\u00b0C per decade** since 2010.\n    *   **Claim:** This contradicts mainstream climate models which predict warming.\n\n2.  **Potsdam Institute (2025 Meta-analysis):**\n    *   **Reported Trend:** Confirmed a consistent **warming** trend of **0.08\u00b0C per decade** in global sea surface temperatures since 2000, with acceleration since 2015.\n    *   **Claim:** This finding supports the standard scientific consensus on climate change, directly opposing Voss's conclusion of cooling.",
+      "prompt_chars": 100346,
+      "prompt_question": "Based on the study findings embedded in the text above, there are two research findings about ocean temperature trends. Do they agree or contradict each other? Explain the specific contradiction, naming both researchers/institutions and the specific temperature trends they report.",
+      "prompt_facts": [
+        "[STUDY FINDING: A 2024 analysis by Dr. Helena Voss at Cambridge University concluded that global ocean temperatures have been DECREASING by 0.03\u00b0C per decade since 2010, contradicting mainstream climate models.]",
+        "[STUDY FINDING: The Potsdam Institute's 2025 meta-analysis of 847 ocean monitoring stations confirmed a consistent warming trend of 0.08\u00b0C per decade in global sea surface temperatures since 2000, accelerating since 2015.]"
+      ],
+      "prompt_fact_positions": [
+        0.25,
+        0.7
+      ],
+      "answer_must_contain": "contradict",
+      "alt_answers": [],
+      "check_extras": [
+        "Voss",
+        "Potsdam",
+        "decreas",
+        "warm"
+      ],
+      "extras_found": {
+        "Voss": true,
+        "Potsdam": true,
+        "decreas": true,
+        "warm": true
+      },
+      "prompt_eval_count": 21355,
+      "eval_count": 227,
+      "gen_tok_s": 25.83,
+      "ttft_s": 121.02,
+      "wall_s": 130.2,
+      "model": "qwen3.5:9b",
+      "short_name": "qwen3.5:9b",
+      "test_name": "synthesis_contradictions",
+      "task_type": "long-range synthesis (identify contradiction across context)",
+      "ctx_size": 32768,
+      "ctx_label": "32K",
+      "timestamp": "2026-03-22T16:46:52.411280"
+    },
+    {
+      "status": "OK",
+      "correct": true,
+      "response": "**Chronological Order of Events:**\n1.  **January 15, 2025:** Nextera Biotech filed patent #NB-2025-0047 for a novel mRNA delivery mechanism using lipid nanoparticles with a **94%** encapsulation efficiency.\n2.  **March 22, 2025:** GeneStar Therapeutics announced their competing patent #GS-2025-0112 was approved, covering lipid nanoparticle delivery with **97%** encapsulation efficiency (three percentage points higher than the Nextera approach).\n3.  **June 8, 2025:** An independent lab published results showing that encapsulation efficiency above **95%** correlates with a 40% reduction in required dosage for therapeutic applications.\n\n**Company Benefiting and Reason:**\n**GeneStar Therapeutics** would benefit the most from the dosage reduction finding.\n\n**Reason:**\nThe independent lab established a specific efficiency threshold of **95%** above which dosage reductions occur.\n*   Nextera Biotech's technology achieves **94%** efficiency, which is *below* the 95% threshold and therefore would not qualify for the dosage reduction benefit.\n*   GeneStar Therapeutics' technology achieves **97%** efficiency, which is *above* the 95% threshold. Consequently, their formulation would trigger the 40% reduction in required dosage, offering",
+      "prompt_chars": 100483,
+      "prompt_question": "Based on the event logs embedded in the text above, list all three events in chronological order. Then answer: which company's technology would benefit from the dosage reduction finding, and why? Be specific about the efficiency threshold.",
+      "prompt_facts": [
+        "[EVENT LOG: January 15, 2025 \u2014 Nextera Biotech filed patent #NB-2025-0047 for a novel mRNA delivery mechanism using lipid nanoparticles with a 94% encapsulation efficiency.]",
+        "[EVENT LOG: March 22, 2025 \u2014 GeneStar Therapeutics announced their competing patent #GS-2025-0112 was approved, covering lipid nanoparticle delivery with 97% encapsulation efficiency, three percentage points higher than the Nextera approach.]",
+        "[EVENT LOG: June 8, 2025 \u2014 An independent lab published results showing that encapsulation efficiency above 95% correlates with a 40% reduction in required dosage for therapeutic applications.]"
+      ],
+      "prompt_fact_positions": [
+        0.1,
+        0.45,
+        0.75
+      ],
+      "answer_must_contain": "GeneStar",
+      "alt_answers": [],
+      "check_extras": [
+        "97",
+        "95",
+        "Nextera",
+        "94"
+      ],
+      "extras_found": {
+        "97": true,
+        "95": true,
+        "Nextera": true,
+        "94": true
+      },
+      "prompt_eval_count": 21401,
+      "eval_count": 300,
+      "gen_tok_s": 25.78,
+      "ttft_s": 132.92,
+      "wall_s": 145.0,
+      "model": "qwen3.5:9b",
+      "short_name": "qwen3.5:9b",
+      "test_name": "synthesis_timeline",
+      "task_type": "long-range synthesis (temporal ordering + implication)",
+      "ctx_size": 32768,
+      "ctx_label": "32K",
+      "timestamp": "2026-03-22T16:49:17.425365"
+    },
+    {
+      "status": "OK",
+      "correct": true,
+      "response": "Project Aurora spent 60% of its allocated budget for quantum computing research ($4.2 million) on hardware procurement.\nLet's calculate this total first:\n$4.2 million * 0.6 = $2.52 million was used exclusively for hardware (cryo cooling systems and superconducting qubit fabrication).\n\nWe are told that the money spent between cryogenic cooling system procurement versus fabricating superconducting quantum bits split equally, so half of these funds went to each category.\n\nTherefore:\n\n$2.52 million * 0.5 = $1.26 million was allocated for Cryo-cooling systems\n\nFinal answer: Project Aurora invested a total amount of $1.26 million in cryogenic cooling system procurement.",
+      "prompt_chars": 50511,
+      "prompt_question": "Based on the notes embedded in the text above, how much money did Project Aurora spend on cryogenic cooling systems? Show your calculation step by step, then give the final answer as a dollar amount.",
+      "prompt_facts": [
+        "[IMPORTANT NOTE: The Meridian Research Institute allocated $4.2 million to Project Aurora for quantum computing research in fiscal year 2025.]",
+        "[IMPORTANT NOTE: Project Aurora's quantum computing division spent exactly 60% of its allocated budget on hardware procurement, with the remainder going to personnel and operations.]",
+        "[IMPORTANT NOTE: The hardware procurement budget for Project Aurora was split equally between cryogenic cooling systems and superconducting qubit fabrication.]"
+      ],
+      "prompt_fact_positions": [
+        0.2,
+        0.55,
+        0.8
+      ],
+      "answer_must_contain": "1.26",
+      "alt_answers": [],
+      "check_extras": [],
+      "extras_found": {},
+      "prompt_eval_count": 10156,
+      "eval_count": 146,
+      "gen_tok_s": 44.76,
+      "ttft_s": 37.89,
+      "wall_s": 41.9,
+      "model": "phi4-mini:latest",
+      "short_name": "phi4-mini",
+      "test_name": "multihop_budget",
+      "task_type": "multi-hop reasoning (3 facts, arithmetic chain)",
+      "ctx_size": 16384,
+      "ctx_label": "16K",
+      "timestamp": "2026-03-22T16:50:09.468177"
+    },
+    {
+      "status": "OK",
+      "correct": false,
+      "response": "The note states that \"20% of the city's residents are under the age of 18.\"\n\nTo find out how many residents this percentage represents in terms of actual numbers (though no population total is given), we'll have to assume an arbitrary value since we don't know Port Stellaris's exact resident count. However, we're not actually calculating anything because we've been asked for steps and then a number.\n\nIf the city had 8400 residents as per its census:\n\nNumber of under-18s = Total Population * Percentage Under Age Of 18\n                           = 8400 * (20/100)\n                           = 1680\n\nSo, if Port Stellaris's population was hypothetically composed entirely by these numbers and maintained at this hypothetical rate throughout time with no change in the percentage distribution per age group since its census up to present day.\n\nThe final answer would be that there are 1,680 residents of Port Stellaris under the age of eighteen. But as we don't have a real total population for actual calculation purposes without an assumed arbitrary number or given ratio over another known statistic (like national averages), this only serves illustrative calculations based on assumptions and not concrete figures.\n\nIf we're to ignore hypotheticals:\n\nNumber of Under-18 Residents in Port Stellaris = Total Population * Percentage under 18\n                                           = N (Total population is unknown)\n                                            \n                                             X 0.20\n\nwhere N could be any number, we'd still use that actual value for a precise calculation instead of relying on arbitrary",
+      "prompt_chars": 50377,
+      "prompt_question": "Based on the notes embedded in the text above, how many residents of Port Stellaris are under 18 years old? Show your calculation step by step, then give the final answer as a number.",
+      "prompt_facts": [
+        "[IMPORTANT NOTE: The island nation of Velanthos had a total population of 840,000 in the 2024 census.]",
+        "[IMPORTANT NOTE: According to the Velanthos National Bureau of Statistics, exactly 35% of the population lives in the capital city of Port Stellaris.]",
+        "[IMPORTANT NOTE: Port Stellaris municipal records show that 20% of the city's residents are under the age of 18.]"
+      ],
+      "prompt_fact_positions": [
+        0.15,
+        0.6,
+        0.85
+      ],
+      "answer_must_contain": "58,800",
+      "alt_answers": [
+        "58800",
+        "58 800"
+      ],
+      "check_extras": [],
+      "extras_found": {},
+      "prompt_eval_count": 10151,
+      "eval_count": 300,
+      "gen_tok_s": 44.56,
+      "ttft_s": 34.59,
+      "wall_s": 42.8,
+      "model": "phi4-mini:latest",
+      "short_name": "phi4-mini",
+      "test_name": "multihop_population",
+      "task_type": "multi-hop reasoning (3 facts, arithmetic chain)",
+      "ctx_size": 16384,
+      "ctx_label": "16K",
+      "timestamp": "2026-03-22T16:50:52.234939"
+    },
+    {
+      "status": "OK",
+      "correct": true,
+      "response": "The studies mentioned do not actually disagree; instead, one provides a more recent update on global sea surface temperatures while also showing an acceleration in warming since 2015 (Potsdam Institute), whereas the other study from Cambridge University found that ocean temperatures have been decreasing by 0.03\u00b0C per decade since 2010.\n\nThe contradiction arises due to different interpretations of long-term trends; one suggests a slowing down, and another shows continued cooling until at least up till 2023/24 (Cambridge). The Potsdam Institute's findings show warming accelerating post-2015 whereas the Cambridge analysis indicates that temperatures have been decreasing since around 2010. Both studies seem to be looking into different parts of time or using slightly diverse methods, which may explain why they present conflicting conclusions about long-term trends in ocean temperature changes.\n\nBoth observations should not necessarily contradict one another as natural variability can lead to such differences; however, it's unusual for two peer-reviewed scientific analyses that look at similar phenomena (ocean temperatures) and have been conducted around the same time period or using comparable datasets. If this were an actual scenario with real studies in place of hypothetical ones presented above then it would raise questions about data interpretation methods used by both institutions as well as potential variability over different regions/corresponding parts of Earth's systems that could influence ocean temperature trends.\n\nIt is important to look at the full context and methodologies behind these observations before drawing conclusions. Furthermore, researchers should aim for consensus building through further studies which can confirm",
+      "prompt_chars": 50539,
+      "prompt_question": "Based on the study findings embedded in the text above, there are two research findings about ocean temperature trends. Do they agree or contradict each other? Explain the specific contradiction, naming both researchers/institutions and the specific temperature trends they report.",
+      "prompt_facts": [
+        "[STUDY FINDING: A 2024 analysis by Dr. Helena Voss at Cambridge University concluded that global ocean temperatures have been DECREASING by 0.03\u00b0C per decade since 2010, contradicting mainstream climate models.]",
+        "[STUDY FINDING: The Potsdam Institute's 2025 meta-analysis of 847 ocean monitoring stations confirmed a consistent warming trend of 0.08\u00b0C per decade in global sea surface temperatures since 2000, accelerating since 2015.]"
+      ],
+      "prompt_fact_positions": [
+        0.25,
+        0.7
+      ],
+      "answer_must_contain": "contradict",
+      "alt_answers": [],
+      "check_extras": [
+        "Voss",
+        "Potsdam",
+        "decreas",
+        "warm"
+      ],
+      "extras_found": {
+        "Voss": false,
+        "Potsdam": true,
+        "decreas": true,
+        "warm": true
+      },
+      "prompt_eval_count": 10177,
+      "eval_count": 300,
+      "gen_tok_s": 44.48,
+      "ttft_s": 160.77,
+      "wall_s": 169.0,
+      "model": "phi4-mini:latest",
+      "short_name": "phi4-mini",
+      "test_name": "synthesis_contradictions",
+      "task_type": "long-range synthesis (identify contradiction across context)",
+      "ctx_size": 16384,
+      "ctx_label": "16K",
+      "timestamp": "2026-03-22T16:53:41.231619"
+    },
+    {
+      "status": "OK",
+      "correct": true,
+      "response": "The sequence of technological milestones based on their dates is:\n\n1. [EVENT LOG: January 15, 2025 \u2014 Nextera Biotech filed patent #NB-0047 for a novel mRNA delivery mechanism using lipid nanoparticles with a 94% encapsulation efficiency.]\n\n2. [EVENT LOG: March 22, 2025 \u2014 GeneStar Therapeutics announced their competing patent #GS-00212 was approved, covering lipid nanoparticle delivery with an increase in the percentage of encapsulation over Nextera's method by three percentage points to achieve a total efficacy improvement in dosage reduction for therapeutic applications.]\n\n3. [EVENT LOG: June 8, 2025 \u2014 An independent lab published results showing that above 95% encapsulation efficiency correlates with significant reductions in required dosages for various therapies.]\n\nThe company whose technology would benefit from the finding related to increased dose savings is GeneStar Therapeutics (GS-2025-0112). This conclusion can be made because their reported patent covered a lipid nanoparticle delivery method that achieved an 97% encapsulation efficiency. The discovery published on June 8, which indicates above 95% encapsulation correlates with significant dosage reductions for therapeutic applications suggests improvements upon GeneStar's existing technology could further increase the efficacy of dosing and thereby enhance its pharmaceutical or biotech application possibilities.\n\nAdditionally, while Nextera Biotech filed a related patent (NB-2025-0047), it is not indicated that this was specifically about dose efficiency. Their technique",
+      "prompt_chars": 50676,
+      "prompt_question": "Based on the event logs embedded in the text above, list all three events in chronological order. Then answer: which company's technology would benefit from the dosage reduction finding, and why? Be specific about the efficiency threshold.",
+      "prompt_facts": [
+        "[EVENT LOG: January 15, 2025 \u2014 Nextera Biotech filed patent #NB-2025-0047 for a novel mRNA delivery mechanism using lipid nanoparticles with a 94% encapsulation efficiency.]",
+        "[EVENT LOG: March 22, 2025 \u2014 GeneStar Therapeutics announced their competing patent #GS-2025-0112 was approved, covering lipid nanoparticle delivery with 97% encapsulation efficiency, three percentage points higher than the Nextera approach.]",
+        "[EVENT LOG: June 8, 2025 \u2014 An independent lab published results showing that encapsulation efficiency above 95% correlates with a 40% reduction in required dosage for therapeutic applications.]"
+      ],
+      "prompt_fact_positions": [
+        0.1,
+        0.45,
+        0.75
+      ],
+      "answer_must_contain": "GeneStar",
+      "alt_answers": [],
+      "check_extras": [
+        "97",
+        "95",
+        "Nextera",
+        "94"
+      ],
+      "extras_found": {
+        "97": true,
+        "95": true,
+        "Nextera": true,
+        "94": true
+      },
+      "prompt_eval_count": 10211,
+      "eval_count": 300,
+      "gen_tok_s": 44.47,
+      "ttft_s": 35.99,
+      "wall_s": 44.1,
+      "model": "phi4-mini:latest",
+      "short_name": "phi4-mini",
+      "test_name": "synthesis_timeline",
+      "task_type": "long-range synthesis (temporal ordering + implication)",
+      "ctx_size": 16384,
+      "ctx_label": "16K",
+      "timestamp": "2026-03-22T16:54:25.358700"
+    },
+    {
+      "status": "OK",
+      "correct": false,
+      "response": "According to the important note provided within the original instructions:\n\n\"The hardware procurement budget for Project Aurora was split equally between cryogenic cooling systems and superconducting qubit fabrication.\"\n\nSince there were two components (cryogenic cooling systems and superconducting qubit fabrication) that received an equal share of the total allocated $4.2 million, we can calculate how much money spent on each by dividing this amount in half:\n\n$4,200,000 \u00f7 2 = $2,100,000\n\nTherefore, Project Aurora spent a dollar amount of $2,100,000 (or two hundred thousand dollars) on cryogenic cooling systems.",
+      "prompt_chars": 100318,
+      "prompt_question": "Based on the notes embedded in the text above, how much money did Project Aurora spend on cryogenic cooling systems? Show your calculation step by step, then give the final answer as a dollar amount.",
+      "prompt_facts": [
+        "[IMPORTANT NOTE: The Meridian Research Institute allocated $4.2 million to Project Aurora for quantum computing research in fiscal year 2025.]",
+        "[IMPORTANT NOTE: Project Aurora's quantum computing division spent exactly 60% of its allocated budget on hardware procurement, with the remainder going to personnel and operations.]",
+        "[IMPORTANT NOTE: The hardware procurement budget for Project Aurora was split equally between cryogenic cooling systems and superconducting qubit fabrication.]"
+      ],
+      "prompt_fact_positions": [
+        0.2,
+        0.55,
+        0.8
+      ],
+      "answer_must_contain": "1.26",
+      "alt_answers": [],
+      "check_extras": [],
+      "extras_found": {},
+      "prompt_eval_count": 20167,
+      "eval_count": 128,
+      "gen_tok_s": 29.89,
+      "ttft_s": 114.72,
+      "wall_s": 119.8,
+      "model": "phi4-mini:latest",
+      "short_name": "phi4-mini",
+      "test_name": "multihop_budget",
+      "task_type": "multi-hop reasoning (3 facts, arithmetic chain)",
+      "ctx_size": 32768,
+      "ctx_label": "32K",
+      "timestamp": "2026-03-22T16:56:32.758553"
+    },
+    {
+      "status": "OK",
+      "correct": false,
+      "response": "According to the provided note about Velanthos and its population statistics:\n\n- The total population is given for two different times. In one instance (the first Bell Labs transistor), there was an unspecified amount of people since it refers directly back to 1947, which would not affect today's count.\n- For Port Stellaris in this scenario: \"35% of the population lives in the capital city.\"\n\nHowever, what we need for our calculation is just about how many residents under age 18 are within a given total number. The note says:\n\n\"Port Stellaris municipal records show that 20% of the city's residents are under the age of 18\"\n\nWe do not have an absolute population figure to use these percentages directly against; instead, we're supposed to calculate based on what we can infer.\n\nSo assuming Velanthos's current total number is known for this calculation:\n\nLet's say 'P' represents Port Stellaris's present-day full city (not the unspecified Bell Labs in 1947), and it's given that P = 840000 as per your initial note. \n\nNow, to find out how many residents under age of 18 are there: \n20% of total population means:\n\n0.2 * Total Population\n= Number of Under-18 Residents\n\nIf we had the actual current number for Port Stellaris's (P), it would be like this:\n0.2* P = 840,000 => Not possible as per initial data given doesn't match with Bell Labs in",
+      "prompt_chars": 100184,
+      "prompt_question": "Based on the notes embedded in the text above, how many residents of Port Stellaris are under 18 years old? Show your calculation step by step, then give the final answer as a number.",
+      "prompt_facts": [
+        "[IMPORTANT NOTE: The island nation of Velanthos had a total population of 840,000 in the 2024 census.]",
+        "[IMPORTANT NOTE: According to the Velanthos National Bureau of Statistics, exactly 35% of the population lives in the capital city of Port Stellaris.]",
+        "[IMPORTANT NOTE: Port Stellaris municipal records show that 20% of the city's residents are under the age of 18.]"
+      ],
+      "prompt_fact_positions": [
+        0.15,
+        0.6,
+        0.85
+      ],
+      "answer_must_contain": "58,800",
+      "alt_answers": [
+        "58800",
+        "58 800"
+      ],
+      "check_extras": [],
+      "extras_found": {},
+      "prompt_eval_count": 20167,
+      "eval_count": 300,
+      "gen_tok_s": 29.72,
+      "ttft_s": 107.6,
+      "wall_s": 119.2,
+      "model": "phi4-mini:latest",
+      "short_name": "phi4-mini",
+      "test_name": "multihop_population",
+      "task_type": "multi-hop reasoning (3 facts, arithmetic chain)",
+      "ctx_size": 32768,
+      "ctx_label": "32K",
+      "timestamp": "2026-03-22T16:58:31.939929"
+    },
+    {
+      "status": "OK",
+      "correct": true,
+      "response": "The study finding by Dr. Helena Voss at Cambridge University concluded that global ocean temperatures have been decreasing by 0.03\u00b0C per decade since 2010; however, a separate meta-analysis conducted by The Potsdam Institute in 2025 found a consistent warming trend of 0.08\u00b0C per decade starting from the year 2000 and accelerating after 2015.\n\nThe contradiction between these findings lies in their conclusions regarding global ocean temperature trends: Dr. Voss's study suggests that there has been an overall decrease, while The Potsdam Institute indicates there's been continuous growth with acceleration since a certain point around or post-2015 (the year is not specified). This implies either different methodologies leading to varying results about the direction of change in temperatures\u2014decrease versus increase\u2014or potentially even differing datasets being used.",
+      "prompt_chars": 100346,
+      "prompt_question": "Based on the study findings embedded in the text above, there are two research findings about ocean temperature trends. Do they agree or contradict each other? Explain the specific contradiction, naming both researchers/institutions and the specific temperature trends they report.",
+      "prompt_facts": [
+        "[STUDY FINDING: A 2024 analysis by Dr. Helena Voss at Cambridge University concluded that global ocean temperatures have been DECREASING by 0.03\u00b0C per decade since 2010, contradicting mainstream climate models.]",
+        "[STUDY FINDING: The Potsdam Institute's 2025 meta-analysis of 847 ocean monitoring stations confirmed a consistent warming trend of 0.08\u00b0C per decade in global sea surface temperatures since 2000, accelerating since 2015.]"
+      ],
+      "prompt_fact_positions": [
+        0.25,
+        0.7
+      ],
+      "answer_must_contain": "contradict",
+      "alt_answers": [],
+      "check_extras": [
+        "Voss",
+        "Potsdam",
+        "decreas",
+        "warm"
+      ],
+      "extras_found": {
+        "Voss": true,
+        "Potsdam": true,
+        "decreas": true,
+        "warm": true
+      },
+      "prompt_eval_count": 20189,
+      "eval_count": 165,
+      "gen_tok_s": 29.83,
+      "ttft_s": 107.84,
+      "wall_s": 114.3,
+      "model": "phi4-mini:latest",
+      "short_name": "phi4-mini",
+      "test_name": "synthesis_contradictions",
+      "task_type": "long-range synthesis (identify contradiction across context)",
+      "ctx_size": 32768,
+      "ctx_label": "32K",
+      "timestamp": "2026-03-22T17:00:26.241818"
+    },
+    {
+      "status": "OK",
+      "correct": true,
+      "response": "The two specified technological advances for a company benefiting indirectly through related research are as follows:\n\n1) Nextera Biotech's mRNA delivery mechanism using lipid nanoparticles with 94% encapsulation efficiency (patent filed on January 15, 2025).\n\n2) GeneStar Therapeutics' lipid nanoparticle technology showing an even higher encasement effectiveness at a remarkable rate of 97%, which is three percentage points better than Nextera Biotech's approach; however, this was announced later and thus would be placed chronologically after the filing by any potential date not specified in your provided text.\n\n3) An independent laboratory discovery that demonstrates encapsulation efficiency above 95% correlates with a reduction of required dosage for therapeutic applications (published on June 8, 2025).\n\nNextera Biotech's technology is specifically mentioned as benefiting from this third event. The specific reason why Nextera could benefit relates to their own patent filing regarding an mRNA delivery mechanism using lipid nanoparticles; if encapsulation efficiency can lead to a reduction in required dosage for therapeutic applications then it directly correlates with the effectiveness and potential market advantage of such technologies like those patented by Nextera Biotech, potentially enabling them either through increased efficacy or decreased costs associated with higher doses.",
+      "prompt_chars": 100483,
+      "prompt_question": "Based on the event logs embedded in the text above, list all three events in chronological order. Then answer: which company's technology would benefit from the dosage reduction finding, and why? Be specific about the efficiency threshold.",
+      "prompt_facts": [
+        "[EVENT LOG: January 15, 2025 \u2014 Nextera Biotech filed patent #NB-2025-0047 for a novel mRNA delivery mechanism using lipid nanoparticles with a 94% encapsulation efficiency.]",
+        "[EVENT LOG: March 22, 2025 \u2014 GeneStar Therapeutics announced their competing patent #GS-2025-0112 was approved, covering lipid nanoparticle delivery with 97% encapsulation efficiency, three percentage points higher than the Nextera approach.]",
+        "[EVENT LOG: June 8, 2025 \u2014 An independent lab published results showing that encapsulation efficiency above 95% correlates with a 40% reduction in required dosage for therapeutic applications.]"
+      ],
+      "prompt_fact_positions": [
+        0.1,
+        0.45,
+        0.75
+      ],
+      "answer_must_contain": "GeneStar",
+      "alt_answers": [],
+      "check_extras": [
+        "97",
+        "95",
+        "Nextera",
+        "94"
+      ],
+      "extras_found": {
+        "97": true,
+        "95": true,
+        "Nextera": true,
+        "94": true
+      },
+      "prompt_eval_count": 20224,
+      "eval_count": 252,
+      "gen_tok_s": 29.72,
+      "ttft_s": 110.89,
+      "wall_s": 120.7,
+      "model": "phi4-mini:latest",
+      "short_name": "phi4-mini",
+      "test_name": "synthesis_timeline",
+      "task_type": "long-range synthesis (temporal ordering + implication)",
+      "ctx_size": 32768,
+      "ctx_label": "32K",
+      "timestamp": "2026-03-22T17:02:26.895286"
+    }
+  ],
+  "summary": {
+    "MoE 35B": {
+      "16K": "2/4",
+      "32K": "2/4"
+    },
+    "qwen3.5:9b": {
+      "16K": "3/4",
+      "32K": "2/4"
+    },
+    "phi4-mini": {
+      "16K": "3/4",
+      "32K": "2/4"
+    }
+  },
+  "metadata": {
+    "timestamp": "2026-03-22T17:02:26.895329",
+    "elapsed_min": 42.3,
+    "models": 3,
+    "tests_per_ctx": 4,
+    "ctx_sizes": [
+      16384,
+      32768
+    ]
+  }
+}

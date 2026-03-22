@@ -1,0 +1,137 @@
+[
+  {
+    "status": "TIMEOUT",
+    "error": "warmup failed: HTTP Error 500: Internal Server Error",
+    "model": "qwen3.5-27b-iq2m:latest",
+    "task": "summarize",
+    "run": 1,
+    "phase": "quality",
+    "timestamp": "2026-03-22T15:00:27.340735"
+  },
+  {
+    "status": "TIMEOUT",
+    "error": "warmup failed: HTTP Error 500: Internal Server Error",
+    "model": "qwen3.5-27b-iq2m:latest",
+    "task": "summarize",
+    "run": 2,
+    "phase": "quality",
+    "timestamp": "2026-03-22T15:00:27.341401"
+  },
+  {
+    "status": "TIMEOUT",
+    "error": "warmup failed: HTTP Error 500: Internal Server Error",
+    "model": "qwen3.5-27b-iq2m:latest",
+    "task": "summarize",
+    "run": 3,
+    "phase": "quality",
+    "timestamp": "2026-03-22T15:00:27.341406"
+  },
+  {
+    "status": "TIMEOUT",
+    "error": "warmup failed: HTTP Error 500: Internal Server Error",
+    "model": "qwen3.5-27b-iq2m:latest",
+    "task": "json_extract",
+    "run": 1,
+    "phase": "quality",
+    "timestamp": "2026-03-22T15:00:27.341411"
+  },
+  {
+    "status": "TIMEOUT",
+    "error": "warmup failed: HTTP Error 500: Internal Server Error",
+    "model": "qwen3.5-27b-iq2m:latest",
+    "task": "json_extract",
+    "run": 2,
+    "phase": "quality",
+    "timestamp": "2026-03-22T15:00:27.341413"
+  },
+  {
+    "status": "TIMEOUT",
+    "error": "warmup failed: HTTP Error 500: Internal Server Error",
+    "model": "qwen3.5-27b-iq2m:latest",
+    "task": "json_extract",
+    "run": 3,
+    "phase": "quality",
+    "timestamp": "2026-03-22T15:00:27.341419"
+  },
+  {
+    "status": "TIMEOUT",
+    "error": "warmup failed: HTTP Error 500: Internal Server Error",
+    "model": "qwen3.5-27b-iq2m:latest",
+    "task": "fact_recall",
+    "run": 1,
+    "phase": "quality",
+    "timestamp": "2026-03-22T15:00:27.341421"
+  },
+  {
+    "status": "TIMEOUT",
+    "error": "warmup failed: HTTP Error 500: Internal Server Error",
+    "model": "qwen3.5-27b-iq2m:latest",
+    "task": "fact_recall",
+    "run": 2,
+    "phase": "quality",
+    "timestamp": "2026-03-22T15:00:27.341423"
+  },
+  {
+    "status": "TIMEOUT",
+    "error": "warmup failed: HTTP Error 500: Internal Server Error",
+    "model": "qwen3.5-27b-iq2m:latest",
+    "task": "fact_recall",
+    "run": 3,
+    "phase": "quality",
+    "timestamp": "2026-03-22T15:00:27.341425"
+  },
+  {
+    "status": "TIMEOUT",
+    "error": "warmup failed: HTTP Error 500: Internal Server Error",
+    "model": "qwen3.5-27b-iq2m:latest",
+    "task": "instruction_follow",
+    "run": 1,
+    "phase": "quality",
+    "timestamp": "2026-03-22T15:00:27.341507"
+  },
+  {
+    "status": "TIMEOUT",
+    "error": "warmup failed: HTTP Error 500: Internal Server Error",
+    "model": "qwen3.5-27b-iq2m:latest",
+    "task": "instruction_follow",
+    "run": 2,
+    "phase": "quality",
+    "timestamp": "2026-03-22T15:00:27.341510"
+  },
+  {
+    "status": "TIMEOUT",
+    "error": "warmup failed: HTTP Error 500: Internal Server Error",
+    "model": "qwen3.5-27b-iq2m:latest",
+    "task": "instruction_follow",
+    "run": 3,
+    "phase": "quality",
+    "timestamp": "2026-03-22T15:00:27.341511"
+  },
+  {
+    "status": "TIMEOUT",
+    "error": "warmup failed: HTTP Error 500: Internal Server Error",
+    "model": "qwen3.5-27b-iq2m:latest",
+    "task": "arithmetic",
+    "run": 1,
+    "phase": "quality",
+    "timestamp": "2026-03-22T15:00:27.341513"
+  },
+  {
+    "status": "TIMEOUT",
+    "error": "warmup failed: HTTP Error 500: Internal Server Error",
+    "model": "qwen3.5-27b-iq2m:latest",
+    "task": "arithmetic",
+    "run": 2,
+    "phase": "quality",
+    "timestamp": "2026-03-22T15:00:27.341515"
+  },
+  {
+    "status": "TIMEOUT",
+    "error": "warmup failed: HTTP Error 500: Internal Server Error",
+    "model": "qwen3.5-27b-iq2m:latest",
+    "task": "arithmetic",
+    "run": 3,
+    "phase": "quality",
+    "timestamp": "2026-03-22T15:00:27.341516"
+  }
+]

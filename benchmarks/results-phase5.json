@@ -1,0 +1,188 @@
+[
+  {
+    "status": "OK",
+    "gen_tok_s": 38.5,
+    "prefill_tok_s": 133.18,
+    "eval_count": 20,
+    "prompt_eval_count": 111,
+    "ttft_s": 17.3,
+    "load_s": 16.5,
+    "prompt_eval_s": 0.83,
+    "eval_s": 0.52,
+    "wall_s": 18.0,
+    "response": "### RISC vs. CISC: Architectural Fundamentals and Modern Evolution\n\nThe distinction between **",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 1076,
+      "ram_free_mb": 14122,
+      "swap_used_mb": 951
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13337,
+      "ram_free_mb": 1861,
+      "swap_used_mb": 950
+    },
+    "swap_delta_mb": -1,
+    "model": "qwen3.5-35b-a3b-iq2m:latest",
+    "run": 1,
+    "phase": "cold",
+    "cold_total_s": 18.01,
+    "timestamp": "2026-03-20T17:57:31.372277"
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 38.51,
+    "prefill_tok_s": 133.38,
+    "eval_count": 20,
+    "prompt_eval_count": 111,
+    "ttft_s": 17.07,
+    "load_s": 16.2,
+    "prompt_eval_s": 0.83,
+    "eval_s": 0.52,
+    "wall_s": 18.0,
+    "response": "### RISC vs. CISC: Architectural Paradigms\n\nThe evolution of computer processors has",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 1042,
+      "ram_free_mb": 14156,
+      "swap_used_mb": 950
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13148,
+      "ram_free_mb": 2050,
+      "swap_used_mb": 1090
+    },
+    "swap_delta_mb": 140,
+    "model": "qwen3.5-35b-a3b-iq2m:latest",
+    "run": 2,
+    "phase": "cold",
+    "cold_total_s": 17.99,
+    "timestamp": "2026-03-20T17:58:04.366238"
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 38.38,
+    "prefill_tok_s": 131.18,
+    "eval_count": 20,
+    "prompt_eval_count": 111,
+    "ttft_s": 16.8,
+    "load_s": 16.0,
+    "prompt_eval_s": 0.85,
+    "eval_s": 0.52,
+    "wall_s": 17.5,
+    "response": "### RISC vs. CISC: Architectural Evolution and Modern Convergence\n\nThe divide between **",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 874,
+      "ram_free_mb": 14324,
+      "swap_used_mb": 1069
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13145,
+      "ram_free_mb": 2053,
+      "swap_used_mb": 1106
+    },
+    "swap_delta_mb": 37,
+    "model": "qwen3.5-35b-a3b-iq2m:latest",
+    "run": 3,
+    "phase": "cold",
+    "cold_total_s": 17.52,
+    "timestamp": "2026-03-20T17:58:36.899815"
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 33.11,
+    "prefill_tok_s": 177.98,
+    "eval_count": 20,
+    "prompt_eval_count": 111,
+    "ttft_s": 11.12,
+    "load_s": 10.5,
+    "prompt_eval_s": 0.62,
+    "eval_s": 0.6,
+    "wall_s": 11.9,
+    "response": "### RISC vs. CISC: Architectural Foundations and Evolution\n\nThe debate between **Reduced",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 850,
+      "ram_free_mb": 14348,
+      "swap_used_mb": 1106
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 8931,
+      "ram_free_mb": 6267,
+      "swap_used_mb": 1105
+    },
+    "swap_delta_mb": -1,
+    "model": "qwen3.5:9b",
+    "run": 1,
+    "phase": "cold",
+    "cold_total_s": 11.93,
+    "timestamp": "2026-03-20T17:59:03.836509"
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 32.95,
+    "prefill_tok_s": 187.7,
+    "eval_count": 20,
+    "prompt_eval_count": 111,
+    "ttft_s": 5.94,
+    "load_s": 5.3,
+    "prompt_eval_s": 0.59,
+    "eval_s": 0.61,
+    "wall_s": 6.7,
+    "response": "The debate between **RISC (Reduced Instruction Set Computer)** and **CISC (Complex Instruction",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 843,
+      "ram_free_mb": 14356,
+      "swap_used_mb": 1105
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 8925,
+      "ram_free_mb": 6273,
+      "swap_used_mb": 1104
+    },
+    "swap_delta_mb": -1,
+    "model": "qwen3.5:9b",
+    "run": 2,
+    "phase": "cold",
+    "cold_total_s": 6.75,
+    "timestamp": "2026-03-20T17:59:25.589782"
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 32.93,
+    "prefill_tok_s": 188.03,
+    "eval_count": 20,
+    "prompt_eval_count": 111,
+    "ttft_s": 6.22,
+    "load_s": 5.6,
+    "prompt_eval_s": 0.59,
+    "eval_s": 0.61,
+    "wall_s": 7.0,
+    "response": "The evolution of processor architecture is defined by the tension between two fundamental design philosophies: **RISC",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 843,
+      "ram_free_mb": 14355,
+      "swap_used_mb": 1104
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 8963,
+      "ram_free_mb": 6235,
+      "swap_used_mb": 1104
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen3.5:9b",
+    "run": 3,
+    "phase": "cold",
+    "cold_total_s": 7.03,
+    "timestamp": "2026-03-20T17:59:47.632486"
+  }
+]

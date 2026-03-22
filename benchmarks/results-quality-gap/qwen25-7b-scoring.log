@@ -1,0 +1,43 @@
+BC-250 Rigorous Benchmark Suite
+Phase: quality
+Results: /opt/netscan/tmp/bench-rigorous
+Started: 2026-03-22T14:49:50.535715
+
+======================================================================
+  PHASE 4: Quality Assessment — 1 models × 5 tasks × 3 runs
+======================================================================
+
+  Model: qwen2.5:7b
+    Warming up... OK
+
+    Task: summarize
+      Run 1: gen=53.9 tok/s  scores={"keywords_found":0,"keywords_total":4,"keywords_pass":false,"sentence_count":1,"sentences_pass":false}
+      Run 2: gen=0.0 tok/s  scores={"keywords_found":0,"keywords_total":4,"keywords_pass":false,"sentence_count":1,"sentences_pass":false}
+      Run 3: gen=54.0 tok/s  scores={"keywords_found":0,"keywords_total":4,"keywords_pass":false,"sentence_count":1,"sentences_pass":false}
+
+    Task: json_extract
+      Run 1: gen=0.0 tok/s  scores={"valid_json":false}
+      Run 2: gen=0.0 tok/s  scores={"valid_json":false}
+      Run 3: gen=55.0 tok/s  scores={"valid_json":false}
+
+    Task: fact_recall
+      Run 1: gen=56.1 tok/s  scores={"keywords_found":2,"keywords_total":2,"keywords_pass":true}
+      Run 2: gen=54.2 tok/s  scores={"keywords_found":1,"keywords_total":2,"keywords_pass":true}
+      Run 3: gen=57.4 tok/s  scores={"keywords_found":2,"keywords_total":2,"keywords_pass":true}
+
+    Task: instruction_follow
+      Run 1: gen=0.0 tok/s  scores={"numbered_items":0,"items_expected":5,"items_pass":false}
+      Run 2: gen=0.0 tok/s  scores={"numbered_items":0,"items_expected":5,"items_pass":false}
+      Run 3: gen=56.2 tok/s  scores={"numbered_items":0,"items_expected":5,"items_pass":false}
+
+    Task: arithmetic
+      Run 1: gen=55.6 tok/s  scores={"contains_target":false,"numbers_found":[]}
+      Run 2: gen=56.8 tok/s  scores={"contains_target":false,"numbers_found":[]}
+      Run 3: gen=57.7 tok/s  scores={"contains_target":false,"numbers_found":[]}
+  → Saved: /opt/netscan/tmp/bench-rigorous/phase4-quality-20260322_1449.json
+
+======================================================================
+  COMPLETE — 2026-03-22T14:50:57.829274
+  Results in: /opt/netscan/tmp/bench-rigorous
+======================================================================
+  → Saved: /opt/netscan/tmp/bench-rigorous/combined-quality-20260322_1449.json

@@ -1,0 +1,1118 @@
+[
+  {
+    "status": "OK",
+    "gen_tok_s": 37.08,
+    "prefill_tok_s": 191.93,
+    "eval_count": 105,
+    "prompt_eval_count": 229,
+    "ttft_s": 1.48,
+    "load_s": 0.3,
+    "prompt_eval_s": 1.19,
+    "eval_s": 2.83,
+    "wall_s": 4.5,
+    "response": "The AMD BC-250 is a decommissioned mining board powered by an AMD Cyan APU with a Zen 2 CPU and a high-performance integrated GPU sharing 16 GB of unified GDDR6 memory. Due to the lack of ROCm support and dedicated tensor cores, this hardware relies exclusively on the Vulkan compute backend for AI inference tasks. Despite these hardware limitations, the board is capable of running a 35-billion parameter language model at 38 tokens per second by utilizing quantized weights.",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13237,
+      "ram_free_mb": 1961,
+      "swap_used_mb": 961
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13441,
+      "ram_free_mb": 1757,
+      "swap_used_mb": 961
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen3.5-35b-a3b-iq2m:latest",
+    "task": "summarize",
+    "run": 1,
+    "phase": "quality",
+    "timestamp": "2026-03-20T17:53:28.613381",
+    "quality_scores": {
+      "keywords_found": 4,
+      "keywords_total": 4,
+      "keywords_pass": true,
+      "sentence_count": 3,
+      "sentences_pass": true
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 37.06,
+    "prefill_tok_s": 193.02,
+    "eval_count": 92,
+    "prompt_eval_count": 229,
+    "ttft_s": 1.47,
+    "load_s": 0.3,
+    "prompt_eval_s": 1.19,
+    "eval_s": 2.48,
+    "wall_s": 4.0,
+    "response": "The AMD BC-250 is a decommissioned crypto-mining board featuring an AMD Cyan Skillfish APU with 16 GB of unified GDDR6 memory. Due to the absence of ROCm support and dedicated tensor cores, the board relies on the Vulkan compute path for AI inference tasks. Despite this limitation, it remains capable of running a 35-billion parameter language model at 38 tokens per second using quantized weights.",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13441,
+      "ram_free_mb": 1757,
+      "swap_used_mb": 961
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13477,
+      "ram_free_mb": 1722,
+      "swap_used_mb": 961
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen3.5-35b-a3b-iq2m:latest",
+    "task": "summarize",
+    "run": 2,
+    "phase": "quality",
+    "timestamp": "2026-03-20T17:53:33.148200",
+    "quality_scores": {
+      "keywords_found": 4,
+      "keywords_total": 4,
+      "keywords_pass": true,
+      "sentence_count": 3,
+      "sentences_pass": true
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 37.32,
+    "prefill_tok_s": 193.18,
+    "eval_count": 98,
+    "prompt_eval_count": 229,
+    "ttft_s": 1.46,
+    "load_s": 0.3,
+    "prompt_eval_s": 1.19,
+    "eval_s": 2.63,
+    "wall_s": 4.2,
+    "response": "The AMD BC-250 is a decommissioned mining board featuring a Zen 2 CPU and a GFX1013 GPU, both utilizing a 16 GB GDDR6 unified memory architecture. Although it lacks dedicated tensor cores and ROCm support, restricting compute to the Vulkan backend, it can still perform AI inference efficiently. Specifically, this hardware is capable of running a 35-billion parameter language model at 38 tokens per second using quantized weights.",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13477,
+      "ram_free_mb": 1722,
+      "swap_used_mb": 961
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13471,
+      "ram_free_mb": 1727,
+      "swap_used_mb": 951
+    },
+    "swap_delta_mb": -10,
+    "model": "qwen3.5-35b-a3b-iq2m:latest",
+    "task": "summarize",
+    "run": 3,
+    "phase": "quality",
+    "timestamp": "2026-03-20T17:53:37.822568",
+    "quality_scores": {
+      "keywords_found": 4,
+      "keywords_total": 4,
+      "keywords_pass": true,
+      "sentence_count": 3,
+      "sentences_pass": true
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 38.04,
+    "prefill_tok_s": 143.78,
+    "eval_count": 46,
+    "prompt_eval_count": 121,
+    "ttft_s": 1.12,
+    "load_s": 0.3,
+    "prompt_eval_s": 0.84,
+    "eval_s": 1.21,
+    "wall_s": 2.4,
+    "response": "{\"name\":\"Dr. Maria Chen\",\"age\":42,\"title\":\"Senior Research Scientist\",\"company\":\"NVIDIA\",\"year_joined\":2018,\"team_size\":12,\"patent_count\":7}",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13471,
+      "ram_free_mb": 1727,
+      "swap_used_mb": 951
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13509,
+      "ram_free_mb": 1689,
+      "swap_used_mb": 951
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen3.5-35b-a3b-iq2m:latest",
+    "task": "json_extract",
+    "run": 1,
+    "phase": "quality",
+    "timestamp": "2026-03-20T17:53:40.702545",
+    "quality_scores": {
+      "valid_json": true,
+      "keys_found": 4,
+      "keys_total": 4,
+      "keys_pass": true,
+      "values_matched": 2,
+      "values_total": 2
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 37.53,
+    "prefill_tok_s": 143.94,
+    "eval_count": 75,
+    "prompt_eval_count": 121,
+    "ttft_s": 1.12,
+    "load_s": 0.3,
+    "prompt_eval_s": 0.84,
+    "eval_s": 2.0,
+    "wall_s": 3.2,
+    "response": "{\n  \"name\": \"Dr. Maria Chen\",\n  \"age\": 42,\n  \"title\": \"Senior Research Scientist\",\n  \"company\": \"NVIDIA\",\n  \"year_joined\": 2018,\n  \"team_size\": 12,\n  \"patent_count\": 7\n}",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13509,
+      "ram_free_mb": 1689,
+      "swap_used_mb": 951
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13529,
+      "ram_free_mb": 1669,
+      "swap_used_mb": 951
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen3.5-35b-a3b-iq2m:latest",
+    "task": "json_extract",
+    "run": 2,
+    "phase": "quality",
+    "timestamp": "2026-03-20T17:53:44.396318",
+    "quality_scores": {
+      "valid_json": true,
+      "keys_found": 4,
+      "keys_total": 4,
+      "keys_pass": true,
+      "values_matched": 2,
+      "values_total": 2
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 37.69,
+    "prefill_tok_s": 143.95,
+    "eval_count": 75,
+    "prompt_eval_count": 121,
+    "ttft_s": 1.12,
+    "load_s": 0.3,
+    "prompt_eval_s": 0.84,
+    "eval_s": 1.99,
+    "wall_s": 3.2,
+    "response": "{\n  \"name\": \"Dr. Maria Chen\",\n  \"age\": 42,\n  \"title\": \"Senior Research Scientist\",\n  \"company\": \"NVIDIA\",\n  \"year_joined\": 2018,\n  \"team_size\": 12,\n  \"patent_count\": 7\n}",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13526,
+      "ram_free_mb": 1672,
+      "swap_used_mb": 951
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13528,
+      "ram_free_mb": 1670,
+      "swap_used_mb": 951
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen3.5-35b-a3b-iq2m:latest",
+    "task": "json_extract",
+    "run": 3,
+    "phase": "quality",
+    "timestamp": "2026-03-20T17:53:48.080971",
+    "quality_scores": {
+      "valid_json": true,
+      "keys_found": 4,
+      "keys_total": 4,
+      "keys_pass": true,
+      "values_matched": 2,
+      "values_total": 2
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 38.55,
+    "prefill_tok_s": 155.97,
+    "eval_count": 30,
+    "prompt_eval_count": 160,
+    "ttft_s": 1.31,
+    "load_s": 0.3,
+    "prompt_eval_s": 1.03,
+    "eval_s": 0.78,
+    "wall_s": 2.1,
+    "response": "Based on the facts provided, the chemical symbol for tungsten is **W**, and it is derived from the German word **Wolfram**.",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13528,
+      "ram_free_mb": 1670,
+      "swap_used_mb": 951
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13512,
+      "ram_free_mb": 1686,
+      "swap_used_mb": 951
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen3.5-35b-a3b-iq2m:latest",
+    "task": "fact_recall",
+    "run": 1,
+    "phase": "quality",
+    "timestamp": "2026-03-20T17:53:50.700896",
+    "quality_scores": {
+      "keywords_found": 2,
+      "keywords_total": 2,
+      "keywords_pass": true
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 38.49,
+    "prefill_tok_s": 156.42,
+    "eval_count": 29,
+    "prompt_eval_count": 160,
+    "ttft_s": 1.31,
+    "load_s": 0.3,
+    "prompt_eval_s": 1.02,
+    "eval_s": 0.75,
+    "wall_s": 2.1,
+    "response": "Based on the facts provided, the chemical symbol for tungsten is **W**. It is derived from the German word **Wolfram**.",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13512,
+      "ram_free_mb": 1686,
+      "swap_used_mb": 951
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13444,
+      "ram_free_mb": 1754,
+      "swap_used_mb": 951
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen3.5-35b-a3b-iq2m:latest",
+    "task": "fact_recall",
+    "run": 2,
+    "phase": "quality",
+    "timestamp": "2026-03-20T17:53:53.295890",
+    "quality_scores": {
+      "keywords_found": 2,
+      "keywords_total": 2,
+      "keywords_pass": true
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 38.22,
+    "prefill_tok_s": 156.48,
+    "eval_count": 29,
+    "prompt_eval_count": 160,
+    "ttft_s": 1.3,
+    "load_s": 0.3,
+    "prompt_eval_s": 1.02,
+    "eval_s": 0.76,
+    "wall_s": 2.1,
+    "response": "Based on the facts provided, the chemical symbol for tungsten is **W**, which is derived from the German word **Wolfram**.",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13444,
+      "ram_free_mb": 1754,
+      "swap_used_mb": 951
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13421,
+      "ram_free_mb": 1778,
+      "swap_used_mb": 951
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen3.5-35b-a3b-iq2m:latest",
+    "task": "fact_recall",
+    "run": 3,
+    "phase": "quality",
+    "timestamp": "2026-03-20T17:53:55.891151",
+    "quality_scores": {
+      "keywords_found": 2,
+      "keywords_total": 2,
+      "keywords_pass": true
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 37.48,
+    "prefill_tok_s": 100.2,
+    "eval_count": 95,
+    "prompt_eval_count": 61,
+    "ttft_s": 0.9,
+    "load_s": 0.3,
+    "prompt_eval_s": 0.61,
+    "eval_s": 2.53,
+    "wall_s": 3.5,
+    "response": "1. Solar energy is a renewable resource that relies on sunlight, which will not deplete over time.\n2. Operating solar power systems produces no greenhouse gas emissions during electricity generation.\n3. Installing solar panels can significantly reduce monthly electricity bills for homeowners and businesses.\n4. Once installed, solar systems require very little maintenance compared to traditional power plants.\n5. Solar energy can be deployed in remote locations where connecting to the main power g",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13421,
+      "ram_free_mb": 1778,
+      "swap_used_mb": 951
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13442,
+      "ram_free_mb": 1756,
+      "swap_used_mb": 951
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen3.5-35b-a3b-iq2m:latest",
+    "task": "instruction_follow",
+    "run": 1,
+    "phase": "quality",
+    "timestamp": "2026-03-20T17:53:59.913134",
+    "quality_scores": {
+      "numbered_items": 5,
+      "items_expected": 5,
+      "items_pass": true
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 37.41,
+    "prefill_tok_s": 100.15,
+    "eval_count": 120,
+    "prompt_eval_count": 61,
+    "ttft_s": 0.89,
+    "load_s": 0.3,
+    "prompt_eval_s": 0.61,
+    "eval_s": 3.21,
+    "wall_s": 4.2,
+    "response": "1. Solar power is a renewable resource that relies on sunlight, ensuring an inexhaustible supply for future generations.\n2. Generating electricity from solar panels produces no greenhouse gas emissions or air pollutants during operation.\n3. Solar energy systems require minimal maintenance and can be installed on rooftops, making them space-efficient for urban and rural areas.\n4. Installing solar panels can significantly lower monthly electricity bills by reducing reliance on the grid and potenti",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13442,
+      "ram_free_mb": 1756,
+      "swap_used_mb": 951
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13440,
+      "ram_free_mb": 1758,
+      "swap_used_mb": 951
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen3.5-35b-a3b-iq2m:latest",
+    "task": "instruction_follow",
+    "run": 2,
+    "phase": "quality",
+    "timestamp": "2026-03-20T17:54:04.626421",
+    "quality_scores": {
+      "numbered_items": 4,
+      "items_expected": 5,
+      "items_pass": false
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 37.5,
+    "prefill_tok_s": 100.29,
+    "eval_count": 103,
+    "prompt_eval_count": 61,
+    "ttft_s": 0.89,
+    "load_s": 0.3,
+    "prompt_eval_s": 0.61,
+    "eval_s": 2.75,
+    "wall_s": 3.7,
+    "response": "1. Solar energy is a renewable resource that will not deplete as long as the sun exists.\n2. Operating solar power plants generates minimal greenhouse gases compared to fossil fuel alternatives.\n3. Solar systems require little maintenance and have no moving parts to wear out or break.\n4. Installing photovoltaic panels on rooftops allows for decentralized power generation close to where energy is needed.\n5. The cost of solar technology has dropped significantly, making it competitive with traditio",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13440,
+      "ram_free_mb": 1758,
+      "swap_used_mb": 951
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13440,
+      "ram_free_mb": 1758,
+      "swap_used_mb": 951
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen3.5-35b-a3b-iq2m:latest",
+    "task": "instruction_follow",
+    "run": 3,
+    "phase": "quality",
+    "timestamp": "2026-03-20T17:54:08.864526",
+    "quality_scores": {
+      "numbered_items": 5,
+      "items_expected": 5,
+      "items_pass": true
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 49.94,
+    "prefill_tok_s": 81.78,
+    "eval_count": 4,
+    "prompt_eval_count": 42,
+    "ttft_s": 0.79,
+    "load_s": 0.3,
+    "prompt_eval_s": 0.51,
+    "eval_s": 0.08,
+    "wall_s": 0.9,
+    "response": "391",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13440,
+      "ram_free_mb": 1758,
+      "swap_used_mb": 951
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13444,
+      "ram_free_mb": 1754,
+      "swap_used_mb": 951
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen3.5-35b-a3b-iq2m:latest",
+    "task": "arithmetic",
+    "run": 1,
+    "phase": "quality",
+    "timestamp": "2026-03-20T17:54:10.244631",
+    "quality_scores": {
+      "contains_target": true,
+      "numbers_found": [
+        "391"
+      ]
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 48.62,
+    "prefill_tok_s": 81.7,
+    "eval_count": 4,
+    "prompt_eval_count": 42,
+    "ttft_s": 0.8,
+    "load_s": 0.3,
+    "prompt_eval_s": 0.51,
+    "eval_s": 0.08,
+    "wall_s": 0.9,
+    "response": "391",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13444,
+      "ram_free_mb": 1754,
+      "swap_used_mb": 951
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13451,
+      "ram_free_mb": 1747,
+      "swap_used_mb": 951
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen3.5-35b-a3b-iq2m:latest",
+    "task": "arithmetic",
+    "run": 2,
+    "phase": "quality",
+    "timestamp": "2026-03-20T17:54:11.632499",
+    "quality_scores": {
+      "contains_target": true,
+      "numbers_found": [
+        "391"
+      ]
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 49.45,
+    "prefill_tok_s": 81.68,
+    "eval_count": 4,
+    "prompt_eval_count": 42,
+    "ttft_s": 0.79,
+    "load_s": 0.3,
+    "prompt_eval_s": 0.51,
+    "eval_s": 0.08,
+    "wall_s": 0.9,
+    "response": "391",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13451,
+      "ram_free_mb": 1747,
+      "swap_used_mb": 951
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13443,
+      "ram_free_mb": 1755,
+      "swap_used_mb": 951
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen3.5-35b-a3b-iq2m:latest",
+    "task": "arithmetic",
+    "run": 3,
+    "phase": "quality",
+    "timestamp": "2026-03-20T17:54:13.013364",
+    "quality_scores": {
+      "contains_target": true,
+      "numbers_found": [
+        "391"
+      ]
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 31.64,
+    "prefill_tok_s": 208.28,
+    "eval_count": 92,
+    "prompt_eval_count": 229,
+    "ttft_s": 1.43,
+    "load_s": 0.3,
+    "prompt_eval_s": 1.1,
+    "eval_s": 2.91,
+    "wall_s": 4.5,
+    "response": "The AMD BC-250 is a decommissioned mining board featuring a Zen 2 CPU and a GFX1013 GPU with 16 GB of shared GDDR6 memory. Although it lacks dedicated tensor cores and does not support ROCm libraries, the device relies on Vulkan for compute tasks. Despite these limitations, it can still run a 35-billion parameter language model at 38 tokens per second using quantized weights.",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9181,
+      "ram_free_mb": 6017,
+      "swap_used_mb": 951
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9278,
+      "ram_free_mb": 5920,
+      "swap_used_mb": 951
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen3.5:9b",
+    "task": "summarize",
+    "run": 1,
+    "phase": "quality",
+    "timestamp": "2026-03-20T17:54:32.598249",
+    "quality_scores": {
+      "keywords_found": 4,
+      "keywords_total": 4,
+      "keywords_pass": true,
+      "sentence_count": 3,
+      "sentences_pass": true
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 31.64,
+    "prefill_tok_s": 209.41,
+    "eval_count": 118,
+    "prompt_eval_count": 229,
+    "ttft_s": 1.42,
+    "load_s": 0.3,
+    "prompt_eval_s": 1.09,
+    "eval_s": 3.73,
+    "wall_s": 5.3,
+    "response": "The AMD BC-250 is a mining-oriented board featuring a Zen 2 APU with a GFX1013 GPU and 16 GB of shared GDDR6 memory that was originally used in multi-board racks by ASRock Rack. Since its decommissioning and release to the secondary market, the device is limited to Vulkan compute paths because it lacks support for ROCm libraries. Despite the absence of dedicated tensor cores, this hardware can execute a 35-billion parameter language model at 38 tokens per second when using quantized weights and ",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9277,
+      "ram_free_mb": 5921,
+      "swap_used_mb": 951
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9283,
+      "ram_free_mb": 5915,
+      "swap_used_mb": 951
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen3.5:9b",
+    "task": "summarize",
+    "run": 2,
+    "phase": "quality",
+    "timestamp": "2026-03-20T17:54:38.390517",
+    "quality_scores": {
+      "keywords_found": 4,
+      "keywords_total": 4,
+      "keywords_pass": true,
+      "sentence_count": 3,
+      "sentences_pass": true
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 31.71,
+    "prefill_tok_s": 209.48,
+    "eval_count": 98,
+    "prompt_eval_count": 229,
+    "ttft_s": 1.42,
+    "load_s": 0.3,
+    "prompt_eval_s": 1.09,
+    "eval_s": 3.09,
+    "wall_s": 4.6,
+    "response": "The AMD BC-250 is a specialized mining board built around a Zen 2 CPU and a GFX1013 GPU that share 16 GB of GDDR6 memory. Originally used in mining racks by ASRock Rack, these units now appear on the secondary market after being decommissioned. Although the board lacks dedicated tensor cores and does not support ROCm, it remains viable for running large language models at 38 tokens per second using a Vulkan backend.",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9279,
+      "ram_free_mb": 5919,
+      "swap_used_mb": 951
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9274,
+      "ram_free_mb": 5924,
+      "swap_used_mb": 951
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen3.5:9b",
+    "task": "summarize",
+    "run": 3,
+    "phase": "quality",
+    "timestamp": "2026-03-20T17:54:43.520566",
+    "quality_scores": {
+      "keywords_found": 3,
+      "keywords_total": 4,
+      "keywords_pass": true,
+      "sentence_count": 3,
+      "sentences_pass": true
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 31.61,
+    "prefill_tok_s": 206.87,
+    "eval_count": 75,
+    "prompt_eval_count": 121,
+    "ttft_s": 0.91,
+    "load_s": 0.3,
+    "prompt_eval_s": 0.58,
+    "eval_s": 2.37,
+    "wall_s": 3.4,
+    "response": "{\n  \"name\": \"Dr. Maria Chen\",\n  \"age\": 42,\n  \"title\": \"Senior Research Scientist\",\n  \"company\": \"NVIDIA\",\n  \"year_joined\": 2018,\n  \"team_size\": 12,\n  \"patent_count\": 7\n}",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9274,
+      "ram_free_mb": 5924,
+      "swap_used_mb": 951
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9279,
+      "ram_free_mb": 5919,
+      "swap_used_mb": 951
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen3.5:9b",
+    "task": "json_extract",
+    "run": 1,
+    "phase": "quality",
+    "timestamp": "2026-03-20T17:54:47.398002",
+    "quality_scores": {
+      "valid_json": true,
+      "keys_found": 4,
+      "keys_total": 4,
+      "keys_pass": true,
+      "values_matched": 2,
+      "values_total": 2
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 32.09,
+    "prefill_tok_s": 206.91,
+    "eval_count": 46,
+    "prompt_eval_count": 121,
+    "ttft_s": 0.91,
+    "load_s": 0.3,
+    "prompt_eval_s": 0.58,
+    "eval_s": 1.43,
+    "wall_s": 2.4,
+    "response": "{\"name\":\"Dr. Maria Chen\",\"age\":42,\"title\":\"Senior Research Scientist\",\"company\":\"NVIDIA\",\"year_joined\":2018,\"team_size\":12,\"patent_count\":7}",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9276,
+      "ram_free_mb": 5922,
+      "swap_used_mb": 951
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9295,
+      "ram_free_mb": 5903,
+      "swap_used_mb": 951
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen3.5:9b",
+    "task": "json_extract",
+    "run": 2,
+    "phase": "quality",
+    "timestamp": "2026-03-20T17:54:50.294117",
+    "quality_scores": {
+      "valid_json": true,
+      "keys_found": 4,
+      "keys_total": 4,
+      "keys_pass": true,
+      "values_matched": 2,
+      "values_total": 2
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 31.85,
+    "prefill_tok_s": 206.65,
+    "eval_count": 50,
+    "prompt_eval_count": 121,
+    "ttft_s": 0.91,
+    "load_s": 0.3,
+    "prompt_eval_s": 0.59,
+    "eval_s": 1.57,
+    "wall_s": 2.5,
+    "response": "{\"name\":\"Dr. Maria Chen\",\"age\":42,\"title\":\"Senior Research Scientist\",\"company\":\"NVIDIA's Santa Clara campus\",\"year_joined\":2018,\"team_size\":12,\"patent_count\":7}",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9294,
+      "ram_free_mb": 5904,
+      "swap_used_mb": 951
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9288,
+      "ram_free_mb": 5910,
+      "swap_used_mb": 951
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen3.5:9b",
+    "task": "json_extract",
+    "run": 3,
+    "phase": "quality",
+    "timestamp": "2026-03-20T17:54:53.341182",
+    "quality_scores": {
+      "valid_json": true,
+      "keys_found": 4,
+      "keys_total": 4,
+      "keys_pass": true,
+      "values_matched": 2,
+      "values_total": 2
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 32.8,
+    "prefill_tok_s": 196.64,
+    "eval_count": 24,
+    "prompt_eval_count": 160,
+    "ttft_s": 1.14,
+    "load_s": 0.3,
+    "prompt_eval_s": 0.81,
+    "eval_s": 0.73,
+    "wall_s": 1.9,
+    "response": "The chemical symbol for tungsten is **W**, and it is derived from the German word **Wolfram**.",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9285,
+      "ram_free_mb": 5913,
+      "swap_used_mb": 951
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9290,
+      "ram_free_mb": 5908,
+      "swap_used_mb": 951
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen3.5:9b",
+    "task": "fact_recall",
+    "run": 1,
+    "phase": "quality",
+    "timestamp": "2026-03-20T17:54:55.742704",
+    "quality_scores": {
+      "keywords_found": 2,
+      "keywords_total": 2,
+      "keywords_pass": true
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 32.71,
+    "prefill_tok_s": 196.69,
+    "eval_count": 24,
+    "prompt_eval_count": 160,
+    "ttft_s": 1.14,
+    "load_s": 0.3,
+    "prompt_eval_s": 0.81,
+    "eval_s": 0.73,
+    "wall_s": 1.9,
+    "response": "The chemical symbol for tungsten is **W**. This symbol is derived from the German word **Wolfram**.",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9290,
+      "ram_free_mb": 5908,
+      "swap_used_mb": 951
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9294,
+      "ram_free_mb": 5904,
+      "swap_used_mb": 951
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen3.5:9b",
+    "task": "fact_recall",
+    "run": 2,
+    "phase": "quality",
+    "timestamp": "2026-03-20T17:54:58.153817",
+    "quality_scores": {
+      "keywords_found": 2,
+      "keywords_total": 2,
+      "keywords_pass": true
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 32.85,
+    "prefill_tok_s": 196.69,
+    "eval_count": 24,
+    "prompt_eval_count": 160,
+    "ttft_s": 1.14,
+    "load_s": 0.3,
+    "prompt_eval_s": 0.81,
+    "eval_s": 0.73,
+    "wall_s": 1.9,
+    "response": "The chemical symbol for tungsten is **W**, and it is derived from the German word **Wolfram**.",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9294,
+      "ram_free_mb": 5904,
+      "swap_used_mb": 951
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9333,
+      "ram_free_mb": 5865,
+      "swap_used_mb": 951
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen3.5:9b",
+    "task": "fact_recall",
+    "run": 3,
+    "phase": "quality",
+    "timestamp": "2026-03-20T17:55:00.552882",
+    "quality_scores": {
+      "keywords_found": 2,
+      "keywords_total": 2,
+      "keywords_pass": true
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 31.71,
+    "prefill_tok_s": 191.12,
+    "eval_count": 93,
+    "prompt_eval_count": 61,
+    "ttft_s": 0.64,
+    "load_s": 0.3,
+    "prompt_eval_s": 0.32,
+    "eval_s": 2.93,
+    "wall_s": 3.7,
+    "response": "1. Solar energy is a renewable resource that naturally replenishes, ensuring a sustainable power supply.\n2. Solar installations significantly reduce electricity bills by generating free power from sunlight.\n3. It produces electricity without emitting greenhouse gases, helping to combat climate change.\n4. Solar panels can be installed on various structures like rooftops, reducing transmission losses.\n5. Once installed, solar energy systems operate with minimal moving parts, resulting in low maint",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9330,
+      "ram_free_mb": 5868,
+      "swap_used_mb": 951
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9322,
+      "ram_free_mb": 5876,
+      "swap_used_mb": 951
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen3.5:9b",
+    "task": "instruction_follow",
+    "run": 1,
+    "phase": "quality",
+    "timestamp": "2026-03-20T17:55:04.733822",
+    "quality_scores": {
+      "numbered_items": 5,
+      "items_expected": 5,
+      "items_pass": true
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 31.97,
+    "prefill_tok_s": 191.5,
+    "eval_count": 83,
+    "prompt_eval_count": 61,
+    "ttft_s": 0.64,
+    "load_s": 0.3,
+    "prompt_eval_s": 0.32,
+    "eval_s": 2.6,
+    "wall_s": 3.3,
+    "response": "1. Solar energy is a renewable and inexhaustible resource that will not deplete.\n2. It significantly reduces greenhouse gas emissions and air pollution during operation.\n3. Solar installations can lower electricity bills by generating power onsite.\n4. The fuel (sunlight) is free, making long-term operational costs very low.\n5. Solar panels require minimal maintenance and have a long operational lifespan.",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9322,
+      "ram_free_mb": 5876,
+      "swap_used_mb": 951
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9307,
+      "ram_free_mb": 5891,
+      "swap_used_mb": 951
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen3.5:9b",
+    "task": "instruction_follow",
+    "run": 2,
+    "phase": "quality",
+    "timestamp": "2026-03-20T17:55:08.566916",
+    "quality_scores": {
+      "numbered_items": 5,
+      "items_expected": 5,
+      "items_pass": true
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 31.81,
+    "prefill_tok_s": 191.01,
+    "eval_count": 91,
+    "prompt_eval_count": 61,
+    "ttft_s": 0.65,
+    "load_s": 0.3,
+    "prompt_eval_s": 0.32,
+    "eval_s": 2.86,
+    "wall_s": 3.6,
+    "response": "1. Solar energy is a renewable resource that will not deplete over time.\n2. It significantly reduces greenhouse gas emissions compared to fossil fuel-based power plants.\n3. Solar panels require minimal maintenance and have a long operational lifespan.\n4. Distributed solar systems can provide energy independence and reduce reliance on the electrical grid.\n5. The cost of solar technology has dropped dramatically, making it one of the cheapest sources of new electricity generation.",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9307,
+      "ram_free_mb": 5891,
+      "swap_used_mb": 951
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9301,
+      "ram_free_mb": 5897,
+      "swap_used_mb": 951
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen3.5:9b",
+    "task": "instruction_follow",
+    "run": 3,
+    "phase": "quality",
+    "timestamp": "2026-03-20T17:55:12.682482",
+    "quality_scores": {
+      "numbered_items": 5,
+      "items_expected": 5,
+      "items_pass": true
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 42.3,
+    "prefill_tok_s": 135.95,
+    "eval_count": 4,
+    "prompt_eval_count": 42,
+    "ttft_s": 0.63,
+    "load_s": 0.3,
+    "prompt_eval_s": 0.31,
+    "eval_s": 0.09,
+    "wall_s": 0.7,
+    "response": "391",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9300,
+      "ram_free_mb": 5898,
+      "swap_used_mb": 951
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9308,
+      "ram_free_mb": 5890,
+      "swap_used_mb": 951
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen3.5:9b",
+    "task": "arithmetic",
+    "run": 1,
+    "phase": "quality",
+    "timestamp": "2026-03-20T17:55:13.917930",
+    "quality_scores": {
+      "contains_target": true,
+      "numbers_found": [
+        "391"
+      ]
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 42.03,
+    "prefill_tok_s": 136.21,
+    "eval_count": 4,
+    "prompt_eval_count": 42,
+    "ttft_s": 0.63,
+    "load_s": 0.3,
+    "prompt_eval_s": 0.31,
+    "eval_s": 0.1,
+    "wall_s": 0.7,
+    "response": "391",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9308,
+      "ram_free_mb": 5890,
+      "swap_used_mb": 951
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9309,
+      "ram_free_mb": 5889,
+      "swap_used_mb": 951
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen3.5:9b",
+    "task": "arithmetic",
+    "run": 2,
+    "phase": "quality",
+    "timestamp": "2026-03-20T17:55:15.149748",
+    "quality_scores": {
+      "contains_target": true,
+      "numbers_found": [
+        "391"
+      ]
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 42.2,
+    "prefill_tok_s": 136.23,
+    "eval_count": 4,
+    "prompt_eval_count": 42,
+    "ttft_s": 0.63,
+    "load_s": 0.3,
+    "prompt_eval_s": 0.31,
+    "eval_s": 0.09,
+    "wall_s": 0.7,
+    "response": "391",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9309,
+      "ram_free_mb": 5889,
+      "swap_used_mb": 951
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9300,
+      "ram_free_mb": 5898,
+      "swap_used_mb": 951
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen3.5:9b",
+    "task": "arithmetic",
+    "run": 3,
+    "phase": "quality",
+    "timestamp": "2026-03-20T17:55:16.385245",
+    "quality_scores": {
+      "contains_target": true,
+      "numbers_found": [
+        "391"
+      ]
+    }
+  }
+]

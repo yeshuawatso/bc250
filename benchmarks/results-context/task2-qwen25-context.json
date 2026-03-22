@@ -1,0 +1,253 @@
+[
+  {
+    "status": "OK",
+    "gen_tok_s": 52.47,
+    "prefill_tok_s": 253.52,
+    "eval_count": 50,
+    "prompt_eval_count": 2191,
+    "ttft_s": 16.58,
+    "load_s": 7.9,
+    "prompt_eval_s": 8.64,
+    "eval_s": 0.95,
+    "wall_s": 17.7,
+    "response": "EE  _E  th  e    ug  old\n  uth  te this   1\n  here this each this    0          this  t\n ",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 1391,
+      "ram_free_mb": 13807,
+      "swap_used_mb": 855
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 6366,
+      "ram_free_mb": 8832,
+      "swap_used_mb": 855
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen2.5:7b",
+    "num_ctx": 4096,
+    "target_fill_tokens": 3276,
+    "run": 1,
+    "phase": "context",
+    "timestamp": "2026-03-21T11:21:08.957520",
+    "context_truncated": false,
+    "vram": {
+      "vram_gib": 4.42,
+      "total_gib": 4.42,
+      "gpu_pct": 100
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 51.93,
+    "prefill_tok_s": 60027.77,
+    "eval_count": 50,
+    "prompt_eval_count": 2191,
+    "ttft_s": 0.23,
+    "load_s": 0.2,
+    "prompt_eval_s": 0.04,
+    "eval_s": 0.96,
+    "wall_s": 1.4,
+    "response": "E E\nDstr\nEV\nE\nE\n muchE\n t\n D\n d\n d\n e\n d\n d\n d\n d\n d\n d\n d\n d\n d\n d\n d\n d\n",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 6344,
+      "ram_free_mb": 8854,
+      "swap_used_mb": 855
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 6347,
+      "ram_free_mb": 8851,
+      "swap_used_mb": 855
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen2.5:7b",
+    "num_ctx": 4096,
+    "target_fill_tokens": 3276,
+    "run": 2,
+    "phase": "context",
+    "timestamp": "2026-03-21T11:21:12.343937",
+    "context_truncated": false
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 44.21,
+    "prefill_tok_s": 189.84,
+    "eval_count": 50,
+    "prompt_eval_count": 9535,
+    "ttft_s": 53.9,
+    "load_s": 3.7,
+    "prompt_eval_s": 50.23,
+    "eval_s": 1.13,
+    "wall_s": 55.3,
+    "response": "the\n\\ro\n\\\n\\r\n \\\nE\nthis this\nthis this\nthis this\nthis this\nthis this\nthis this\nthis this\nthis this\nthis this\nthis this\nthis is\nthis this\n",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 1428,
+      "ram_free_mb": 13771,
+      "swap_used_mb": 855
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 6601,
+      "ram_free_mb": 8597,
+      "swap_used_mb": 821
+    },
+    "swap_delta_mb": -34,
+    "model": "qwen2.5:7b",
+    "num_ctx": 16384,
+    "target_fill_tokens": 13107,
+    "run": 1,
+    "phase": "context",
+    "timestamp": "2026-03-21T11:22:13.650443",
+    "context_truncated": false,
+    "vram": {
+      "vram_gib": 5.21,
+      "total_gib": 5.21,
+      "gpu_pct": 100
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 43.33,
+    "prefill_tok_s": 220208.59,
+    "eval_count": 50,
+    "prompt_eval_count": 9535,
+    "ttft_s": 0.23,
+    "load_s": 0.2,
+    "prompt_eval_s": 0.04,
+    "eval_s": 1.15,
+    "wall_s": 1.6,
+    "response": "this is```this\nis\nthis\nthat\nthis\nthis\nthis\nthis\nthis\nthis\nthis\nthis\nthis\nthis\nthis\nthis\nthis\nthis\nthis\nthis\nthis\nthis\nthis\nthis",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 6600,
+      "ram_free_mb": 8598,
+      "swap_used_mb": 821
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 6603,
+      "ram_free_mb": 8595,
+      "swap_used_mb": 821
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen2.5:7b",
+    "num_ctx": 16384,
+    "target_fill_tokens": 13107,
+    "run": 2,
+    "phase": "context",
+    "timestamp": "2026-03-21T11:22:17.292763",
+    "context_truncated": false
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 36.87,
+    "prefill_tok_s": 140.28,
+    "eval_count": 50,
+    "prompt_eval_count": 19021,
+    "ttft_s": 139.15,
+    "load_s": 3.6,
+    "prompt_eval_s": 135.59,
+    "eval_s": 1.36,
+    "wall_s": 140.9,
+    "response": " this and parallel parallel and parallelparallel\nparallel parallel\n parallel parallel paralleparallel \nparalleparallel\n parallel parallel paralle par parallels parallel\n parallel parallel paralleparallel parallel\n paralle parallel paralleparallelparallelparalle\nparallel parallel paralleparallelparallel\nparallel parallel paralleparallel parallel",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 1394,
+      "ram_free_mb": 13804,
+      "swap_used_mb": 821
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 6844,
+      "ram_free_mb": 8354,
+      "swap_used_mb": 798
+    },
+    "swap_delta_mb": -23,
+    "model": "qwen2.5:7b",
+    "num_ctx": 32768,
+    "target_fill_tokens": 26214,
+    "run": 1,
+    "phase": "context",
+    "timestamp": "2026-03-21T11:24:44.184698",
+    "context_truncated": false,
+    "vram": {
+      "vram_gib": 6.33,
+      "total_gib": 6.33,
+      "gpu_pct": 100
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 36.37,
+    "prefill_tok_s": 367730.87,
+    "eval_count": 50,
+    "prompt_eval_count": 19021,
+    "ttft_s": 0.24,
+    "load_s": 0.2,
+    "prompt_eval_s": 0.05,
+    "eval_s": 1.37,
+    "wall_s": 2.0,
+    "response": " this and parallelparallel\nparallel parallel\n parallelparallel parallel parallelsor parallel long paralle\n par parallel parallel parallel\n parallel parallel\nparallel\nparalle\nparallel parallel parallel for\nparalleparallel\n parallelparallel parallel paralleparallel\n parallel parallel parallel\n parallel ppar",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 6844,
+      "ram_free_mb": 8354,
+      "swap_used_mb": 798
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 6864,
+      "ram_free_mb": 8334,
+      "swap_used_mb": 798
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen2.5:7b",
+    "num_ctx": 32768,
+    "target_fill_tokens": 26214,
+    "run": 2,
+    "phase": "context",
+    "timestamp": "2026-03-21T11:24:48.165540",
+    "context_truncated": false
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 27.93,
+    "prefill_tok_s": 101.88,
+    "eval_count": 24,
+    "prompt_eval_count": 32768,
+    "ttft_s": 325.31,
+    "load_s": 3.7,
+    "prompt_eval_s": 321.62,
+    "eval_s": 0.86,
+    "wall_s": 326.6,
+    "response": "batation b atatationa Doperationtion\n\n##at in strugg parallel with0cion\n\n|",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 1420,
+      "ram_free_mb": 13778,
+      "swap_used_mb": 798
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 7315,
+      "ram_free_mb": 7883,
+      "swap_used_mb": 754
+    },
+    "swap_delta_mb": -44,
+    "model": "qwen2.5:7b",
+    "num_ctx": 65536,
+    "target_fill_tokens": 52428,
+    "run": 1,
+    "phase": "context",
+    "timestamp": "2026-03-21T11:30:20.812425",
+    "context_truncated": false,
+    "vram": {
+      "vram_gib": 6.33,
+      "total_gib": 6.33,
+      "gpu_pct": 100
+    }
+  }
+]

@@ -103,7 +103,7 @@ SIGNAL_RPC = "http://127.0.0.1:8080/api/v1/rpc"
 SIGNAL_ACCOUNT = os.environ.get('SIGNAL_ACCOUNT', '+<BOT_PHONE>')
 SIGNAL_OWNER = os.environ.get('SIGNAL_OWNER', '+<OWNER_PHONE>')
 SIGNAL_CHAT_MODEL = "qwen3.5-35b-a3b-iq2m"
-SIGNAL_CHAT_CTX = 16384             # Context window for chat responses (matches OLLAMA_CONTEXT_LENGTH)
+SIGNAL_CHAT_CTX = 65536             # Context window for chat responses (verified filled-context ceiling)
 SIGNAL_CHAT_MAX_EXEC = 3            # Max shell commands per message (search+fetch+verify)
 SIGNAL_EXEC_TIMEOUT_S = 30          # Timeout for shell commands
 SIGNAL_LLM_TIMEOUT_S = 900          # 15 min — MoE model with large context can be slow
@@ -145,9 +145,9 @@ WHISPER_THREADS = 6                  # Zen 2 6c
 
 # ─── Vision Analysis ────────────────────────────────────────────────────────
 VISION_MODEL = "qwen3.5:9b"          # Has native vision capability
-VISION_CTX = 4096                    # Enough for image + short prompt
+VISION_CTX = 65536                   # Match global 64K ceiling (9B handles it with -26% degradation)
 VISION_MAX_PREDICT = 500             # Max tokens for vision reply
-VISION_TIMEOUT_S = 120               # Vision analysis timeout
+VISION_TIMEOUT_S = 300               # 5 min — image + long text at high ctx fill
 
 # ─── Smart Model Routing ────────────────────────────────────────────────────
 # MoE (35B) = faster, smarter for text. 9B = vision, longer context.

@@ -169,7 +169,7 @@ def chart_whisper_memory():
 
 def chart_model_speed():
     """Horizontal bar: gen speed + prefill speed for all three models."""
-    models = ['qwen2.5:3b\n(draft candidate)', 'qwen3.5-35b-a3b\nMoE IQ2_M', 'qwen3.5:9b\nQ4_K_M']
+    models = ['qwen2.5:3b\n(draft candidate)', 'qwen3.5-35b-a3b-iq2m\nMoE 35B-A3B', 'qwen3.5:9b\nQ4_K_M']
     gen_speed = [101.9, 37.7, 31.8]
     prefill_speed = [309.2, 69.1, 109.0]  # averaged from results
     sizes_gb = [1.8, 10.6, 6.1]
@@ -348,7 +348,7 @@ def chart_signal_pipeline():
 
     # Size/speed annotations
     ax.text(6.5, 4.15, '~4s for 30s audio', fontsize=8, ha='center', color='#8b949e', style='italic')
-    ax.text(6.5, 2.15, 'think: false, 4K ctx', fontsize=8, ha='center', color='#8b949e', style='italic')
+    ax.text(6.5, 2.15, 'think: false, 64K ctx', fontsize=8, ha='center', color='#8b949e', style='italic')
     ax.text(6.5, 0.15, '>8K tok → 9B, else MoE', fontsize=8, ha='center', color='#8b949e', style='italic')
 
     plt.savefig(f'{OUT_DIR}/signal-pipeline.png', dpi=150, bbox_inches='tight')

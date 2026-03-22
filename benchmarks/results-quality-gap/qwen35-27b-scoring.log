@@ -1,0 +1,9 @@
+Quality benchmark: qwen3.5-27b-iq2m:latest
+Tasks: 5, Runs: 3
+Timeout: 180s per task
+
+Warming up (300s timeout)... FAIL: HTTP Error 500: Internal Server Error
+Model cannot be loaded. Recording all tasks as TIMEOUT.
+Saved: /opt/netscan/tmp/bench-rigorous/phase4-quality-27b-20260322_1500.json
+
+Result: 0/15 (warmup failure)

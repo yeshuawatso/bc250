@@ -1,0 +1,539 @@
+[
+  {
+    "status": "OK",
+    "gen_tok_s": 53.94,
+    "prefill_tok_s": 264.27,
+    "eval_count": 300,
+    "prompt_eval_count": 244,
+    "ttft_s": 1.1,
+    "load_s": 0.2,
+    "prompt_eval_s": 0.92,
+    "eval_s": 5.56,
+    "wall_s": 7.5,
+    "response": "PU PUPU PPUPU PU-P PUUPPU PU PU PU PUPU PU PU U PU thePU aPUPUPU PU aPUPUPUPU PPPU PU PUUPPU PU PU PU PU PU PE PU PUPUPU PU thePUPUPUPUPU PUPUPUPUPUPUPUPU PU PUPUPU PU PU PU PU PUPU PU PU thepuPUPUPUPU PU PU PPU PU thePUPUPUPUPU PU PU thepuPUPUPUPU PU PUPUPU PU thePUPUPUPUPU PU PU thepuPUPUPUPU PU PUUUU PU UPU PU PU PU PU PUUUUUU PU thepuPUPUPUPU PUPUPUPUPUPUPUPU PU PPUUPU PUUUpuUU PU thePUPUPUPUPU PU PUPUPU PU thepuPUPUPUPU PU PU thePUPUPUPUPU PU thepuPUPUPUPUPUPU PU PU thepuPUPUPUPUPUPU PU the",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 5973,
+      "ram_free_mb": 9225,
+      "swap_used_mb": 925
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 5978,
+      "ram_free_mb": 9220,
+      "swap_used_mb": 925
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen2.5:7b",
+    "task": "summarize",
+    "run": 1,
+    "phase": "quality",
+    "timestamp": "2026-03-22T14:50:05.209813",
+    "quality_scores": {
+      "keywords_found": 0,
+      "keywords_total": 4,
+      "keywords_pass": false,
+      "sentence_count": 1,
+      "sentences_pass": false
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 0,
+    "prefill_tok_s": 0,
+    "eval_count": 0,
+    "prompt_eval_count": 0,
+    "ttft_s": 0.0,
+    "load_s": 0.0,
+    "prompt_eval_s": 0.0,
+    "eval_s": 0.0,
+    "wall_s": 3.8,
+    "response": "PUPUthe PUPEPUPUPUPUPU PUUPPUPUPUPUPU PUPOPUPUPUPUPUPU PUPUPUPUPUPUPUPU PUPUPUPUPUPUPUPU PU PPUPUPUPUPUPU PU PUU PU PUPUPUPUPU PUPUPU PU PU PU PU PU U PUPU PU PU PU PU PU PU PU PU PU PU PU PE PU PU PU PU PU PU PU PU PU PU PU PU PU PU PU PU PU PU PU PU PU PU PU PU PU PU PU PU PU PU PU",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 5975,
+      "ram_free_mb": 9223,
+      "swap_used_mb": 925
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 5965,
+      "ram_free_mb": 9233,
+      "swap_used_mb": 925
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen2.5:7b",
+    "task": "summarize",
+    "run": 2,
+    "phase": "quality",
+    "timestamp": "2026-03-22T14:50:09.515809",
+    "quality_scores": {
+      "keywords_found": 0,
+      "keywords_total": 4,
+      "keywords_pass": false,
+      "sentence_count": 1,
+      "sentences_pass": false
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 53.99,
+    "prefill_tok_s": 264.47,
+    "eval_count": 300,
+    "prompt_eval_count": 244,
+    "ttft_s": 1.11,
+    "load_s": 0.2,
+    "prompt_eval_s": 0.92,
+    "eval_s": 5.56,
+    "wall_s": 8.3,
+    "response": "PU PUUP PU PU PU,PUPUPU\n\nPU PUUUPPEPUPUPUPU PUdPUPUPU PUPU PU UPPUpePU thePUPUPUPUPUPUPUPUPUPUPUPUPU PU UPUPUUPUPUPUPUPUPUPUPUPUPUPU PU PUPEPUPUPUPUPUPUPUPUPUPUPUPUPUPUPUUUUUUUPUUPPUPUPUPUPUPUPUUUUUUUUUU PUUUUUUUPUUUUUUUUUUUPUUUUUUUUUPUUUUUUUUUUPPUUUUUUUUUUUUPUUUUUUUUUUPPUUPPPUPUUUUUUPUUUUPUPUUPPUUPPPUPUUUUPPPUPUUUUPUUPUUUPUUUUUUPUUPPUUPPPUPUUUPPUUUPUUUPUUUUUPUUUUUPUUUUUPPUUUUUUUUUUUUUUUUUUUUUUUUUUUUUPPPPUPUUUU PPPPUUUUPUUUUPUUUUPUUPPPPUUPPPPPUUUPUPPPUUUUPPUPUPUUUPUUPPUPPUUUPUUUUUPPPPUPPU PUUPUU",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 5965,
+      "ram_free_mb": 9233,
+      "swap_used_mb": 925
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 5954,
+      "ram_free_mb": 9244,
+      "swap_used_mb": 925
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen2.5:7b",
+    "task": "summarize",
+    "run": 3,
+    "phase": "quality",
+    "timestamp": "2026-03-22T14:50:18.304538",
+    "quality_scores": {
+      "keywords_found": 0,
+      "keywords_total": 4,
+      "keywords_pass": false,
+      "sentence_count": 1,
+      "sentences_pass": false
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 0,
+    "prefill_tok_s": 0,
+    "eval_count": 0,
+    "prompt_eval_count": 0,
+    "ttft_s": 0.0,
+    "load_s": 0.0,
+    "prompt_eval_s": 0.0,
+    "eval_s": 0.0,
+    "wall_s": 2.8,
+    "response": "``` no,\nname no \"\n\nTEXT\n\n``````FieldValue\n:TextField\n\nage\n4\nno\n no\nno no no\n\n no no no no no no no no no no no no no no no no no no no no no no no no no no no no no no no",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 5952,
+      "ram_free_mb": 9246,
+      "swap_used_mb": 925
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 5963,
+      "ram_free_mb": 9235,
+      "swap_used_mb": 925
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen2.5:7b",
+    "task": "json_extract",
+    "run": 1,
+    "phase": "quality",
+    "timestamp": "2026-03-22T14:50:21.626756",
+    "quality_scores": {
+      "valid_json": false
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 0,
+    "prefill_tok_s": 0,
+    "eval_count": 0,
+    "prompt_eval_count": 0,
+    "ttft_s": 0.0,
+    "load_s": 0.0,
+    "prompt_eval_s": 0.0,
+    "eval_s": 0.0,
+    "wall_s": 4.4,
+    "response": "``` no no no no \" no no no no no no no no no no no no no no no no no no no no no no no no no no no no no no no",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 5962,
+      "ram_free_mb": 9236,
+      "swap_used_mb": 925
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 5963,
+      "ram_free_mb": 9235,
+      "swap_used_mb": 925
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen2.5:7b",
+    "task": "json_extract",
+    "run": 2,
+    "phase": "quality",
+    "timestamp": "2026-03-22T14:50:26.532978",
+    "quality_scores": {
+      "valid_json": false
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 55.03,
+    "prefill_tok_s": 287.87,
+    "eval_count": 80,
+    "prompt_eval_count": 136,
+    "ttft_s": 0.65,
+    "load_s": 0.2,
+    "prompt_eval_s": 0.47,
+    "eval_s": 1.45,
+    "wall_s": 2.7,
+    "response": "``` {\n \"[\";\n }\n\n JSON(\n; \n\n\n\n \n\n\n\n;\n\n no\n\nno\n\n;\n\nno\n\nno\n\n;\n\nno\n\nno\n\n;\n\nno\n\nno\n\n;\n\nno\n\nno\n\n;\n\nno\n\nno\n\n;\n\nno\n\nno\n;\n\nno\n\nno(no;\n\nno\n\nyear\n\n;\n\nno\n\nno\n\n;\n\nno\n\nno\n\n;\n\nno\n\nno\n\n;\n\nno\n\nno\n\n;",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 5961,
+      "ram_free_mb": 9237,
+      "swap_used_mb": 925
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 5977,
+      "ram_free_mb": 9221,
+      "swap_used_mb": 925
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen2.5:7b",
+    "task": "json_extract",
+    "run": 3,
+    "phase": "quality",
+    "timestamp": "2026-03-22T14:50:29.689379",
+    "quality_scores": {
+      "valid_json": false
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 56.12,
+    "prefill_tok_s": 251.73,
+    "eval_count": 33,
+    "prompt_eval_count": 169,
+    "ttft_s": 0.85,
+    "load_s": 0.2,
+    "prompt_eval_s": 0.67,
+    "eval_s": 0.59,
+    "wall_s": 1.7,
+    "response": "The chemical symbol for tungsten is Wol (from German: Wolfram). \n\nIn English, tungsten. is the word used) used use..",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 5975,
+      "ram_free_mb": 9223,
+      "swap_used_mb": 925
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 5971,
+      "ram_free_mb": 9227,
+      "swap_used_mb": 925
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen2.5:7b",
+    "task": "fact_recall",
+    "run": 1,
+    "phase": "quality",
+    "timestamp": "2026-03-22T14:50:31.874051",
+    "quality_scores": {
+      "keywords_found": 2,
+      "keywords_total": 2,
+      "keywords_pass": true
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 54.18,
+    "prefill_tok_s": 251.58,
+    "eval_count": 300,
+    "prompt_eval_count": 169,
+    "ttft_s": 0.85,
+    "load_s": 0.2,
+    "prompt_eval_s": 0.67,
+    "eval_s": 5.54,
+    "wall_s": 8.7,
+    "response": "The chemical element you're asking about is tungsten. and its name from Germany (from the German \" Wol in the Germanic.T\n\n\nSo, to- tungsten's) is- W\n\nW T\n- tungsten, t\n ?\n\nut\n? \nt - The\n\n- from\n \n\n  ? \n\n \\- \n\n   \n \\ \n   \n \\ \n\n- \\ tungsten? \\ ? \n\n\\ \\ \n \\ \n \\ \n\n \\ \n\n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ \n \\ ",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 5971,
+      "ram_free_mb": 9227,
+      "swap_used_mb": 925
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 5964,
+      "ram_free_mb": 9234,
+      "swap_used_mb": 925
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen2.5:7b",
+    "task": "fact_recall",
+    "run": 2,
+    "phase": "quality",
+    "timestamp": "2026-03-22T14:50:41.032398",
+    "quality_scores": {
+      "keywords_found": 1,
+      "keywords_total": 2,
+      "keywords_pass": true
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 57.36,
+    "prefill_tok_s": 251.76,
+    "eval_count": 19,
+    "prompt_eval_count": 169,
+    "ttft_s": 0.84,
+    "load_s": 0.2,
+    "prompt_eval_s": 0.67,
+    "eval_s": 0.33,
+    "wall_s": 1.9,
+    "response": "The chemical name for tungsten is Wolfram.It gets name name fromGerman:.",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 5965,
+      "ram_free_mb": 9233,
+      "swap_used_mb": 925
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 5965,
+      "ram_free_mb": 9233,
+      "swap_used_mb": 925
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen2.5:7b",
+    "task": "fact_recall",
+    "run": 3,
+    "phase": "quality",
+    "timestamp": "2026-03-22T14:50:43.451427",
+    "quality_scores": {
+      "keywords_found": 2,
+      "keywords_total": 2,
+      "keywords_pass": true
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 0,
+    "prefill_tok_s": 0,
+    "eval_count": 0,
+    "prompt_eval_count": 0,
+    "ttft_s": 0.0,
+    "load_s": 0.0,
+    "prompt_eval_s": 0.0,
+    "eval_s": 0.0,
+    "wall_s": 4.8,
+    "response": "   advantages  \\n\\t\n\n   An environmentally source abundant minimal access to produce electrical energy power .     the  \\n\\\n\n   A renewable  high efficiency and less waste gases emissions,   A reduces e reliance on non-renew s sources and decreases       A potentially riable cost in oduction reduction production,     A lpplicable in to a wide r array range and diverse scales costs.\n\n\n\n     )   )  ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 5966,
+      "ram_free_mb": 9232,
+      "swap_used_mb": 925
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 5972,
+      "ram_free_mb": 9226,
+      "swap_used_mb": 925
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen2.5:7b",
+    "task": "instruction_follow",
+    "run": 1,
+    "phase": "quality",
+    "timestamp": "2026-03-22T14:50:48.783987",
+    "quality_scores": {
+      "numbered_items": 0,
+      "items_expected": 5,
+      "items_pass": false
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 0,
+    "prefill_tok_s": 0,
+    "eval_count": 0,
+    "prompt_eval_count": 0,
+    "ttft_s": 0.0,
+    "load_s": 0.0,
+    "prompt_eval_s": 0.0,
+    "eval_s": 0.0,
+    "wall_s": 2.2,
+    "response": "   advantages request    list:\n\n- Adv environmentally by the Earth's atmosphere.\n- Utilize for renewable energy source.\n \n-    0Note     \n\nPlease Note                \n     \n       \n\n   ",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 5976,
+      "ram_free_mb": 9222,
+      "swap_used_mb": 925
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 5947,
+      "ram_free_mb": 9251,
+      "swap_used_mb": 925
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen2.5:7b",
+    "task": "instruction_follow",
+    "run": 2,
+    "phase": "quality",
+    "timestamp": "2026-03-22T14:50:51.528224",
+    "quality_scores": {
+      "numbered_items": 0,
+      "items_expected": 5,
+      "items_pass": false
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 56.22,
+    "prefill_tok_s": 4268.11,
+    "eval_count": 31,
+    "prompt_eval_count": 78,
+    "ttft_s": 0.21,
+    "load_s": 0.2,
+    "prompt_eval_s": 0.02,
+    "eval_s": 0.55,
+    "wall_s": 0.9,
+    "response": "  . \n\n- Reduced advantages Energy efficiency efficient is production process.\n .\n-- Adv Energy the can renewable utilization sources to utilize for\n .\n.\n-",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 5946,
+      "ram_free_mb": 9252,
+      "swap_used_mb": 925
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 5963,
+      "ram_free_mb": 9235,
+      "swap_used_mb": 925
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen2.5:7b",
+    "task": "instruction_follow",
+    "run": 3,
+    "phase": "quality",
+    "timestamp": "2026-03-22T14:50:52.913519",
+    "quality_scores": {
+      "numbered_items": 0,
+      "items_expected": 5,
+      "items_pass": false
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 55.6,
+    "prefill_tok_s": 210.54,
+    "eval_count": 51,
+    "prompt_eval_count": 57,
+    "ttft_s": 0.46,
+    "load_s": 0.2,
+    "prompt_eval_s": 0.27,
+    "eval_s": 0.92,
+    "wall_s": 1.6,
+    "response": "It It seems like you've mentioned an expression but for me toto solve,Could you please could provide give provide the specific expression or and the instruction problem that you need want to For me I I I\n\nIf I can help help solve it?",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 5963,
+      "ram_free_mb": 9235,
+      "swap_used_mb": 925
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 5961,
+      "ram_free_mb": 9237,
+      "swap_used_mb": 925
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen2.5:7b",
+    "task": "arithmetic",
+    "run": 1,
+    "phase": "quality",
+    "timestamp": "2026-03-22T14:50:54.995885",
+    "quality_scores": {
+      "contains_target": false,
+      "numbers_found": []
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 56.76,
+    "prefill_tok_s": 3115.81,
+    "eval_count": 25,
+    "prompt_eval_count": 57,
+    "ttft_s": 0.2,
+    "load_s": 0.2,
+    "prompt_eval_s": 0.02,
+    "eval_s": 0.44,
+    "wall_s": 0.7,
+    "response": "It It seems like you want to solve an arithmetic problem,, However but, However Please can. CouldCould\n?\n",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 5961,
+      "ram_free_mb": 9237,
+      "swap_used_mb": 925
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 5960,
+      "ram_free_mb": 9238,
+      "swap_used_mb": 925
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen2.5:7b",
+    "task": "arithmetic",
+    "run": 2,
+    "phase": "quality",
+    "timestamp": "2026-03-22T14:50:56.240600",
+    "quality_scores": {
+      "contains_target": false,
+      "numbers_found": []
+    }
+  },
+  {
+    "status": "OK",
+    "gen_tok_s": 57.72,
+    "prefill_tok_s": 3112.35,
+    "eval_count": 18,
+    "prompt_eval_count": 57,
+    "ttft_s": 0.2,
+    "load_s": 0.2,
+    "prompt_eval_s": 0.02,
+    "eval_s": 0.31,
+    "wall_s": 0.6,
+    "response": "It It seems like you need to provided some mathematical expression or problem that I needs to",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 5960,
+      "ram_free_mb": 9238,
+      "swap_used_mb": 925
+    },
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 5969,
+      "ram_free_mb": 9229,
+      "swap_used_mb": 925
+    },
+    "swap_delta_mb": 0,
+    "model": "qwen2.5:7b",
+    "task": "arithmetic",
+    "run": 3,
+    "phase": "quality",
+    "timestamp": "2026-03-22T14:50:57.327123",
+    "quality_scores": {
+      "contains_target": false,
+      "numbers_found": []
+    }
+  }
+]

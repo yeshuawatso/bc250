@@ -1,0 +1,1299 @@
+[
+  {
+    "model": "qwen3.5-35b-a3b-iq2m:latest",
+    "num_ctx": 4096,
+    "target_fill_tokens": 10,
+    "timestamp": "2026-03-20T10:07:18.603381",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 694,
+      "ram_free_mb": 14504,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 327
+    },
+    "prompt_chars": 126,
+    "status": "OK",
+    "gen_tok_s": 38.18,
+    "prefill_tok_s": 61.83,
+    "eval_count": 50,
+    "prompt_eval_count": 37,
+    "prompt_eval_duration_s": 0.6,
+    "eval_duration_s": 1.31,
+    "load_duration_s": 16.1,
+    "wall_s": 18.4,
+    "ttft_s": 16.7,
+    "fill_ratio_actual": 0.009,
+    "fill_verified": true,
+    "context_truncated": false,
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13033,
+      "ram_free_mb": 2165,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 348
+    },
+    "vram": {
+      "vram_bytes": 13157763584,
+      "vram_gib": 12.25,
+      "total_bytes": 13157763584,
+      "gpu_pct": 100
+    },
+    "ollama_logs": {
+      "kv_size_requested": 4096,
+      "kv_cache_reported": "1.6 GiB",
+      "total_memory_reported": "12.3 GiB",
+      "layers_offloaded": "41/41"
+    },
+    "swap_status": "OK",
+    "phase": "allocation"
+  },
+  {
+    "model": "qwen3.5-35b-a3b-iq2m:latest",
+    "num_ctx": 4096,
+    "target_fill_tokens": 3276,
+    "timestamp": "2026-03-20T10:07:37.077043",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13023,
+      "ram_free_mb": 2175,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 348
+    },
+    "prompt_chars": 11650,
+    "status": "OK",
+    "gen_tok_s": 35.65,
+    "prefill_tok_s": 233.5,
+    "eval_count": 50,
+    "prompt_eval_count": 2394,
+    "prompt_eval_duration_s": 10.25,
+    "eval_duration_s": 1.4,
+    "load_duration_s": 0.31,
+    "wall_s": 12.0,
+    "ttft_s": 10.56,
+    "fill_ratio_actual": 0.584,
+    "fill_verified": true,
+    "context_truncated": false,
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13251,
+      "ram_free_mb": 1947,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 346
+    },
+    "vram": {
+      "vram_bytes": 13157763584,
+      "vram_gib": 12.25,
+      "total_bytes": 13157763584,
+      "gpu_pct": 100
+    },
+    "ollama_logs": {
+      "kv_size_requested": 4096,
+      "kv_cache_reported": "1.6 GiB",
+      "total_memory_reported": "12.3 GiB",
+      "layers_offloaded": "41/41"
+    },
+    "swap_status": "OK",
+    "phase": "filled"
+  },
+  {
+    "model": "qwen3.5-35b-a3b-iq2m:latest",
+    "num_ctx": 8192,
+    "target_fill_tokens": 10,
+    "timestamp": "2026-03-20T10:07:55.139609",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 865,
+      "ram_free_mb": 14333,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 342
+    },
+    "prompt_chars": 126,
+    "status": "OK",
+    "gen_tok_s": 38.07,
+    "prefill_tok_s": 62.54,
+    "eval_count": 50,
+    "prompt_eval_count": 37,
+    "prompt_eval_duration_s": 0.59,
+    "eval_duration_s": 1.31,
+    "load_duration_s": 16.27,
+    "wall_s": 18.5,
+    "ttft_s": 16.87,
+    "fill_ratio_actual": 0.005,
+    "fill_verified": true,
+    "context_truncated": false,
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13049,
+      "ram_free_mb": 2150,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 350
+    },
+    "vram": {
+      "vram_bytes": 13189745152,
+      "vram_gib": 12.28,
+      "total_bytes": 13189745152,
+      "gpu_pct": 100
+    },
+    "ollama_logs": {
+      "kv_size_requested": 8192,
+      "layers_offloaded": "41/41",
+      "kv_cache_reported": "1.6 GiB",
+      "total_memory_reported": "12.3 GiB"
+    },
+    "swap_status": "OK",
+    "phase": "allocation"
+  },
+  {
+    "model": "qwen3.5-35b-a3b-iq2m:latest",
+    "num_ctx": 8192,
+    "target_fill_tokens": 6553,
+    "timestamp": "2026-03-20T10:08:13.678191",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13008,
+      "ram_free_mb": 2190,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 350
+    },
+    "prompt_chars": 23212,
+    "status": "OK",
+    "gen_tok_s": 34.23,
+    "prefill_tok_s": 222.77,
+    "eval_count": 50,
+    "prompt_eval_count": 4758,
+    "prompt_eval_duration_s": 21.36,
+    "eval_duration_s": 1.46,
+    "load_duration_s": 0.29,
+    "wall_s": 23.2,
+    "ttft_s": 21.65,
+    "fill_ratio_actual": 0.581,
+    "fill_verified": true,
+    "context_truncated": false,
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13316,
+      "ram_free_mb": 1883,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 350
+    },
+    "vram": {
+      "vram_bytes": 13189745152,
+      "vram_gib": 12.28,
+      "total_bytes": 13189745152,
+      "gpu_pct": 100
+    },
+    "ollama_logs": {
+      "kv_size_requested": 8192,
+      "layers_offloaded": "41/41",
+      "kv_cache_reported": "1.6 GiB",
+      "total_memory_reported": "12.3 GiB"
+    },
+    "swap_status": "OK",
+    "phase": "filled"
+  },
+  {
+    "model": "qwen3.5-35b-a3b-iq2m:latest",
+    "num_ctx": 16384,
+    "target_fill_tokens": 10,
+    "timestamp": "2026-03-20T10:08:42.901454",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 881,
+      "ram_free_mb": 14317,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 343
+    },
+    "prompt_chars": 126,
+    "status": "OK",
+    "gen_tok_s": 38.08,
+    "prefill_tok_s": 65.21,
+    "eval_count": 50,
+    "prompt_eval_count": 37,
+    "prompt_eval_duration_s": 0.57,
+    "eval_duration_s": 1.31,
+    "load_duration_s": 16.4,
+    "wall_s": 18.7,
+    "ttft_s": 16.97,
+    "fill_ratio_actual": 0.002,
+    "fill_verified": true,
+    "context_truncated": false,
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13226,
+      "ram_free_mb": 1972,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 373
+    },
+    "vram": {
+      "vram_bytes": 13253708288,
+      "vram_gib": 12.34,
+      "total_bytes": 13253708288,
+      "gpu_pct": 100
+    },
+    "ollama_logs": {
+      "kv_size_requested": 16384,
+      "layers_offloaded": "41/41",
+      "kv_cache_reported": "1.6 GiB",
+      "total_memory_reported": "12.3 GiB"
+    },
+    "swap_status": "OK",
+    "phase": "allocation"
+  },
+  {
+    "model": "qwen3.5-35b-a3b-iq2m:latest",
+    "num_ctx": 16384,
+    "target_fill_tokens": 13107,
+    "timestamp": "2026-03-20T10:09:01.612850",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13075,
+      "ram_free_mb": 2123,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 373
+    },
+    "prompt_chars": 48263,
+    "status": "OK",
+    "gen_tok_s": 31.86,
+    "prefill_tok_s": 203.59,
+    "eval_count": 50,
+    "prompt_eval_count": 9880,
+    "prompt_eval_duration_s": 48.53,
+    "eval_duration_s": 1.57,
+    "load_duration_s": 0.29,
+    "wall_s": 50.5,
+    "ttft_s": 48.82,
+    "fill_ratio_actual": 0.603,
+    "fill_verified": true,
+    "context_truncated": false,
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13395,
+      "ram_free_mb": 1803,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 371
+    },
+    "vram": {
+      "vram_bytes": 13253708288,
+      "vram_gib": 12.34,
+      "total_bytes": 13253708288,
+      "gpu_pct": 100
+    },
+    "ollama_logs": {
+      "kv_size_requested": 16384,
+      "layers_offloaded": "41/41",
+      "kv_cache_reported": "1.6 GiB",
+      "total_memory_reported": "12.3 GiB"
+    },
+    "swap_status": "OK",
+    "phase": "filled"
+  },
+  {
+    "model": "qwen3.5-35b-a3b-iq2m:latest",
+    "num_ctx": 32768,
+    "target_fill_tokens": 10,
+    "timestamp": "2026-03-20T10:09:58.166503",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 864,
+      "ram_free_mb": 14334,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 345
+    },
+    "prompt_chars": 126,
+    "status": "OK",
+    "gen_tok_s": 37.66,
+    "prefill_tok_s": 59.57,
+    "eval_count": 50,
+    "prompt_eval_count": 37,
+    "prompt_eval_duration_s": 0.62,
+    "eval_duration_s": 1.33,
+    "load_duration_s": 17.14,
+    "wall_s": 19.5,
+    "ttft_s": 17.76,
+    "fill_ratio_actual": 0.001,
+    "fill_verified": true,
+    "context_truncated": false,
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13275,
+      "ram_free_mb": 1923,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 397
+    },
+    "vram": {
+      "vram_bytes": 13381634560,
+      "vram_gib": 12.46,
+      "total_bytes": 13381634560,
+      "gpu_pct": 100
+    },
+    "ollama_logs": {
+      "kv_size_requested": 32768,
+      "layers_offloaded": "41/41",
+      "kv_cache_reported": "1.7 GiB",
+      "total_memory_reported": "12.5 GiB"
+    },
+    "swap_status": "OK",
+    "phase": "allocation"
+  },
+  {
+    "model": "qwen3.5-35b-a3b-iq2m:latest",
+    "num_ctx": 32768,
+    "target_fill_tokens": 26214,
+    "timestamp": "2026-03-20T10:10:17.732660",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13281,
+      "ram_free_mb": 1917,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 397
+    },
+    "prompt_chars": 98365,
+    "status": "OK",
+    "gen_tok_s": 27.85,
+    "prefill_tok_s": 171.57,
+    "eval_count": 50,
+    "prompt_eval_count": 20124,
+    "prompt_eval_duration_s": 117.29,
+    "eval_duration_s": 1.8,
+    "load_duration_s": 0.32,
+    "wall_s": 119.6,
+    "ttft_s": 117.62,
+    "fill_ratio_actual": 0.614,
+    "fill_verified": true,
+    "context_truncated": false,
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13576,
+      "ram_free_mb": 1622,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 397
+    },
+    "vram": {
+      "vram_bytes": 13381634560,
+      "vram_gib": 12.46,
+      "total_bytes": 13381634560,
+      "gpu_pct": 100
+    },
+    "ollama_logs": {
+      "kv_size_requested": 32768,
+      "layers_offloaded": "41/41",
+      "kv_cache_reported": "1.7 GiB",
+      "total_memory_reported": "12.5 GiB"
+    },
+    "swap_status": "OK",
+    "phase": "filled"
+  },
+  {
+    "model": "qwen3.5-35b-a3b-iq2m:latest",
+    "num_ctx": 65536,
+    "target_fill_tokens": 10,
+    "timestamp": "2026-03-20T10:12:23.413229",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 881,
+      "ram_free_mb": 14317,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 362
+    },
+    "prompt_chars": 126,
+    "status": "OK",
+    "gen_tok_s": 37.57,
+    "prefill_tok_s": 57.56,
+    "eval_count": 50,
+    "prompt_eval_count": 37,
+    "prompt_eval_duration_s": 0.64,
+    "eval_duration_s": 1.33,
+    "load_duration_s": 17.84,
+    "wall_s": 20.7,
+    "ttft_s": 18.49,
+    "fill_ratio_actual": 0.001,
+    "fill_verified": true,
+    "context_truncated": false,
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13527,
+      "ram_free_mb": 1671,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 488
+    },
+    "vram": {
+      "vram_bytes": 13687818752,
+      "vram_gib": 12.75,
+      "total_bytes": 13687818752,
+      "gpu_pct": 100
+    },
+    "ollama_logs": {
+      "kv_size_requested": 65536,
+      "layers_offloaded": "41/41",
+      "kv_cache_reported": "1.9 GiB",
+      "total_memory_reported": "12.7 GiB"
+    },
+    "swap_status": "OK",
+    "phase": "allocation"
+  },
+  {
+    "model": "qwen3.5-35b-a3b-iq2m:latest",
+    "num_ctx": 65536,
+    "target_fill_tokens": 52428,
+    "timestamp": "2026-03-20T10:12:44.122983",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13538,
+      "ram_free_mb": 1660,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 488
+    },
+    "prompt_chars": 198569,
+    "status": "OK",
+    "gen_tok_s": 22.49,
+    "prefill_tok_s": 130.37,
+    "eval_count": 50,
+    "prompt_eval_count": 40612,
+    "prompt_eval_duration_s": 311.51,
+    "eval_duration_s": 2.22,
+    "load_duration_s": 0.31,
+    "wall_s": 314.4,
+    "ttft_s": 311.83,
+    "fill_ratio_actual": 0.62,
+    "fill_verified": true,
+    "context_truncated": false,
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13845,
+      "ram_free_mb": 1353,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 784
+    },
+    "vram": {
+      "vram_bytes": 13687818752,
+      "vram_gib": 12.75,
+      "total_bytes": 13687818752,
+      "gpu_pct": 100
+    },
+    "ollama_logs": {
+      "kv_cache_reported": "1.9 GiB",
+      "total_memory_reported": "12.7 GiB"
+    },
+    "swap_status": "OK",
+    "phase": "filled"
+  },
+  {
+    "model": "qwen3.5-35b-a3b-iq2m:latest",
+    "num_ctx": 98304,
+    "target_fill_tokens": 10,
+    "timestamp": "2026-03-20T10:18:04.574282",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 1094,
+      "ram_free_mb": 14104,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 372
+    },
+    "prompt_chars": 126,
+    "status": "OK",
+    "gen_tok_s": 38.75,
+    "prefill_tok_s": 62.47,
+    "eval_count": 50,
+    "prompt_eval_count": 37,
+    "prompt_eval_duration_s": 0.59,
+    "eval_duration_s": 1.29,
+    "load_duration_s": 17.23,
+    "wall_s": 19.8,
+    "ttft_s": 17.82,
+    "fill_ratio_actual": 0.0,
+    "fill_verified": true,
+    "context_truncated": false,
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 14020,
+      "ram_free_mb": 1178,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 578
+    },
+    "vram": {
+      "vram_bytes": 13977225728,
+      "vram_gib": 13.02,
+      "total_bytes": 13977225728,
+      "gpu_pct": 100
+    },
+    "ollama_logs": {
+      "kv_size_requested": 98304,
+      "layers_offloaded": "41/41",
+      "kv_cache_reported": "2.1 GiB",
+      "total_memory_reported": "13.0 GiB"
+    },
+    "swap_status": "OK",
+    "phase": "allocation"
+  },
+  {
+    "model": "qwen3.5-35b-a3b-iq2m:latest",
+    "num_ctx": 98304,
+    "target_fill_tokens": 78643,
+    "timestamp": "2026-03-20T10:18:24.401248",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 14013,
+      "ram_free_mb": 1185,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 578
+    },
+    "prompt_chars": 298773,
+    "status": "OK",
+    "gen_tok_s": 18.86,
+    "prefill_tok_s": 105.19,
+    "eval_count": 50,
+    "prompt_eval_count": 61100,
+    "prompt_eval_duration_s": 580.83,
+    "eval_duration_s": 2.65,
+    "load_duration_s": 0.31,
+    "wall_s": 584.2,
+    "ttft_s": 581.14,
+    "fill_ratio_actual": 0.622,
+    "fill_verified": true,
+    "context_truncated": false,
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 13815,
+      "ram_free_mb": 1383,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 1060
+    },
+    "vram": {
+      "vram_bytes": 13977225728,
+      "vram_gib": 13.02,
+      "total_bytes": 13977225728,
+      "gpu_pct": 100
+    },
+    "ollama_logs": {
+      "kv_cache_reported": "2.1 GiB",
+      "total_memory_reported": "13.0 GiB"
+    },
+    "swap_status": "OK",
+    "phase": "filled"
+  },
+  {
+    "model": "qwen3.5-35b-a3b-iq2m:latest",
+    "num_ctx": 131072,
+    "target_fill_tokens": 10,
+    "timestamp": "2026-03-20T10:28:13.726043",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 10711,
+      "ram_free_mb": 4487,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 662
+    },
+    "prompt_chars": 126,
+    "status": "OK",
+    "gen_tok_s": 38.64,
+    "prefill_tok_s": 65.04,
+    "eval_count": 50,
+    "prompt_eval_count": 37,
+    "prompt_eval_duration_s": 0.57,
+    "eval_duration_s": 1.29,
+    "load_duration_s": 120.57,
+    "wall_s": 123.5,
+    "ttft_s": 121.14,
+    "fill_ratio_actual": 0.0,
+    "fill_verified": true,
+    "context_truncated": false,
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 14539,
+      "ram_free_mb": 659,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 635
+    },
+    "vram": {
+      "vram_bytes": 14266632704,
+      "vram_gib": 13.29,
+      "total_bytes": 14266632704,
+      "gpu_pct": 100
+    },
+    "ollama_logs": {
+      "kv_size_requested": 131072,
+      "kv_cache_reported": "2.2 GiB",
+      "total_memory_reported": "13.3 GiB",
+      "layers_offloaded": "41/41"
+    },
+    "swap_status": "OK",
+    "phase": "allocation"
+  },
+  {
+    "model": "qwen3.5-35b-a3b-iq2m:latest",
+    "num_ctx": 131072,
+    "target_fill_tokens": 104857,
+    "timestamp": "2026-03-20T10:30:17.264604",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 14529,
+      "ram_free_mb": 669,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 634
+    },
+    "prompt_chars": 397050,
+    "status": "TIMEOUT",
+    "error": "timed out",
+    "wall_s": 600.0,
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 14625,
+      "ram_free_mb": 573,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 1192
+    },
+    "swap_status": "OK",
+    "phase": "filled",
+    "ceiling_reason": "fill_failed_at_131072"
+  },
+  {
+    "model": "qwen3.5:9b",
+    "num_ctx": 4096,
+    "target_fill_tokens": 10,
+    "timestamp": "2026-03-20T10:40:26.325272",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 816,
+      "ram_free_mb": 14382,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 633
+    },
+    "prompt_chars": 126,
+    "status": "OK",
+    "gen_tok_s": 32.07,
+    "prefill_tok_s": 103.65,
+    "eval_count": 50,
+    "prompt_eval_count": 37,
+    "prompt_eval_duration_s": 0.36,
+    "eval_duration_s": 1.56,
+    "load_duration_s": 10.8,
+    "wall_s": 13.0,
+    "ttft_s": 11.16,
+    "fill_ratio_actual": 0.009,
+    "fill_verified": true,
+    "context_truncated": false,
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 8880,
+      "ram_free_mb": 6318,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 591
+    },
+    "vram": {
+      "vram_bytes": 8502385600,
+      "vram_gib": 7.92,
+      "total_bytes": 8502385600,
+      "gpu_pct": 100
+    },
+    "ollama_logs": {
+      "kv_size_requested": 4096,
+      "layers_offloaded": "33/33",
+      "kv_cache_reported": "1.3 GiB",
+      "total_memory_reported": "7.9 GiB"
+    },
+    "swap_status": "OK",
+    "phase": "allocation"
+  },
+  {
+    "model": "qwen3.5:9b",
+    "num_ctx": 4096,
+    "target_fill_tokens": 3276,
+    "timestamp": "2026-03-20T10:40:39.477058",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 8863,
+      "ram_free_mb": 6335,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 591
+    },
+    "prompt_chars": 11650,
+    "status": "OK",
+    "gen_tok_s": 31.18,
+    "prefill_tok_s": 225.52,
+    "eval_count": 50,
+    "prompt_eval_count": 2394,
+    "prompt_eval_duration_s": 10.62,
+    "eval_duration_s": 1.6,
+    "load_duration_s": 0.33,
+    "wall_s": 12.6,
+    "ttft_s": 10.95,
+    "fill_ratio_actual": 0.584,
+    "fill_verified": true,
+    "context_truncated": false,
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9032,
+      "ram_free_mb": 6166,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 590
+    },
+    "vram": {
+      "vram_bytes": 8502385600,
+      "vram_gib": 7.92,
+      "total_bytes": 8502385600,
+      "gpu_pct": 100
+    },
+    "ollama_logs": {
+      "kv_size_requested": 4096,
+      "layers_offloaded": "33/33",
+      "kv_cache_reported": "1.3 GiB",
+      "total_memory_reported": "7.9 GiB"
+    },
+    "swap_status": "OK",
+    "phase": "filled"
+  },
+  {
+    "model": "qwen3.5:9b",
+    "num_ctx": 8192,
+    "target_fill_tokens": 10,
+    "timestamp": "2026-03-20T10:40:58.139861",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 870,
+      "ram_free_mb": 14328,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 590
+    },
+    "prompt_chars": 126,
+    "status": "OK",
+    "gen_tok_s": 31.95,
+    "prefill_tok_s": 102.71,
+    "eval_count": 50,
+    "prompt_eval_count": 37,
+    "prompt_eval_duration_s": 0.36,
+    "eval_duration_s": 1.56,
+    "load_duration_s": 6.1,
+    "wall_s": 8.5,
+    "ttft_s": 6.46,
+    "fill_ratio_actual": 0.005,
+    "fill_verified": true,
+    "context_truncated": false,
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 8919,
+      "ram_free_mb": 6279,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 655
+    },
+    "vram": {
+      "vram_bytes": 8574376896,
+      "vram_gib": 7.99,
+      "total_bytes": 8574376896,
+      "gpu_pct": 100
+    },
+    "ollama_logs": {
+      "kv_size_requested": 8192,
+      "layers_offloaded": "33/33",
+      "kv_cache_reported": "1.3 GiB",
+      "total_memory_reported": "8.0 GiB"
+    },
+    "swap_status": "OK",
+    "phase": "allocation"
+  },
+  {
+    "model": "qwen3.5:9b",
+    "num_ctx": 8192,
+    "target_fill_tokens": 6553,
+    "timestamp": "2026-03-20T10:41:06.757907",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 8894,
+      "ram_free_mb": 6304,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 655
+    },
+    "prompt_chars": 23212,
+    "status": "OK",
+    "gen_tok_s": 30.4,
+    "prefill_tok_s": 218.69,
+    "eval_count": 50,
+    "prompt_eval_count": 4758,
+    "prompt_eval_duration_s": 21.76,
+    "eval_duration_s": 1.64,
+    "load_duration_s": 0.33,
+    "wall_s": 23.8,
+    "ttft_s": 22.09,
+    "fill_ratio_actual": 0.581,
+    "fill_verified": true,
+    "context_truncated": false,
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9127,
+      "ram_free_mb": 6071,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 647
+    },
+    "vram": {
+      "vram_bytes": 8574376896,
+      "vram_gib": 7.99,
+      "total_bytes": 8574376896,
+      "gpu_pct": 100
+    },
+    "ollama_logs": {
+      "kv_size_requested": 8192,
+      "layers_offloaded": "33/33",
+      "kv_cache_reported": "1.3 GiB",
+      "total_memory_reported": "8.0 GiB"
+    },
+    "swap_status": "OK",
+    "phase": "filled"
+  },
+  {
+    "model": "qwen3.5:9b",
+    "num_ctx": 16384,
+    "target_fill_tokens": 10,
+    "timestamp": "2026-03-20T10:41:36.629366",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 889,
+      "ram_free_mb": 14309,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 596
+    },
+    "prompt_chars": 126,
+    "status": "OK",
+    "gen_tok_s": 32.03,
+    "prefill_tok_s": 105.11,
+    "eval_count": 50,
+    "prompt_eval_count": 37,
+    "prompt_eval_duration_s": 0.35,
+    "eval_duration_s": 1.56,
+    "load_duration_s": 7.93,
+    "wall_s": 10.1,
+    "ttft_s": 8.28,
+    "fill_ratio_actual": 0.002,
+    "fill_verified": true,
+    "context_truncated": false,
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9134,
+      "ram_free_mb": 6064,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 597
+    },
+    "vram": {
+      "vram_bytes": 8716295104,
+      "vram_gib": 8.12,
+      "total_bytes": 8716295104,
+      "gpu_pct": 100
+    },
+    "ollama_logs": {
+      "kv_size_requested": 16384,
+      "layers_offloaded": "33/33",
+      "kv_cache_reported": "1.4 GiB",
+      "total_memory_reported": "8.1 GiB"
+    },
+    "swap_status": "OK",
+    "phase": "allocation"
+  },
+  {
+    "model": "qwen3.5:9b",
+    "num_ctx": 16384,
+    "target_fill_tokens": 13107,
+    "timestamp": "2026-03-20T10:41:46.728996",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9134,
+      "ram_free_mb": 6064,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 597
+    },
+    "prompt_chars": 48263,
+    "status": "OK",
+    "gen_tok_s": 28.99,
+    "prefill_tok_s": 203.36,
+    "eval_count": 50,
+    "prompt_eval_count": 9880,
+    "prompt_eval_duration_s": 48.58,
+    "eval_duration_s": 1.72,
+    "load_duration_s": 0.33,
+    "wall_s": 50.8,
+    "ttft_s": 48.91,
+    "fill_ratio_actual": 0.603,
+    "fill_verified": true,
+    "context_truncated": false,
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9389,
+      "ram_free_mb": 5809,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 599
+    },
+    "vram": {
+      "vram_bytes": 8716295104,
+      "vram_gib": 8.12,
+      "total_bytes": 8716295104,
+      "gpu_pct": 100
+    },
+    "ollama_logs": {
+      "kv_size_requested": 16384,
+      "layers_offloaded": "33/33",
+      "kv_cache_reported": "1.4 GiB",
+      "total_memory_reported": "8.1 GiB"
+    },
+    "swap_status": "OK",
+    "phase": "filled"
+  },
+  {
+    "model": "qwen3.5:9b",
+    "num_ctx": 32768,
+    "target_fill_tokens": 10,
+    "timestamp": "2026-03-20T10:42:43.532946",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 856,
+      "ram_free_mb": 14342,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 599
+    },
+    "prompt_chars": 126,
+    "status": "OK",
+    "gen_tok_s": 32.18,
+    "prefill_tok_s": 102.38,
+    "eval_count": 50,
+    "prompt_eval_count": 37,
+    "prompt_eval_duration_s": 0.36,
+    "eval_duration_s": 1.55,
+    "load_duration_s": 8.79,
+    "wall_s": 10.9,
+    "ttft_s": 9.15,
+    "fill_ratio_actual": 0.001,
+    "fill_verified": true,
+    "context_truncated": false,
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9853,
+      "ram_free_mb": 5345,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 607
+    },
+    "vram": {
+      "vram_bytes": 9000131520,
+      "vram_gib": 8.38,
+      "total_bytes": 9000131520,
+      "gpu_pct": 100
+    },
+    "ollama_logs": {
+      "kv_size_requested": 32768,
+      "layers_offloaded": "33/33",
+      "kv_cache_reported": "1.5 GiB",
+      "total_memory_reported": "8.4 GiB"
+    },
+    "swap_status": "OK",
+    "phase": "allocation"
+  },
+  {
+    "model": "qwen3.5:9b",
+    "num_ctx": 32768,
+    "target_fill_tokens": 26214,
+    "timestamp": "2026-03-20T10:42:54.480204",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9854,
+      "ram_free_mb": 5344,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 607
+    },
+    "prompt_chars": 98365,
+    "status": "OK",
+    "gen_tok_s": 26.58,
+    "prefill_tok_s": 177.3,
+    "eval_count": 50,
+    "prompt_eval_count": 20124,
+    "prompt_eval_duration_s": 113.5,
+    "eval_duration_s": 1.88,
+    "load_duration_s": 0.33,
+    "wall_s": 115.9,
+    "ttft_s": 113.83,
+    "fill_ratio_actual": 0.614,
+    "fill_verified": true,
+    "context_truncated": false,
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 9822,
+      "ram_free_mb": 5376,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 604
+    },
+    "vram": {
+      "vram_bytes": 9000131520,
+      "vram_gib": 8.38,
+      "total_bytes": 9000131520,
+      "gpu_pct": 100
+    },
+    "ollama_logs": {
+      "kv_size_requested": 32768,
+      "layers_offloaded": "33/33",
+      "kv_cache_reported": "1.5 GiB",
+      "total_memory_reported": "8.4 GiB"
+    },
+    "swap_status": "OK",
+    "phase": "filled"
+  },
+  {
+    "model": "qwen3.5:9b",
+    "num_ctx": 65536,
+    "target_fill_tokens": 10,
+    "timestamp": "2026-03-20T10:44:56.404273",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 871,
+      "ram_free_mb": 14327,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 604
+    },
+    "prompt_chars": 126,
+    "status": "OK",
+    "gen_tok_s": 32.34,
+    "prefill_tok_s": 106.87,
+    "eval_count": 50,
+    "prompt_eval_count": 37,
+    "prompt_eval_duration_s": 0.35,
+    "eval_duration_s": 1.55,
+    "load_duration_s": 10.12,
+    "wall_s": 12.2,
+    "ttft_s": 10.46,
+    "fill_ratio_actual": 0.001,
+    "fill_verified": true,
+    "context_truncated": false,
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 11260,
+      "ram_free_mb": 3938,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 589
+    },
+    "vram": {
+      "vram_bytes": 9833487296,
+      "vram_gib": 9.16,
+      "total_bytes": 9833487296,
+      "gpu_pct": 100
+    },
+    "ollama_logs": {
+      "kv_size_requested": 65536,
+      "layers_offloaded": "33/33",
+      "kv_cache_reported": "1.8 GiB",
+      "total_memory_reported": "9.2 GiB"
+    },
+    "swap_status": "OK",
+    "phase": "allocation"
+  },
+  {
+    "model": "qwen3.5:9b",
+    "num_ctx": 65536,
+    "target_fill_tokens": 52428,
+    "timestamp": "2026-03-20T10:45:08.656734",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 10987,
+      "ram_free_mb": 4211,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 589
+    },
+    "prompt_chars": 198569,
+    "status": "OK",
+    "gen_tok_s": 22.64,
+    "prefill_tok_s": 135.1,
+    "eval_count": 50,
+    "prompt_eval_count": 40612,
+    "prompt_eval_duration_s": 300.62,
+    "eval_duration_s": 2.21,
+    "load_duration_s": 130.16,
+    "wall_s": 433.4,
+    "ttft_s": 430.78,
+    "fill_ratio_actual": 0.62,
+    "fill_verified": true,
+    "context_truncated": false,
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 10389,
+      "ram_free_mb": 4809,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 582
+    },
+    "vram": {
+      "vram_bytes": 9833487296,
+      "vram_gib": 9.16,
+      "total_bytes": 9833487296,
+      "gpu_pct": 100
+    },
+    "ollama_logs": {
+      "kv_size_requested": 65536,
+      "kv_cache_reported": "1.8 GiB",
+      "total_memory_reported": "9.2 GiB",
+      "layers_offloaded": "33/33"
+    },
+    "swap_status": "OK",
+    "phase": "filled"
+  },
+  {
+    "model": "qwen3.5:9b",
+    "num_ctx": 98304,
+    "target_fill_tokens": 10,
+    "timestamp": "2026-03-20T10:52:28.135984",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 961,
+      "ram_free_mb": 14238,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 574
+    },
+    "prompt_chars": 126,
+    "status": "OK",
+    "gen_tok_s": 32.19,
+    "prefill_tok_s": 99.87,
+    "eval_count": 50,
+    "prompt_eval_count": 37,
+    "prompt_eval_duration_s": 0.37,
+    "eval_duration_s": 1.55,
+    "load_duration_s": 12.27,
+    "wall_s": 14.7,
+    "ttft_s": 12.64,
+    "fill_ratio_actual": 0.0,
+    "fill_verified": true,
+    "context_truncated": false,
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 12294,
+      "ram_free_mb": 2904,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 777
+    },
+    "vram": {
+      "vram_bytes": 10233732032,
+      "vram_gib": 9.53,
+      "total_bytes": 10233732032,
+      "gpu_pct": 100
+    },
+    "ollama_logs": {
+      "kv_size_requested": 98304,
+      "layers_offloaded": "33/33",
+      "kv_cache_reported": "2.1 GiB",
+      "total_memory_reported": "9.5 GiB"
+    },
+    "swap_status": "OK",
+    "phase": "allocation"
+  },
+  {
+    "model": "qwen3.5:9b",
+    "num_ctx": 98304,
+    "target_fill_tokens": 78643,
+    "timestamp": "2026-03-20T10:52:42.929470",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 12286,
+      "ram_free_mb": 2912,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 777
+    },
+    "prompt_chars": 298773,
+    "status": "OK",
+    "gen_tok_s": 19.59,
+    "prefill_tok_s": 114.18,
+    "eval_count": 50,
+    "prompt_eval_count": 61100,
+    "prompt_eval_duration_s": 535.11,
+    "eval_duration_s": 2.55,
+    "load_duration_s": 0.33,
+    "wall_s": 538.7,
+    "ttft_s": 535.45,
+    "fill_ratio_actual": 0.622,
+    "fill_verified": true,
+    "context_truncated": false,
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 10265,
+      "ram_free_mb": 4933,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 1326
+    },
+    "vram": {
+      "vram_bytes": 10233732032,
+      "vram_gib": 9.53,
+      "total_bytes": 10233732032,
+      "gpu_pct": 100
+    },
+    "ollama_logs": {
+      "layers_offloaded": "33/33",
+      "kv_cache_reported": "2.1 GiB",
+      "total_memory_reported": "9.5 GiB"
+    },
+    "swap_status": "OK",
+    "phase": "filled"
+  },
+  {
+    "model": "qwen3.5:9b",
+    "num_ctx": 131072,
+    "target_fill_tokens": 10,
+    "timestamp": "2026-03-20T11:01:47.722259",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 10467,
+      "ram_free_mb": 4731,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 706
+    },
+    "prompt_chars": 126,
+    "status": "OK",
+    "gen_tok_s": 31.84,
+    "prefill_tok_s": 84.71,
+    "eval_count": 50,
+    "prompt_eval_count": 37,
+    "prompt_eval_duration_s": 0.44,
+    "eval_duration_s": 1.57,
+    "load_duration_s": 107.69,
+    "wall_s": 111.8,
+    "ttft_s": 108.13,
+    "fill_ratio_actual": 0.0,
+    "fill_verified": true,
+    "context_truncated": false,
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 12175,
+      "ram_free_mb": 3023,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 1972
+    },
+    "vram": {
+      "vram_bytes": 10934246336,
+      "vram_gib": 10.18,
+      "total_bytes": 10934246336,
+      "gpu_pct": 100
+    },
+    "ollama_logs": {
+      "kv_size_requested": 131072,
+      "layers_offloaded": "33/33",
+      "kv_cache_reported": "2.4 GiB",
+      "total_memory_reported": "10.2 GiB"
+    },
+    "swap_status": "ELEVATED",
+    "phase": "allocation"
+  },
+  {
+    "model": "qwen3.5:9b",
+    "num_ctx": 131072,
+    "target_fill_tokens": 104857,
+    "timestamp": "2026-03-20T11:03:39.729293",
+    "mem_before": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 12112,
+      "ram_free_mb": 3086,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 2031
+    },
+    "prompt_chars": 397050,
+    "status": "TIMEOUT",
+    "error": "timed out",
+    "wall_s": 600.1,
+    "mem_after": {
+      "ram_total_mb": 15198,
+      "ram_used_mb": 11795,
+      "ram_free_mb": 3403,
+      "swap_total_mb": 16384,
+      "swap_used_mb": 1133
+    },
+    "swap_status": "OK",
+    "phase": "filled",
+    "ceiling_reason": "fill_failed_at_131072"
+  }
+]
