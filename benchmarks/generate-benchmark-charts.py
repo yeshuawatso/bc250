@@ -40,7 +40,7 @@ C_GRAY   = "#8b949e"
 
 
 # ══════════════════════════════════════════════════════════════════════
-# CHART 1: Generation Speed — 29 of 31 Models (horizontal bar)
+# CHART 1: Generation Speed — 30 of 32 Models (horizontal bar)
 # 2 redundant 14B variants omitted per BR §3 (see qwen3-abl:14b, qwen3-14b-nothink)
 # ══════════════════════════════════════════════════════════════════════
 def chart_gen_speed_all():
@@ -50,6 +50,7 @@ def chart_gen_speed_all():
         ("phi4-mini",                87.0, "4B"),
         ("gemma3:4b",                76.5, "4B"),
         ("qwen3:4b",                 73.6, "4B"),
+        ("Qwen3-Coder-30B-A3B",     62.2, "MoE"),
         ("Qwen3-30B-A3B (Q2_K)",      59.0, "MoE"),
         ("qwen2.5:7b",              55.0, "7B"),
         ("qwen2.5-coder:7b",        54.8, "7B"),
@@ -100,7 +101,7 @@ def chart_gen_speed_all():
     ax.set_yticks(range(len(names)))
     ax.set_yticklabels(names, fontsize=9)
     ax.set_xlabel("Generation Speed (tok/s)")
-    ax.set_title("BC-250 · Generation Speed — 29 of 31 Models\n@4K context · Q4_0/IQ2_M quants · 2 redundant 14B variants omitted", fontsize=13, fontweight='bold', pad=15)
+    ax.set_title("BC-250 · Generation Speed — 30 of 32 Models\n@4K context · Q4_0/IQ2_M quants · 2 redundant 14B variants omitted", fontsize=13, fontweight='bold', pad=15)
     ax.set_xlim(0, 120)
     ax.grid(axis='x', alpha=0.3)
 
@@ -115,7 +116,7 @@ def chart_gen_speed_all():
 
 
 # ══════════════════════════════════════════════════════════════════════
-# CHART 2: Quality Scores — All 31 Models (horizontal bar)
+# CHART 2: Quality Scores — All 32 Models (horizontal bar)
 # ══════════════════════════════════════════════════════════════════════
 def chart_quality_all():
     models = [
@@ -129,7 +130,8 @@ def chart_quality_all():
         ("qwen3:14b",           100), ("deepseek-r1:14b",     100),
         ("★ MoE 35B-A3B",    93),  ("phi4-mini",            93),
         ("llama3.2:3b",          93),  ("llama3.1:8b",          93),
-        ("glm4:9b",              93),  ("seed-coder-abl:8b",    87),
+        ("glm4:9b",              93),
+        ("Qwen3-Coder-30B-A3B",  87),  ("seed-coder-abl:8b",    87),
         ("granite3.3:8b",        80),  ("mistral-nemo:12b",     80),
         ("qwen2.5:3b",           73),  ("deepseek-r1:8b",       73),
         ("qwen2.5-coder:7b",    40),  ("qwen3:4b ⁶",          33),
@@ -161,7 +163,7 @@ def chart_quality_all():
     ax.set_yticks(range(len(names)))
     ax.set_yticklabels(names, fontsize=9)
     ax.set_xlabel("Quality Score (%)")
-    ax.set_title("BC-250 · Quality Assessment — All 31 Models\n5 tasks × 3 runs · deterministic scoring (keyword/JSON/regex checks)", fontsize=13, fontweight='bold', pad=15)
+    ax.set_title("BC-250 · Quality Assessment — All 32 Models\n5 tasks × 3 runs · deterministic scoring (keyword/JSON/regex checks)", fontsize=13, fontweight='bold', pad=15)
     ax.set_xlim(0, 115)
     ax.grid(axis='x', alpha=0.3)
 
@@ -180,7 +182,7 @@ def chart_quality_all():
 
 
 # ══════════════════════════════════════════════════════════════════════
-# CHART 3: Context Ceiling Grid — 18 of 31 Models (heatmap)
+# CHART 3: Context Ceiling Grid — 19 of 32 Models (heatmap)
 # Only models with filled-context speed data across 4K/16K/32K/64K
 # ══════════════════════════════════════════════════════════════════════
 def chart_context_ceiling():
@@ -192,6 +194,7 @@ def chart_context_ceiling():
         ("phi4-mini",             74.1, 47.1, 31.8, 18.7),
         ("qwen3:4b",              62.0, 38.9, 26.6, 17.0),
         ("Qwen3-30B-A3B (Q2_K)",   54.1, 38.9, 29.9, 20.4),
+        ("Qwen3-Coder-30B-A3B",    58.4, 42.8, 32.6, 22.9),
         ("qwen2.5:7b",            52.5, 44.2, 36.9, None),
         ("llama3.1:8b",           46.8, 34.6, 25.7, 17.0),
         ("seed-coder-abl:8b",    46.4, 34.1, 25.2, 17.8),
@@ -251,7 +254,7 @@ def chart_context_ceiling():
                 clr = '#ffffff' if v < 50 else '#000000'
             ax.text(j, i, txt, ha='center', va='center', fontsize=8, color=clr, fontweight='bold')
 
-    ax.set_title("BC-250 · Filled-Context Speed (tok/s) — 18 of 31 Models\n80% real-token fill · Q4_0 KV · ✂️ = truncated · ⚠️ = impractical",
+    ax.set_title("BC-250 · Filled-Context Speed (tok/s) — 19 of 32 Models\n80% real-token fill · Q4_0 KV · ✂️ = truncated · ⚠️ = impractical",
                  fontsize=13, fontweight='bold', pad=15)
 
     cbar = plt.colorbar(im, ax=ax, shrink=0.6, pad=0.02)
@@ -324,15 +327,15 @@ def chart_context_degradation():
 
 
 # ══════════════════════════════════════════════════════════════════════
-# CHART 5: Quality per Task Category — All 31 Models (grouped bar)
+# CHART 5: Quality per Task Category — All 32 Models (grouped bar)
 # ══════════════════════════════════════════════════════════════════════
 def chart_quality_tasks():
     tasks = ["Summarize", "JSON\nExtract", "Fact\nRecall", "Instruction\nFollow", "Arithmetic\n(17×23)"]
 
     # Counts of 3/3 across all 29 testable models
     # From §6.1: count how many got 3/3 on each
-    pass_counts = [25, 25, 30, 20, 23]  # out of 31 — counted from BR §6.1 (incl. qwen2.5:7b 0/3+3/3, 27b-iq2m 0/3)
-    fail_counts = [31-c for c in pass_counts]
+    pass_counts = [25, 26, 31, 21, 24]  # out of 32 — counted from B4 table
+    fail_counts = [32-c for c in pass_counts]
 
     x = np.arange(len(tasks))
     w = 0.5
@@ -346,10 +349,10 @@ def chart_quality_tasks():
         if f > 0:
             ax.text(i, p + f/2, f"{f}", ha='center', va='center', fontsize=11, fontweight='bold', color='white')
 
-    ax.set_ylabel("Number of Models (out of 31)")
+    ax.set_ylabel("Number of Models (out of 32)")
     ax.set_xticks(x)
     ax.set_xticklabels(tasks, fontsize=10)
-    ax.set_title("BC-250 · Quality by Task — All 31 Models\n5 tasks × 3 runs · how many achieve perfect 3/3",
+    ax.set_title("BC-250 · Quality by Task — All 32 Models\n5 tasks × 3 runs · how many achieve perfect 3/3",
                  fontsize=13, fontweight='bold', pad=15)
     ax.legend(fontsize=10, framealpha=0.3)
     ax.grid(axis='y', alpha=0.3)
@@ -362,7 +365,7 @@ def chart_quality_tasks():
 
 
 # ══════════════════════════════════════════════════════════════════════
-# CHART 6: Long-Context Quality — 3 of 31 Models (heatmap, 4 tests × 2 ctx)
+# CHART 6: Long-Context Quality — 3 of 32 Models (heatmap, 4 tests × 2 ctx)
 # Only models with long-context quality data (production + phi4-mini comparison)
 # ══════════════════════════════════════════════════════════════════════
 def chart_longctx_quality():
@@ -405,7 +408,7 @@ def chart_longctx_quality():
     ax.text(1.5, -0.7, "16K Context", ha='center', fontsize=11, fontweight='bold', color=C_BLUE)
     ax.text(5.5, -0.7, "32K Context", ha='center', fontsize=11, fontweight='bold', color=C_ORANGE)
 
-    ax.set_title("BC-250 · Long-Context Quality — 3 of 31 Models\n4 multi-hop tests (budget/pop/contradict/timeline) at 16K & 32K",
+    ax.set_title("BC-250 · Long-Context Quality — 3 of 32 Models\n4 multi-hop tests (budget/pop/contradict/timeline) at 16K & 32K",
                  fontsize=13, fontweight='bold', pad=25)
 
     # Summary on right
@@ -466,7 +469,7 @@ def chart_image_gen():
 
 
 # ══════════════════════════════════════════════════════════════════════
-# CHART 8: VRAM Usage — 21 of 31 Models (excludes quant/think variants)
+# CHART 8: VRAM Usage — 22 of 32 Models (excludes quant/think variants)
 # ══════════════════════════════════════════════════════════════════════
 def chart_vram_usage():
     models = [
@@ -488,6 +491,7 @@ def chart_vram_usage():
         ("qwen3:8b-q8_0",    8.5),
         ("gemma3:12b",       8.7),
         ("qwen3:14b",        8.9),
+        ("Qwen3-Coder-30B-A3B",  11.0),
         ("Qwen3-30B-A3B (Q2_K)",  10.7),
         ("★ MoE 35B-A3B",12.3),
         ("qwen3.5-27b-iq2m",       13.4),
@@ -514,7 +518,7 @@ def chart_vram_usage():
     ax.set_yticks(range(len(names)))
     ax.set_yticklabels(names, fontsize=9)
     ax.set_xlabel("VRAM Usage @4K Context (GiB)")
-    ax.set_title("BC-250 · VRAM Usage — 21 of 31 Models @4K Context\n16.5 GiB Vulkan available · quant/think variants excluded",
+    ax.set_title("BC-250 · VRAM Usage — 22 of 32 Models @4K Context\n16.5 GiB Vulkan available · quant/think variants excluded",
                  fontsize=13, fontweight='bold', pad=15)
     ax.set_xlim(0, 18)
     ax.grid(axis='x', alpha=0.3)
@@ -526,7 +530,7 @@ def chart_vram_usage():
 
 
 # ══════════════════════════════════════════════════════════════════════
-# CHART 9: Speed vs Quality — 22 of 31 Models (scatter)
+# CHART 9: Speed vs Quality — 23 of 32 Models (scatter)
 # Excludes quant variants and think-mode duplicates
 # ══════════════════════════════════════════════════════════════════════
 def chart_speed_vs_quality():
@@ -537,6 +541,7 @@ def chart_speed_vs_quality():
         ("phi4-mini",          87.0, 93,  3.8, True),
         ("gemma3:4b",          76.5, 100, 4.0, False),
         ("qwen3:4b",           73.6, 33,  4.0, False),
+        ("Qwen3-Coder-30B-A3B",   62.2, 87, 30.5, False),
         ("Qwen3-30B-A3B (Q2_K)", 59.0, 27, 30.5, False),
         ("qwen2.5-coder:7b",  54.8, 40, 7.6, False),
         ("llama3.1:8b",        51.3, 93,  8.0, False),
@@ -606,7 +611,7 @@ def chart_speed_vs_quality():
             ax.get_yticklabels()[i].set_color(C_GOLD)
 
     ax.set_xlabel("Generation Speed (tok/s)", fontsize=12)
-    ax.set_title("BC-250 · Speed vs Quality — 22 Models\nBar color = quality tier · Gold outline = production · Badge = quality score",
+    ax.set_title("BC-250 · Speed vs Quality — 23 Models\nBar color = quality tier · Gold outline = production · Badge = quality score",
                  fontsize=13, fontweight='bold', pad=15)
     ax.set_xlim(0, 130)
     ax.grid(axis='x', alpha=0.2)
